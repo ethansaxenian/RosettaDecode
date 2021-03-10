@@ -2,3 +2,4 @@ Cache
 ToDo
 *.swp
 rosettacode.log
+.DS_Store
