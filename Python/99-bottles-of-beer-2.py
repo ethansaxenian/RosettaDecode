@@ -3,7 +3,6 @@
 
 """Pythonic 99 beer song (maybe the simplest naive implementation in Python 3)."""
 
-
 REGULAR_VERSE = '''\
 {n} bottles of beer on the wall, {n} bottles of beer
 Take one down and pass it around, {n_minus_1} bottles of beer on the wall.
@@ -21,7 +20,6 @@ No more bottles of beer on the wall, no more bottles of beer.
 Go to the store and buy some more, 99 bottles of beer on the wall.
 
 '''
-
 
 for n in range(99, 2, -1):
     print(REGULAR_VERSE.format(n=n, n_minus_1=n - 1))

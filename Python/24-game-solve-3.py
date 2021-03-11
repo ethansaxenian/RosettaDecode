@@ -8,7 +8,9 @@ def div(a, b):
         return 999999.0
     return a / b
 
+
 ops = {mul: '*', div: '/', sub: '-', add: '+'}
+
 
 def solve24(num, how, target):
     if len(num) == 1:
@@ -23,19 +25,20 @@ def solve24(num, how, target):
                         new_how = [h for k, h in enumerate(how) if k != i and k != j] + [(how[i], ops[op], how[j])]
                         yield from solve24(new_num, new_how, target)
 
+
 tests = [
-         [1, 7, 2, 7],
-         [5, 7, 5, 4],
-         [1, 4, 6, 6],
-         [2, 3, 7, 3],
-         [1, 6, 2, 6],
-         [7, 9, 4, 1],
-         [6, 4, 2, 2],
-         [5, 7, 9, 7],
-         [3, 3, 8, 8],  # Difficult case requiring precise division
-         [8, 7, 9, 7],  # No solution
-         [9, 4, 4, 5],  # No solution
-            ]
+    [1, 7, 2, 7],
+    [5, 7, 5, 4],
+    [1, 4, 6, 6],
+    [2, 3, 7, 3],
+    [1, 6, 2, 6],
+    [7, 9, 4, 1],
+    [6, 4, 2, 2],
+    [5, 7, 9, 7],
+    [3, 3, 8, 8],  # Difficult case requiring precise division
+    [8, 7, 9, 7],  # No solution
+    [9, 4, 4, 5],  # No solution
+]
 for nums in tests:
     print(nums, end=' : ')
     try:

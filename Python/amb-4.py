@@ -12,19 +12,18 @@ def amb(xs):
 
 # main :: IO ()
 def main():
-
     xs = enumFromTo(1)(10)
     print ('Pythagorean triples from integers 1-10:')
     print (
         amb(xs)(
             lambda x: amb(xs)
             (lambda y: amb(xs)
-                (lambda z: when(
-                    x * x + y * y == z * z
-                )(
-                    (x, y, z)
-                )
-            ))
+            (lambda z: when(
+                x * x + y * y == z * z
+            )(
+                (x, y, z)
+            )
+             ))
         )
     )
 
@@ -51,16 +50,17 @@ def main():
     print('\nAdditional problem reference in procedural version above:')
     print(
         amb([1, 2, 3])
-        (
-            lambda x: amb([4, 5, 6])
             (
-                lambda y: when(x * y != 8)
+            lambda x: amb([4, 5, 6])
                 (
+                lambda y: when(x * y != 8)
+                    (
                     (x, y)
                 )
             )
         )
     )
+
 
 # GENERIC -------------------------------------------------
 
@@ -73,6 +73,7 @@ def enumFromTo(m):
 # when :: Bool -> [a] -> [a]
 def when(p):
     return lambda x: [x] if p else []
+
 
 # MAIN ---
 if __name__ == '__main__':

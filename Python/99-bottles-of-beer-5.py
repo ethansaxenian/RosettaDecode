@@ -14,11 +14,12 @@ Excercise of style. An overkill for the task :-D
    the number of initial items
 """
 
-from string import Template
-from abc import ABC, abstractmethod
-from multiprocessing.pool import Pool as ProcPool
-from functools import partial
 import sys
+from abc import ABC, abstractmethod
+from functools import partial
+from multiprocessing.pool import Pool as ProcPool
+from string import Template
+
 
 class Song(ABC):
     @abstractmethod
@@ -28,6 +29,7 @@ class Song(ABC):
         """
 
         pass
+
 
 class MuchItemsSomewhere(Song):
     eq_attrs = (
@@ -46,15 +48,15 @@ class MuchItemsSomewhere(Song):
     __slots__ = eq_attrs + ("_repr", "_hash")
 
     def __init__(
-        self,
-        items = "bottles of beer",
-        item = "bottle of beer",
-        where = "on the wall",
-        initial_number = None,
-        zero_items = "No more",
-        action1 = "Take one down, pass it around",
-        action2 = "Go to the store, buy some more",
-        template = None,
+            self,
+            items="bottles of beer",
+            item="bottle of beer",
+            where="on the wall",
+            initial_number=None,
+            zero_items="No more",
+            action1="Take one down, pass it around",
+            action2="Go to the store, buy some more",
+            template=None,
     ):
         initial_number_true = 99 if initial_number is None else initial_number
 
@@ -68,7 +70,6 @@ class MuchItemsSomewhere(Song):
 
         if initial_number_true < 0:
             raise ValueError("`initial_number` parameter must be >=0")
-
 
         true_tpl = template or """\
 $i $items1 $where
@@ -115,11 +116,11 @@ $j $items2 $where"""
             items2 = items
 
         return self.strofa_tpl.substitute(
-            i = i,
-            j = j,
-            action = action,
-            items1 = items1,
-            items2 = items2
+            i=i,
+            j=j,
+            action=action,
+            items1=items1,
+            items2=items2
         )
 
     def sing(self):
@@ -200,10 +201,12 @@ $j $items2 $where"""
 
         return repr_true
 
+
 def muchBeersOnTheWall(num):
     song = MuchItemsSomewhere(initial_number=num)
 
     return song.sing()
+
 
 def balladOfProgrammer(num):
     """
@@ -214,16 +217,17 @@ def balladOfProgrammer(num):
     """
 
     song = MuchItemsSomewhere(
-        initial_number = num,
-        items = "subtle bugs",
-        item = "subtle bug",
-        where = "in Production",
-        action1 = "Debug and catch, commit a patch",
-        action2 = "Release the fixes, wait for some tickets",
-        zero_items = "Zarro",
+        initial_number=num,
+        items="subtle bugs",
+        item="subtle bug",
+        where="in Production",
+        action1="Debug and catch, commit a patch",
+        action2="Release the fixes, wait for some tickets",
+        zero_items="Zarro",
     )
 
     return song.sing()
+
 
 def main(num):
     print(f"### {num} Bottles of Beers on the Wall ###")
@@ -234,6 +238,7 @@ def main(num):
     print('### "The Ballad of Programmer", by Marco Sulla')
     print()
     print(balladOfProgrammer(num))
+
 
 if __name__ == "__main__":
     # Ok, argparse is **really** too much

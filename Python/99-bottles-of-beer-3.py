@@ -1,6 +1,5 @@
 '''99 Units of Disposable Asset'''
 
-
 from itertools import chain
 
 
@@ -30,6 +29,7 @@ def incantation(localisation):
 
     def inventory(n):
         return unwords([asset(n), location])
+
     return lambda n: solution if 0 == n else (
         unlines([
             inventory(n),
@@ -43,8 +43,10 @@ def incantation(localisation):
 # asset :: Int -> String
 def asset(n):
     '''Quantified asset.'''
+
     def suffix(n):
         return [] if 1 == n else 's'
+
     return unwords([
         str(n),
         concat(reversed(concat(cons(suffix(n))(["elttob"]))))
@@ -77,9 +79,11 @@ def cons(x):
 def enumFromThenTo(m):
     '''Integer values enumerated from m to n
        with a step defined by nxt-m.'''
+
     def go(nxt, n):
         d = nxt - m
         return list(range(m, d + n, d))
+
     return lambda nxt: lambda n: (
         go(nxt, n)
     )

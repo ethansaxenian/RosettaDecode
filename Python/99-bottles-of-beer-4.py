@@ -18,14 +18,14 @@ def regular_plural(noun: str) -> str:
 
 
 def beer_song(
-    *,
-    location: str = 'on the wall',
-    distribution: str = 'Take one down, pass it around',
-    solution: str = 'Better go to the store to buy some more!',
-    container: str = 'bottle',
-    plurifier: Callable[[str], str] = regular_plural,
-    liquid: str = "beer",
-    initial_count: int = 99,
+        *,
+        location: str = 'on the wall',
+        distribution: str = 'Take one down, pass it around',
+        solution: str = 'Better go to the store to buy some more!',
+        container: str = 'bottle',
+        plurifier: Callable[[str], str] = regular_plural,
+        liquid: str = "beer",
+        initial_count: int = 99,
 ) -> str:
     """
     Return the lyrics of the beer song
@@ -40,13 +40,13 @@ def beer_song(
 
     verse = partial(
         get_verse,
-        initial_count = initial_count,
-        location = location,
-        distribution = distribution,
-        solution = solution,
-        container = container,
-        plurifier = plurifier,
-        liquid = liquid,
+        initial_count=initial_count,
+        location=location,
+        distribution=distribution,
+        solution=solution,
+        container=container,
+        plurifier=plurifier,
+        liquid=liquid,
     )
 
     verses = map(verse, range(initial_count, -1, -1))
@@ -54,23 +54,23 @@ def beer_song(
 
 
 def get_verse(
-    count: int,
-    *,
-    initial_count: str,
-    location: str,
-    distribution: str,
-    solution: str,
-    container: str,
-    plurifier: Callable[[str], str],
-    liquid: str,
+        count: int,
+        *,
+        initial_count: str,
+        location: str,
+        distribution: str,
+        solution: str,
+        container: str,
+        plurifier: Callable[[str], str],
+        liquid: str,
 ) -> str:
     """Returns the verse for the given amount of drinks"""
 
     asset = partial(
         get_asset,
-        container = container,
-        plurifier = plurifier,
-        liquid = liquid,
+        container=container,
+        plurifier=plurifier,
+        liquid=liquid,
     )
 
     current_asset = asset(count)
@@ -80,7 +80,7 @@ def get_verse(
 
     inventory = partial(
         get_inventory,
-        location = location,
+        location=location,
     )
 
     return '\n'.join((
@@ -92,9 +92,9 @@ def get_verse(
 
 
 def get_inventory(
-    asset: str,
-    *,
-    location: str,
+        asset: str,
+        *,
+        location: str,
 ) -> str:
     """
     Used to return the first or the fourth line of the verse
@@ -106,11 +106,11 @@ def get_inventory(
 
 
 def get_asset(
-    count: int,
-    *,
-    container: str,
-    plurifier: Callable[[str], str],
-    liquid: str,
+        count: int,
+        *,
+        container: str,
+        plurifier: Callable[[str], str],
+        liquid: str,
 ) -> str:
     """
     Quantified asset

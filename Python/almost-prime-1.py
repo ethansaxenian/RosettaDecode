@@ -1,5 +1,7 @@
-from prime_decomposition import decompose
 from itertools import islice, count
+
+from prime_decomposition import decompose
+
 try:
     from functools import reduce
 except:
@@ -14,6 +16,7 @@ def almostprime(n, k=2):
     except:
         return False
 
+
 if __name__ == '__main__':
-    for k in range(1,6):
+    for k in range(1, 6):
         print('%i: %r' % (k, list(islice((n for n in count() if almostprime(n, k)), 10))))

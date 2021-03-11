@@ -1,9 +1,11 @@
-from __future__ import with_statement # required for Python 2.5
-import threading
+from __future__ import with_statement  # required for Python 2.5
+
 import random
+import threading
 import time
 
 terminate = threading.Event()
+
 
 class Buckets:
     def __init__(self, nbuckets):
@@ -25,30 +27,36 @@ class Buckets:
         with self.lock:
             return self.values[:]
 
+
 def randomize(buckets):
     nbuckets = buckets.nbuckets
     while not terminate.isSet():
         src = random.randrange(nbuckets)
         dst = random.randrange(nbuckets)
-        if dst!=src:
+        if dst != src:
             amount = random.randrange(20)
             buckets.transfer(src, dst, amount)
+
 
 def equalize(buckets):
     nbuckets = buckets.nbuckets
     while not terminate.isSet():
         src = random.randrange(nbuckets)
         dst = random.randrange(nbuckets)
-        if dst!=src:
+        if dst != src:
             amount = (buckets[src] - buckets[dst]) // 2
-            if amount>=0: buckets.transfer(src, dst, amount)
-            else: buckets.transfer(dst, src, -amount)
+            if amount >= 0:
+                buckets.transfer(src, dst, amount)
+            else:
+                buckets.transfer(dst, src, -amount)
+
 
 def print_state(buckets):
     snapshot = buckets.snapshot()
     for value in snapshot:
         print '%2d' % value,
     print '=', sum(snapshot)
+
 
 # create 15 buckets
 buckets = Buckets(15)
@@ -66,7 +74,7 @@ try:
     while True:
         print_state(buckets)
         time.sleep(1)
-except KeyboardInterrupt: # ^C to finish
+except KeyboardInterrupt:  # ^C to finish
     terminate.set()
 
 # wait until all worker threads finish

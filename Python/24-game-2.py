@@ -1,9 +1,11 @@
-import random, re
-chars = ["(",")","/","+","-","*"]
+import random
+import re
+
+chars = ["(", ")", "/", "+", "-", "*"]
 while True:
     charsandints, ints = [], []
     for x in range(4):
-        ints.append(str(random.randrange(1,10)))
+        ints.append(str(random.randrange(1, 10)))
     charsandints = chars + ints
     print "Numbers are:", ints
     guess = raw_input("Enter your guess:")

@@ -1,6 +1,7 @@
 def accumulator(sum):
-  while True:
-    sum += yield sum
+    while True:
+        sum += yield sum
+
 
 x = accumulator(1)
 x.send(None)
