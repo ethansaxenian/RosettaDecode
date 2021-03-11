@@ -1,6 +1,0 @@
-Public Sub Form_Open()
-Dim sFile As String
-
-sFile = File.Load("FileToLoad")
-
-End

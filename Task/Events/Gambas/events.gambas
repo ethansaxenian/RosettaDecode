@@ -1,5 +1,0 @@
-Public Sub Timer1_Timer()
-
-Print Str(Time(Now))
-
-End

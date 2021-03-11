@@ -1,2 +1,0 @@
-list:=T("hydrogen", "helium", "lithium", "beryllium", "boron");
-list[(0).random(list.len())]

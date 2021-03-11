@@ -1,4 +1,0 @@
-fcn testQuine(quine){
-   Compiler.Compiler.compileText(quine).__constructor(); out:=vm.regX;
-   println("\ndiff>>",quine-out,"<<");
-}

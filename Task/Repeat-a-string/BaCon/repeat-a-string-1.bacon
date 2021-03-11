@@ -1,4 +1,0 @@
-DOTIMES 5
-    s$ = s$ & "ha"
-DONE
-PRINT s$

@@ -1,1 +1,0 @@
-say value('COMPUTERNAME',,'environment')

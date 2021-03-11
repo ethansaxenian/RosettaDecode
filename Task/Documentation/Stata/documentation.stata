@@ -1,3 +1,0 @@
-prog def hello
-	di "Hello, World!"
-end

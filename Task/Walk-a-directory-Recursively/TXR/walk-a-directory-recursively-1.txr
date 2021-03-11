@@ -1,3 +1,0 @@
-(build (ftw "." (lambda (path type stat level base)
-                  (if (ends-with ".tl" path)
-                    (add path)))))

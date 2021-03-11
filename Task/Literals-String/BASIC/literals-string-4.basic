@@ -1,3 +1,0 @@
-100 PRINT CHR$(34)
-110 PRINT """"
-120 PRINT "This is a ""quoted string""."

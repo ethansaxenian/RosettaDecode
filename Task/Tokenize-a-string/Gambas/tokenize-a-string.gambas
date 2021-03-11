@@ -1,6 +1,0 @@
-Public Sub Main()
-Dim sString As String[] = Split("Hello,How,Are,You,Today")
-
-Print sString.Join(".")
-
-End

@@ -1,2 +1,0 @@
-(let ((var (file-get-lines "input.txt")))
-  (file-put-lines "output.txt" var))

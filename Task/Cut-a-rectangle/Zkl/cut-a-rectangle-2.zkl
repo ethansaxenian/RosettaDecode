@@ -1,3 +1,0 @@
-foreach w,h in ([1..9],[1..w]){
-   if((w*h).isEven) println("%d x %d: %d".fmt(w, h, cut_it(w,h)));
-}

@@ -1,1 +1,0 @@
-address command 'hostname -f'

@@ -1,3 +1,0 @@
-s:="";     // or s:=String, String is the object ""
-s.toBool() //-->False
-if (s) println("not empty")

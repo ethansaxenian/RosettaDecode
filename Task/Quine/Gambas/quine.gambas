@@ -1,2 +1,0 @@
-dim s as string="dim s as string=&1&2&3&4print subst(s,chr(34),s,chr(34),chr(10))"
-print subst(s,chr(34),s,chr(34),chr(10))

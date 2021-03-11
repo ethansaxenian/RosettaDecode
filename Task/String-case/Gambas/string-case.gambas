@@ -1,7 +1,0 @@
-Public Sub Main()
-Dim sString As String = "alphaBETA "
-
-Print UCase(sString)
-Print LCase(sString)
-
-End

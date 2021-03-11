@@ -1,3 +1,0 @@
-100 LET S$="Hello"
-110 LET S$=S$&" World!"
-120 PRINT S$

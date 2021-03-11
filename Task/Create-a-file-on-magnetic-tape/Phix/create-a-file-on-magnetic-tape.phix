@@ -1,3 +1,0 @@
-include builtins/write_file.e
-constant filepath = iff(platform()=WINDOWS?"tape.file":"/dev/tape"),
-write_file(file_path,"Hello world!")

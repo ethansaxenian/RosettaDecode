@@ -1,4 +1,0 @@
-. scalar a="ha"
-. scalar b=a*5
-. display b
-hahahahaha

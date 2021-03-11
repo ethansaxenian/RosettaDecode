@@ -1,2 +1,0 @@
-fcn grayEncode(n){ n.bitXor(n.shiftRight(1)) }
-fcn grayDecode(g){ b:=g; while(g/=2){ b=b.bitXor(g) } b }

@@ -1,3 +1,0 @@
-var t=Time.Clock.time;
-try{ n:=0; while(1){(n+=1).println(); Atomic.sleep(0.5)} }
-catch{ println("ran for ",Time.Clock.time-t," seconds"); System.exit() }

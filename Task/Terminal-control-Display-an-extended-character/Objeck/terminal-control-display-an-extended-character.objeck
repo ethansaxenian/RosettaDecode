@@ -1,5 +1,0 @@
-class Program {
-  function : Main(args : String[]) ~ Nil {
-    "£"->PrintLine();
-  }
-}

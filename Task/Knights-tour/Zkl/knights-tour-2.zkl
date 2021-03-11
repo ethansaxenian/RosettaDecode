@@ -1,2 +1,0 @@
-b:=Board(); b.knightsTour(3,3);
-b.println();

@@ -1,3 +1,0 @@
-zkl: var ZC=Import("zklCurl")
-zkl: var data=ZC().get("https://sourceforge.net")
-L(Data(36,265),826,0)

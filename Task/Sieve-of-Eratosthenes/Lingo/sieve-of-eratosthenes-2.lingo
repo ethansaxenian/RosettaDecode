@@ -1,2 +1,0 @@
-sieve = script("sieve").new()
-put sieve.getPrimes(100)

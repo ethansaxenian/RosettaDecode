@@ -1,1 +1,0 @@
-foreach p in (permuteW(T("a","b","c"))){ println(p) }

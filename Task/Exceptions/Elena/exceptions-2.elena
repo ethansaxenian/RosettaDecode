@@ -1,4 +1,0 @@
-foo()
-{
-    MyException.new().raise()
-}

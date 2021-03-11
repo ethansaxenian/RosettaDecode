@@ -1,3 +1,0 @@
-s:="alphaBETA";
-s.toLower(); //--> "alphabeta"
-s.toUpper(); //--> "ALPHABETA"

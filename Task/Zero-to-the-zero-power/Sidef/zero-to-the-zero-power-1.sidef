@@ -1,3 +1,0 @@
-[0, Complex(0, 0)].each {|n|
-    say n**n
-}

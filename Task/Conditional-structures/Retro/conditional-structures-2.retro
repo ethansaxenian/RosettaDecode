@@ -1,5 +1,0 @@
-:foo (n-)
-  #1 [ ( if quote evaluates to true ) ] case
-  #2 [ ( if quote evaluates to true ) ] case
-  #3 [ ( if quote evaluates to true ) ] case
-  drop ( default action ) ;

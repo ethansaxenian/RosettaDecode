@@ -1,2 +1,0 @@
-heapSort(L(170, 45, 75, -90, -802, 24, 2, 66)).println();
-heapSort("this is a test".split("")).println();

@@ -1,3 +1,0 @@
-Time.Date.isLeapYear(1988) //-->True
-T(1988,1989,1900,2000).apply(Time.Date.isLeapYear)
-    //-->L(True,False,False,True)

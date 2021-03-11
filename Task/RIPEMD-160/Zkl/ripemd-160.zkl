@@ -1,2 +1,0 @@
-var MsgHash=Import("zklMsgHash");
-MsgHash.RIPEMD160("Rosetta Code")

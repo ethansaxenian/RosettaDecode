@@ -1,3 +1,0 @@
-for n = primes[]
-   if isPrime[2^n-1]
-      println[n]

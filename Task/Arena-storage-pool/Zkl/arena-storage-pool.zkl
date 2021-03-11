@@ -1,3 +1,0 @@
-var pool=List();  // pool could be any mutable container
-pool.append(Data(0,1234));   // allocate mem blob and add to pool
-pool=Void; // free the pool and everything in it.

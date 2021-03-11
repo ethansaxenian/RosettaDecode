@@ -1,2 +1,0 @@
-L: rdrand eax
-jnc L

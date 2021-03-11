@@ -1,1 +1,0 @@
-"\t\n hoho\n\t\ ".strip() //-->"hoho"

@@ -1,3 +1,0 @@
-! In True BASIC all programs run in their own window. So this is almost a graphical version.
-PRINT "Hello world!"
-END

@@ -1,2 +1,0 @@
-n:=42; (n==42) or throw(Exception.AssertionError);
-n=41;  (n==42) or throw(Exception.AssertionError("I wanted 42!"));

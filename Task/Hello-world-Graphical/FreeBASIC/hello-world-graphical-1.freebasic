@@ -1,4 +1,0 @@
-screen 1 'Mode 320x200
-locate 12,15
-? "Goodbye, World!"
-sleep

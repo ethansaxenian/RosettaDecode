@@ -1,3 +1,0 @@
-' Include a file
-INCLUDE "other.bac"
-PRINT other

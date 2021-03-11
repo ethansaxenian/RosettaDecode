@@ -1,1 +1,0 @@
-For x= ORD("a") To ORD("z") : @(x - ORD("a")) = x : Next

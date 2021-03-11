@@ -1,8 +1,0 @@
-Public Sub Main()
-Dim siCount As Short
-
-For siCount = Asc("a") To Asc("z")
-  Print Chr(siCount);
-Next
-
-End

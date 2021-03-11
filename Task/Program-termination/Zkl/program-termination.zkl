@@ -1,3 +1,0 @@
-if (die) System.exit();
-if (die) System.exit(1);
-if (die) System.exit("dumping core");

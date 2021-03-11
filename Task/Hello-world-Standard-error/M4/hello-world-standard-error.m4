@@ -1,2 +1,0 @@
-errprint(`Goodbye, World!
-')dnl

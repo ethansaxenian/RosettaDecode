@@ -1,8 +1,0 @@
-DECLARE @i INT;
-WHILE 1=1
-BEGIN
-    SET @i = ABS(CHECKSUM(NewId())) % 20;
-    PRINT @i;
-    IF @i=10 BREAK;
-    PRINT ABS(CHECKSUM(NewId())) % 20;
-END;

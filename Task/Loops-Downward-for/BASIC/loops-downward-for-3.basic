@@ -1,2 +1,0 @@
-' Downward for
-FOR i = 10 DOWNTO 0 : PRINT i : NEXT

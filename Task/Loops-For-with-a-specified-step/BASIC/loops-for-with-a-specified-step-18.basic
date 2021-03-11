@@ -1,3 +1,0 @@
-For i = 0 To 100 Step 2
-  TextWindow.WriteLine(i)
-EndFor

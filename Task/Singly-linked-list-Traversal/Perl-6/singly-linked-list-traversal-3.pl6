@@ -1,3 +1,0 @@
-    method Seq {
-        self, *.next ...^ !*
-    }

@@ -1,1 +1,0 @@
-fractranW(2,fracs).walk(20).println();

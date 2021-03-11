@@ -1,3 +1,0 @@
-var [const] ZLib=Import("zeelib");
-ZLib.calcCRC32(Data(Void,"The quick brown fox jumps over the lazy dog"));
-//-->0x414fa339

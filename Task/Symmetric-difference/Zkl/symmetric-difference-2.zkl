@@ -1,3 +1,0 @@
-a:=T("John","Bob","Mary","Serena");
-b:=T("Jim","Mary","John","Bob");
-sdiff(a,b).println();

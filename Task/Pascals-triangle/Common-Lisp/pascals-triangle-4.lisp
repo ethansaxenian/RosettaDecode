@@ -1,1 +1,0 @@
-(pascal-print 4)

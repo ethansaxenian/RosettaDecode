@@ -1,5 +1,0 @@
-Public Sub Main()
-
-Shell "ls -aul"
-
-End

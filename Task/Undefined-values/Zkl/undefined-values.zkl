@@ -1,3 +1,0 @@
-println(Void);
-1+Void
-if(Void){} else { 23 }

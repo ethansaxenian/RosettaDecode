@@ -1,1 +1,0 @@
-,load "otus/random!.scm"

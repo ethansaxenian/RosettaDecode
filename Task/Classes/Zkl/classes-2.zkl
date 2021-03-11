@@ -1,3 +1,0 @@
-C.__constructor(); // run base class constructor for giggles
-C.init(456);  // initialize base class without creating instance
-println(C.v," ",c1.v);

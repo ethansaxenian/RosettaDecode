@@ -1,8 +1,0 @@
-import system'io;
-import extensions;
-import extensions'routines;
-
-public program()
-{
-    File.assign:"file.txt".forEachLine(printingLn)
-}

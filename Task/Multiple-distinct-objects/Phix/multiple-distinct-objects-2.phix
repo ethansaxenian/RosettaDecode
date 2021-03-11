@@ -1,1 +1,0 @@
-sequence s = repeat(my_func(),5)

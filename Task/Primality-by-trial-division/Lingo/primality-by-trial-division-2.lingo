@@ -1,5 +1,0 @@
-primes = []
-repeat with i = 0 to 100
-    if isPrime(i) then primes.add(i)
-end repeat
-put primes

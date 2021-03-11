@@ -1,3 +1,0 @@
-{"one": 1, "two": "bad"} m:keys
-( . cr )
-a:each

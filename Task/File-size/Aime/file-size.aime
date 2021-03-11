@@ -1,2 +1,0 @@
-o_(stat("input.txt", ST_SIZE), "\n");
-o_("/Cygwin.ico".stat(ST_SIZE), "\n");

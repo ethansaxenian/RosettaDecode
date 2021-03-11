@@ -1,3 +1,0 @@
-bitmap:=PPM(200,200,0xff|ff|ff);
-bitmap.qBezier(10,100, 250,270, 150,20, 0);
-bitmap.write(File("foo.ppm","wb"));

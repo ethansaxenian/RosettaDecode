@@ -1,8 +1,0 @@
-Public Sub Main()
-Dim bX As Boolean
-
-Print bX
-bX = True
-Print bX
-
-End

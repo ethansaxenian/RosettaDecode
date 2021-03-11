@@ -1,2 +1,0 @@
-if (raining==True) needumbrella:=True;
-(raining==True) : if (_) needumbrella:=True;

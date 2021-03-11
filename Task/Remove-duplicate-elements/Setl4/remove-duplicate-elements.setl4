@@ -1,3 +1,0 @@
-set = new('set')
-* Add all the elements of the array to the set.
-add(set,array)

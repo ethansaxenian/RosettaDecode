@@ -1,2 +1,0 @@
-fcn horner(coeffs,x)
-   { coeffs.reverse().reduce('wrap(a,coeff){ a*x + coeff },0.0) }

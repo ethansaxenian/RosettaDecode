@@ -1,6 +1,0 @@
-Public Sub Form_KeyPress()
-
-'Requires a TextBox or similar on the Form to work
-Print Key.Text;
-
-End

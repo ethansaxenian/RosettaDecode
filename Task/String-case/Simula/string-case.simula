@@ -1,6 +1,0 @@
-TEXT soup, lower;
-soup :- "alphaBETA";
-lower :- LOWCASE(COPY(soup)); ! COPY, else soup is changed;
-OutText("upper: "); OutText(UPCASE("alphaBETA"));
-OutText(", lower: "); OutText(lower);
-OutText(", soup: "); OutText(soup); Outimage;

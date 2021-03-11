@@ -1,3 +1,0 @@
-octcount := proc (n)
- seq(printf("%a \n", convert(i, octal)), i = 1 .. n);
- end proc;

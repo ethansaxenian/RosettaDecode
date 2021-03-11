@@ -1,3 +1,0 @@
-alias a+b {
-  echo -ag $calc($1 + $2)
-}

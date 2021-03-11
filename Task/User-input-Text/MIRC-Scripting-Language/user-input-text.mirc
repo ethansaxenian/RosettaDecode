@@ -1,3 +1,0 @@
-alias askmesomething {
-  echo -a You answered: $input(What's your name?, e)
-}

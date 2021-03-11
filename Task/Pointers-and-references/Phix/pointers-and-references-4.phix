@@ -1,2 +1,0 @@
-sequence s
-    s = myfunc(s)

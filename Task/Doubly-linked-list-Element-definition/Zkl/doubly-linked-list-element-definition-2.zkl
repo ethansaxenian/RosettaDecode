@@ -1,3 +1,0 @@
-a,b:=Node(1),Node("three");
-a.next=b; b.prev=a;
-println(a.next,"  ",b.prev);

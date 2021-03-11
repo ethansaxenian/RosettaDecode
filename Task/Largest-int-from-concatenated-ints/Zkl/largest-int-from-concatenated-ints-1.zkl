@@ -1,3 +1,0 @@
-fcn bigCI(ns){
-   ns.apply("toString").sort(fcn(a,b){ (a+b)>(b+a) }).concat();
-}

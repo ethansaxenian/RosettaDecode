@@ -1,1 +1,0 @@
-werror("Goodbye, World!");

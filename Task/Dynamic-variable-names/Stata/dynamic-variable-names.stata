@@ -1,3 +1,0 @@
-display "Name?" _request(s)
-scalar $s=10
-display $s

@@ -1,6 +1,0 @@
-clear
-set obs 100
-count
-  100
-count if mod(_n, 3)==0
-  33

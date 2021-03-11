@@ -1,4 +1,0 @@
-a=st_matrix("a")
-findval1(a,20,i=.,j=.)
-findval2(a,20,i=.,j=.)
-findval3(a,20,i=.,j=.)

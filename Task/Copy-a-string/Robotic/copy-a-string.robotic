@@ -1,3 +1,0 @@
-set "$string1" to "This is a string"
-set "$string2" to "$string1"
-* "&$string2&"

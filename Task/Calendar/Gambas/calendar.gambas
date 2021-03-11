@@ -1,5 +1,0 @@
-Public Sub Main()
-
-Shell "cal 1969"
-
-End

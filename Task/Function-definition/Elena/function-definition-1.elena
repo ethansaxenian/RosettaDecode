@@ -1,2 +1,0 @@
-real multiply(real a, real b)
-        = a * b;

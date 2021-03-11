@@ -1,5 +1,0 @@
-fcn mergeSort(L){
-   if (L.len()<2) return(L.copy());
-   n:=L.len()/2;
-   self.fcn(L[0,n]).merge(self.fcn(L[n,*]));
-}

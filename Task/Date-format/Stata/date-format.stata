@@ -1,2 +1,0 @@
-display %tdCCYY-NN-DD td($S_DATE)
-display %tdDayname,_Month_dd,_CCYY td($S_DATE)

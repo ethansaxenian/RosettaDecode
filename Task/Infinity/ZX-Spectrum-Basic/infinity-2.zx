@@ -1,4 +1,0 @@
-10 LET z=1
-20 PRINT z
-30 LET z=z*2
-40 GO TO 20

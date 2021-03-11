@@ -1,2 +1,0 @@
-str:=ask("Gimmie a string: ");
-n:=ask("Type 75000: ").toInt();

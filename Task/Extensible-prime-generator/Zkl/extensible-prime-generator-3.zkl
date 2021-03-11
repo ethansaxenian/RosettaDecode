@@ -1,2 +1,0 @@
-var [const] BN=Import("zklBigNum");  // libGMP
-bigPrimes:=Walker(fcn(p){ p.nextPrime().copy(); }.fp(BN(1)));

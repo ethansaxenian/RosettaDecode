@@ -1,3 +1,0 @@
-clear all
-set obs 1000
-gen x=rnormal(1,0.5)

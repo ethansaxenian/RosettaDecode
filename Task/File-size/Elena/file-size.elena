@@ -1,9 +1,0 @@
-import system'io;
-import extensions;
-
-public program()
-{
-    console.printLine(File.assign("input.txt").Length);
-
-    console.printLine(File.assign("\input.txt").Length)
-}

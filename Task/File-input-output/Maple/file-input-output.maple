@@ -1,5 +1,0 @@
-inout:=proc(filename)
-local f;
-f:=FileTools[Text][ReadFile](filename);
-FileTools[Text][WriteFile]("output.txt",f);
-end proc;

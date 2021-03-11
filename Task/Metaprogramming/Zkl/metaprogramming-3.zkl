@@ -1,3 +1,0 @@
-// Shove text into the parse stream
-#text name text
-#tokenize name, #tokenize f, #tokenize f(a)

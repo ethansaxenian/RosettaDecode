@@ -1,4 +1,0 @@
-println("2^6 = %d".fmt(pow(2,6)));
-println("2^-6 = %d".fmt(pow(2,-6)));
-println("2.71^6 = %f".fmt(pow(2.71,6)));
-println("2.71^-6 = %f".fmt(pow(2.71,-6)));

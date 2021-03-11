@@ -1,2 +1,0 @@
-INPUT "String: ", s$
-PRINT "Output: ", REPLACE$(s$, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", "nopqrstuvwxyzabcdefghijklmNOPQRSTUVWXYZABCDEFGHIJKLM", 2)

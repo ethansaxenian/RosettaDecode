@@ -1,4 +1,0 @@
-(CharacterLength=
-  length
-. vap$((=.!arg).!arg):? [?length&!length
-);

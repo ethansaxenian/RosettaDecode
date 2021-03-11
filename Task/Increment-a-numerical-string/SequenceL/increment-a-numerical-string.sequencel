@@ -1,3 +1,0 @@
-import <Utilities/Conversion.sl>;
-
-increment(input(1)) := intToString(stringToInt(input) + 1);

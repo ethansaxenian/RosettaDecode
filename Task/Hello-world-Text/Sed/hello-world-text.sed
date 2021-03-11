@@ -1,3 +1,0 @@
-i\
-Hello world!
-q

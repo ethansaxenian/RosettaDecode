@@ -1,2 +1,0 @@
-println("hello world");
-line(0, 0, width, height);

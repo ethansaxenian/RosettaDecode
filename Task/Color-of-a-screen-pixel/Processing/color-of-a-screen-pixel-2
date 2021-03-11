@@ -1,5 +1,0 @@
-void draw(){
-  loadPixels();
-  color c = pixels[mouseY * width + mouseX];
-  println(c, c >> 16 & 0xFF, c >> 8 & 0xFF, c >> 8 & 0xFF);
-}

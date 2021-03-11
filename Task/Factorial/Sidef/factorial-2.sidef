@@ -1,3 +1,0 @@
-func factorial_reduce(n) {
-    1..n -> reduce({|a,b| a * b }, 1)
-}

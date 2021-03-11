@@ -1,5 +1,0 @@
-sshell ss;
-
-ss.argv.insert("ls");
-
-o_(ss.link);

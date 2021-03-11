@@ -1,3 +1,0 @@
-solutions:=u(game24Solver(ask(0,"digits: ")));
-println(solutions.len()," solutions:");
-solutions.apply2(Console.println);

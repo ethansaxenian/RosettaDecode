@@ -1,1 +1,0 @@
-foreach n in ([0..]){println("%.8B".fmt(n))}

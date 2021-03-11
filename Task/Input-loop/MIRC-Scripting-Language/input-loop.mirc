@@ -1,5 +1,0 @@
-var %n = 1
-while (%n <= $lines(input.txt)) {
-  write output.txt $read(input.txt,%n)
-  inc %n
-}

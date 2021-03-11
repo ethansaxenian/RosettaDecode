@@ -1,2 +1,0 @@
-File.info("input.txt").println();
-File.info("/input.txt").println();

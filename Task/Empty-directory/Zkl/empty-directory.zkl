@@ -1,3 +1,0 @@
-path:="Empty"; File.isDir(path).println();
-File.mkdir(path); File.isDir(path).println();
-File.glob(path+"/*").println(); // show contents of directory

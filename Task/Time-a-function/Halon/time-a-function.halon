@@ -1,5 +1,0 @@
-$t = uptime();
-
-sleep(1);
-
-echo uptime() - $t;

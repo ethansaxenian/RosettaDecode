@@ -1,2 +1,0 @@
-var c0 := { console.writeLine("No argument provided") };
-var c2 := (int a, int b){ console.printLine("Arguments ",a," and ",b," provided") };

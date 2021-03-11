@@ -1,8 +1,0 @@
-import system'routines;
-import system'io;
-import extensions'routines;
-
-public program()
-{
-    ReaderEnumerator.new(File.assign:"file.txt").forEach(printingLn)
-}

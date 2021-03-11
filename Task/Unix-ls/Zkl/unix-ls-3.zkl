@@ -1,1 +1,0 @@
-File.globular("Src",*,True,0x10,List).sort().concat("\n")

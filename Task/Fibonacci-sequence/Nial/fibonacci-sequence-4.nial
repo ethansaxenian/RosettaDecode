@@ -1,1 +1,0 @@
-fibr is op n {fork [2>, +, + [fibr (-1 +), fibr (-2 +)]] n};

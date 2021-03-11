@@ -1,2 +1,0 @@
-s3:=s_of_n_creator(3);
-[0..9].pump(List,s3,"copy").println();

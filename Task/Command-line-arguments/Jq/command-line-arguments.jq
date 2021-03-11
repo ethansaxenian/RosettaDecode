@@ -1,7 +1,0 @@
-{
-  "positional": [
-    "a",
-    "b"
-  ],
-  "named": {}
-}

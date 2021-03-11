@@ -1,5 +1,0 @@
-Public Sub Main()
-
-Print Format(Now, "dddd dd mmmm yyyy hh:nn:ss")
-
-End

@@ -1,3 +1,0 @@
-with(StringTools);
-FormatTime("%Y-%m-%d")
-FormatTime("%A,%B %d, %y")

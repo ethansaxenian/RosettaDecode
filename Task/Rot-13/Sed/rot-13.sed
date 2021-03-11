@@ -1,2 +1,0 @@
-y/abcdefghijklmnopqrstuvwxyz/nopqrstuvwxyzabcdefghijklm/
-y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/NOPQRSTUVWXYZABCDEFGHIJKLM/

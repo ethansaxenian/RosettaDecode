@@ -1,6 +1,0 @@
-component loops_infinite
-  export Executable
-  run() = while true do
-    println("SPAM")
-  end
-end

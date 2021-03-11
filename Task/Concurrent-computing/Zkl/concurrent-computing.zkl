@@ -1,3 +1,0 @@
-fcn{println("Enjoy")}.launch();  // thread
-fcn{println("Rosetta")}.strand();  // co-op thread
-fcn{println("Code")}.future();  // another thread type

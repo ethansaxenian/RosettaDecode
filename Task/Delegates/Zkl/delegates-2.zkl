@@ -1,7 +1,0 @@
-    // Without a delegate:
-a:= Delegator();
-a.operation().println(); //--> "default implementation"
-
-    // With a delegate:
-a.delegate = Delegate();
-a.operation().println(); //-->"delegate implementation"

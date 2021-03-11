@@ -1,3 +1,0 @@
-System.getenv("HOME")
-/home/craigd
-System.getenv() //--> Dictionary of all env vars

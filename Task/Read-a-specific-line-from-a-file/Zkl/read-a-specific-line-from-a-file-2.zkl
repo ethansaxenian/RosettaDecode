@@ -1,1 +1,0 @@
-lines:=File.stdin.readln(7); println(">>>",line[-1]);

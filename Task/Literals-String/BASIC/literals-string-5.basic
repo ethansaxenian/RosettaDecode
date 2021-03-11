@@ -1,3 +1,0 @@
-print "Hello, World."
-print chr(34); "Hello, World." & chr(34)
-print "Tom said," + "'The fox ran away.'"

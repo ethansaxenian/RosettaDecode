@@ -1,2 +1,0 @@
-const NM="address.db";
-dbExec(NM,"create table address (street, city, state, zip);");

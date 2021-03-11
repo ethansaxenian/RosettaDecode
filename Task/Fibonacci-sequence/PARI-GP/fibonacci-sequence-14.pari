@@ -1,1 +1,0 @@
-fib(n)=n--;polchebyshev(n,2,I/2)*I^n;

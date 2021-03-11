@@ -1,1 +1,0 @@
-a := Print[InputForm[Definition[a]], ";a"];a

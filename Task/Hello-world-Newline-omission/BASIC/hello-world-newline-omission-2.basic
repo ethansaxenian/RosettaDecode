@@ -1,2 +1,0 @@
-PRINT "Goodbye, World!";
-PRINT "Goodbye, World!" FORMAT "%s"

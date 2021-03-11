@@ -1,6 +1,0 @@
-input string "Input A:"
-set "A" to "input"
-input string "Input B:"
-set "B" to "input"
-* "('A' + 'B')"
-end

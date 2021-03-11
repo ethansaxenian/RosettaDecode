@@ -1,1 +1,0 @@
-echo -ag $asctime($calc($ctime(March 7 2009 7:30pm EST)+43200))

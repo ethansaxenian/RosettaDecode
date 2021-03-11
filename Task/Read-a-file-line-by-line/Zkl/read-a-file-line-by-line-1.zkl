@@ -1,1 +1,0 @@
-foreach line in (File("foo.zkl")){print(line)}

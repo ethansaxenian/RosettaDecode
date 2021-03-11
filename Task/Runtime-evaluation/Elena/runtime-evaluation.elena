@@ -1,6 +1,0 @@
-import extensions'scripting.
-
-program =
-[
-    escript eval("system'console writeLine(""Hello World"").").
-].

@@ -1,1 +1,0 @@
-symbol f := (x,y => x * y);

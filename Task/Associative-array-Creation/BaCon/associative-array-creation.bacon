@@ -1,6 +1,0 @@
-DECLARE associative ASSOC STRING
-
-associative("abc") = "first three"
-associative("xyz") = "last three"
-
-PRINT associative("xyz")

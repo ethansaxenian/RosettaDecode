@@ -1,2 +1,0 @@
-DirMake(String2Psz("c:\docs"))
-FCreate("c:\docs\output.txt", FC_NORMAL)

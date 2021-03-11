@@ -1,3 +1,0 @@
-number_name := n -> convert(n, english)
-number_name(2001);
-                       "two thousand one"

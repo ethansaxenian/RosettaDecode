@@ -1,4 +1,0 @@
-File.exists("input.txt")  //--> True (in this case a sym link)
-File.exists("/input.txt") //-->False
-File.isDir("/")     //-->True
-File.isDir("docs")  //-->False

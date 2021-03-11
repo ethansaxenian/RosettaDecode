@@ -1,3 +1,0 @@
-:disp (nq-)  call n:put ;
-
-#31 [ (n-n) #100 * ] disp

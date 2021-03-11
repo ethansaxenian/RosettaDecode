@@ -1,1 +1,0 @@
-(mappend [iff (op ends-with ".conf") list] (get-lines (open-directory "/etc")))

@@ -1,3 +1,0 @@
-n = 4
-a$ = "6 feet"
-PRINT n * a$

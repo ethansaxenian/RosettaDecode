@@ -1,4 +1,0 @@
-:- pred greet(string::in, io::di, io::uo) is det.
-greet(Who, !IO) :-
-    io.write_string("Hello", !IO),
-    io.format(", %s!\n", [s(Who)], !IO).

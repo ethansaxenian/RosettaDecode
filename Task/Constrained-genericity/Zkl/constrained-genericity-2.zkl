@@ -1,2 +1,0 @@
-class Apple(Eatable){} class Nuts(Eatable){} class Foo{}
-FoodBox(Apple,"boogers",Nuts,Foo).contents.apply2("eat");

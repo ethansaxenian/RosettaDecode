@@ -1,3 +1,0 @@
-condition  [ true statements ] if
-condition  [ false statements ] -if
-condition  [ true statements  ] [ false statements ] choose

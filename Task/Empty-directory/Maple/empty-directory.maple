@@ -1,3 +1,0 @@
-emptydirectory := proc (dir)
-is(listdir(dir) = [".", ".."]);
-end proc;

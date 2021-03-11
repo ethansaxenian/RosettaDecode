@@ -1,5 +1,0 @@
-r = ~a
-a = 3
-#.output(r)
-r = 5
-#.output(a)

@@ -1,2 +1,0 @@
-?version()
-?scanf(version(),"%d.%d.%d")[1]

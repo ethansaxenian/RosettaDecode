@@ -1,2 +1,0 @@
-$var = "Rosetta code";
-echo sha2($var, 256);

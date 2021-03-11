@@ -1,2 +1,0 @@
-fcn f(g){ g() }
-fcn(g){ g() }(fcn{ "Hello World!".println() } )

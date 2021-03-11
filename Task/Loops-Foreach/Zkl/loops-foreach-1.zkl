@@ -1,2 +1,0 @@
-foreach c in (T("Red","Green","Blue","Black","White"))
-  { print(c," "); }

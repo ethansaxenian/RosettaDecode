@@ -1,4 +1,0 @@
-sequence s = repeat(0,5)
-for i=1 to length(s) do
-    s[i] = my_func()
-end for

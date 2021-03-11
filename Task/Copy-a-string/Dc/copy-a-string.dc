@@ -1,3 +1,0 @@
-[a string]   # push "a string" on the main stack
-d            # duplicate the top value
-f            # show the current contents of the main stack

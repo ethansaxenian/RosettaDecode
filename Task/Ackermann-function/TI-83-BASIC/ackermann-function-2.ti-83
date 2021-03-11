@@ -1,6 +1,0 @@
-PROGRAM:AHANDLER
-:0→dim(L1
-:Prompt M
-:Prompt N
-:prgmACKERMAN
-:Disp Ans

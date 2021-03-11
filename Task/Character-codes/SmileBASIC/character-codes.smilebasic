@@ -1,2 +1,0 @@
-PRINT CHR$(97) 'a
-PRINT ASC("a") '97

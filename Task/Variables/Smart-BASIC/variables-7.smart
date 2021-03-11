@@ -1,2 +1,0 @@
-x = MyFunction(3)
-PRINT x; MyFunction.MyF2; MyFunction.MyF3

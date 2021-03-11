@@ -1,2 +1,0 @@
-var BN=Import("zklBigNum");
-BN(1)+2  //--> BN(3)

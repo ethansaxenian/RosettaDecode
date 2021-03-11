@@ -1,2 +1,0 @@
-List(1,"two",3.14); L(1,"two",3.14);
-ROList(fcn{"foobar"}); T('+);

@@ -1,5 +1,0 @@
-class CRC32 {
-  function : Main(args : String[]) ~ Nil {
-    "The quick brown fox jumps over the lazy dog"->ToByteArray()->CRC32()->PrintLine();
-  }
-}

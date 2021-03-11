@@ -1,7 +1,0 @@
-forvalues n=1/5 {
-	local s ""
-	forvalues i=1/`n' {
-		local s `s'*
-	}
-	display "`s'"
-}

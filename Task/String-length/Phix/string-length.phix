@@ -1,3 +1,0 @@
-constant s = "𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
-?length(s)
-?length(utf8_to_utf32(s))

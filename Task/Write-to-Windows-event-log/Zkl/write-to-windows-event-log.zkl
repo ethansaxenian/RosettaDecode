@@ -1,1 +1,0 @@
-zkl: System.cmd(0'|eventcreate "/T" "INFORMATION" "/ID" "123" "/D" "Rosetta Code example"|)

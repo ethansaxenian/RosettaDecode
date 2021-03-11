@@ -1,3 +1,0 @@
-if not create_directory("myapp/interface/letters") then
-    crash("Filesystem problem - could not create the new folder")
-end if

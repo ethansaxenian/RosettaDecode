@@ -1,2 +1,0 @@
-#Define P(X) Print X: Print "P(" & #X & ")"
-P("#Define P(X) Print X: Print ""P("" & #X & "")""")

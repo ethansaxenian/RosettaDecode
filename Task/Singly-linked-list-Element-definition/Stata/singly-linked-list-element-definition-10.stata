@@ -1,2 +1,0 @@
-list_insert_after(a, list_get(a, 2), 40)
-list_show(a);

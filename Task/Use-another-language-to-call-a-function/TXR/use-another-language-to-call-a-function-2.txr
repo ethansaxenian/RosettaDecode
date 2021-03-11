@@ -1,2 +1,0 @@
-gcc -g -fPIC query.c -c
-gcc -g --shared query.c -o query.c

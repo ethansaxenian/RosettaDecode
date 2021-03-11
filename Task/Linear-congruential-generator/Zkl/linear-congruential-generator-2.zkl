@@ -1,2 +1,0 @@
-srand(0);
-println(rand(),",",rand(),",",rand());

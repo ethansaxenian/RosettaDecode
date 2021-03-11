@@ -1,2 +1,0 @@
-fcn randN(N){ (not (0).random(N)).toInt() }
-fcn unbiased(randN){ while((a:=randN())==randN()){} a }

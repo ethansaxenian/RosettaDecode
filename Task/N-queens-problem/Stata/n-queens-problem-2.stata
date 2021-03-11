@@ -1,4 +1,0 @@
-clear
-mata: a=queens(8)
-getmata (a*)=a
-save queens, replace

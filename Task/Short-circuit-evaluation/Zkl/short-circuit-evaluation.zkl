@@ -1,2 +1,0 @@
-fcn a(b){self.fcn.println(b); b}
-fcn b(b){self.fcn.println(b); b}

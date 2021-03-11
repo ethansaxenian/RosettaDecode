@@ -1,2 +1,0 @@
-urlText:="http%3A%2F%2Ffoo.com%2Fbar";
-urlText.pump(...).println();

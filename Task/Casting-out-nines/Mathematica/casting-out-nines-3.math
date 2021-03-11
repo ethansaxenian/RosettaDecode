@@ -1,1 +1,0 @@
-task2 = Select[Range@100, Co9[#] == Co9[#^2] &]

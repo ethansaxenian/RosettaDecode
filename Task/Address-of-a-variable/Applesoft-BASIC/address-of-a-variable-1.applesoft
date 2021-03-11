@@ -1,1 +1,0 @@
-N = N : PRINT PEEK (131) + PEEK (132) * 256
