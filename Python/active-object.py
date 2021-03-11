@@ -1,15 +1,13 @@
-from threading import Thread
 from time import time, sleep
-
+from threading import Thread
 
 class Integrator(Thread):
     'continuously integrate a function `K`, at each `interval` seconds'
-
-    def __init__(self, K=lambda t: 0, interval=1e-4):
+    def __init__(self, K=lambda t:0, interval=1e-4):
         Thread.__init__(self)
-        self.interval = interval
-        self.K = K
-        self.S = 0.0
+        self.interval  = interval
+        self.K   = K
+        self.S   = 0.0
         self.__run = True
         self.start()
 
@@ -22,18 +20,17 @@ class Integrator(Thread):
             sleep(interval)
             t1 = time() - start
             k1 = self.K(t1)
-            self.S += (k1 + k0) * (t1 - t0) / 2.0
+            self.S += (k1 + k0)*(t1 - t0)/2.0
             t0, k0 = t1, k1
 
     def join(self):
         self.__run = False
         Thread.join(self)
 
-
 if __name__ == "__main__":
     from math import sin, pi
 
-    ai = Integrator(lambda t: sin(pi * t))
+    ai = Integrator(lambda t: sin(pi*t))
     sleep(2)
     print ai.S
     ai.K = lambda t: 0

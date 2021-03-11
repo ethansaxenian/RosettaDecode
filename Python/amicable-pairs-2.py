@@ -53,10 +53,8 @@ def concatMap(f):
 # enumFromTo :: Int -> Int -> [Int]
 def enumFromTo(m):
     '''Enumeration of integer values [m..n]'''
-
     def go(n):
         return list(range(m, 1 + n))
-
     return lambda n: go(n)
 
 

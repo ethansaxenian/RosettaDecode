@@ -1,7 +1,7 @@
 '''Abundant, deficient and perfect number classifications'''
 
-from functools import reduce
 from itertools import accumulate, chain, groupby, product
+from functools import reduce
 from math import floor, sqrt
 from operator import mul
 
@@ -11,7 +11,6 @@ def deficientPerfectAbundantCountsUpTo(n):
     '''Counts of deficient, perfect, and abundant
        integers in the range [1..n].
     '''
-
     def go(dpa, x):
         deficient, perfect, abundant = dpa
         divisorSum = sum(properDivisors(x))
@@ -22,7 +21,6 @@ def deficientPerfectAbundantCountsUpTo(n):
         ) if x < divisorSum else (
             deficient, succ(perfect), abundant
         )
-
     return reduce(go, range(1, 1 + n), (0, 0, 0))
 
 
@@ -47,7 +45,6 @@ def main():
 def primeFactors(n):
     '''A list of the prime factors of n.
     '''
-
     def f(qr):
         r = qr[1]
         return step(r), 1 + r
@@ -74,13 +71,11 @@ def primeFactors(n):
 def properDivisors(n):
     '''The ordered divisors of n, excluding n itself.
     '''
-
     def go(a, x):
         return [a * b for a, b in product(
             a,
             accumulate(chain([1], x), mul)
         )]
-
     return sorted(
         reduce(go, [
             list(g) for _, g in groupby(primeFactors(n))
@@ -101,13 +96,11 @@ def until(p):
     '''The result of repeatedly applying f until p holds.
        The initial seed value is x.
     '''
-
     def go(f, x):
         v = x
         while not p(v):
             v = f(v)
         return v
-
     return lambda f: lambda x: go(f, x)
 
 

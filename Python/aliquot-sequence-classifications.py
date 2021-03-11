@@ -1,6 +1,5 @@
-from functools import lru_cache
-
 from proper_divisors import proper_divs
+from functools import lru_cache
 
 
 @lru_cache()
@@ -8,7 +7,7 @@ def pdsum(n):
     return sum(proper_divs(n))
 
 
-def aliquot(n, maxlen=16, maxterm=2 ** 47):
+def aliquot(n, maxlen=16, maxterm=2**47):
     if n == 0:
         return 'terminating', [0]
     s, slen, new = [n], 1, n
@@ -34,10 +33,9 @@ def aliquot(n, maxlen=16, maxterm=2 ** 47):
     else:
         return 'non-terminating', s
 
-
 if __name__ == '__main__':
     for n in range(1, 11):
         print('%s: %r' % aliquot(n))
     print()
-    for n in [11, 12, 28, 496, 220, 1184, 12496, 1264460, 790, 909, 562, 1064, 1488, 15355717786080]:
+    for n in [11, 12, 28, 496, 220, 1184,  12496, 1264460, 790, 909, 562, 1064, 1488, 15355717786080]:
         print('%s: %r' % aliquot(n))

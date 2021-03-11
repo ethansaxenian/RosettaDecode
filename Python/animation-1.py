@@ -41,5 +41,4 @@ w.adjustSize()  # update w.rect() now
 w.move(QApplication.instance().desktop().screen().rect().center()
        - w.rect().center())
 w.show()
-sys.exit(app.
-exec ())
+sys.exit(app.exec())

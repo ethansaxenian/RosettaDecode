@@ -1,6 +1,5 @@
 from functools import lru_cache
 
-
 @lru_cache(None)
 def ack2(M, N):
     if M == 0:

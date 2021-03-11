@@ -13,8 +13,8 @@ d2 = dict(zip(['spam', 'eggs'], [1, 2]))
 
 # iterating over keys
 for key in d:
-    print key, d[key]
+  print key, d[key]
 
 # iterating over (key, value) pairs
 for key, value in d.iteritems():
-    print key, value
+  print key, value
