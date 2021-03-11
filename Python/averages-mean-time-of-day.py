@@ -3,7 +3,8 @@ from math import radians, degrees
 
 
 def mean_angle(deg):
-    return degrees(phase(sum(rect(1, radians(d)) for d in deg)/len(deg)))
+    return degrees(phase(sum(rect(1, radians(d)) for d in deg) / len(deg)))
+
 
 def mean_time(times):
     t = (time.split(':') for time in times)
@@ -21,4 +22,4 @@ def mean_time(times):
 
 
 if __name__ == '__main__':
-    print( mean_time(["23:00:17", "23:40:20", "00:12:45", "00:17:19"]) )
+    print(mean_time(["23:00:17", "23:40:20", "00:12:45", "00:17:19"]))

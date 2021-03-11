@@ -29,14 +29,14 @@ print (
         (amb(['frog', 'elephant', 'thing'])
          (lambda w2: when(joins(w1, w2))
 
-          (amb(['walked', 'treaded', 'grows'])
-           (lambda w3: when(joins(w2, w3))
+         (amb(['walked', 'treaded', 'grows'])
+          (lambda w3: when(joins(w2, w3))
 
-            (amb(['slowly', 'quickly'])
-             (lambda w4: when(joins(w3, w4))(
+          (amb(['slowly', 'quickly'])
+           (lambda w4: when(joins(w3, w4))(
 
-                 [w1, w2, w3, w4]
-             ))))))
+               [w1, w2, w3, w4]
+           ))))))
          )
     )
 )

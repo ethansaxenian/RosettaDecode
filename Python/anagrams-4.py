@@ -1,8 +1,8 @@
 '''Largest anagram groups found in list of words.'''
 
-from os.path import expanduser
 from itertools import groupby
 from operator import eq
+from os.path import expanduser
 
 
 # main :: IO ()

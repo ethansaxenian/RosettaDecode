@@ -37,6 +37,7 @@ def alignedTable(rows):
        and separator between columns
        supplied by the `sep` argument.
     '''
+
     def go(sep, eAlign):
         lcr = ['ljust', 'center', 'rjust'][1 + eAlign]
 
@@ -51,6 +52,7 @@ def alignedTable(rows):
             sep.join(cells) for cells in
             zip(*reduce(nextAlignedCol, zip(*rows), []))
         ])
+
     return lambda sep: lambda eAlign: go(sep, eAlign)
 
 
@@ -62,11 +64,14 @@ def paddedRows(n):
        in which each may be padded (but
        not truncated) to length n with
        appended copies of value v.'''
+
     def go(v, xs):
         def pad(x):
             d = n - len(x)
             return (x + list(repeat(v, d))) if 0 < d else x
+
         return [pad(row) for row in xs]
+
     return lambda v: lambda xs: go(v, xs) if xs else []
 
 

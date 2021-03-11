@@ -1,6 +1,4 @@
-from collections import defaultdict
 from itertools import combinations
-from pathlib import Path
 from typing import (Callable,
                     Dict,
                     Iterable,
@@ -9,6 +7,10 @@ from typing import (Callable,
                     Optional,
                     Tuple,
                     TypeVar)
+
+from pathlib import Path
+
+from collections import defaultdict
 
 WORDS_FILE = 'unixdict.txt'
 

@@ -17,13 +17,14 @@
 
 '''
 
-from   __future__ import division, print_function
-from   itertools  import permutations, combinations, product, \
-                         chain
-from   pprint     import pprint as pp
-from   fractions  import Fraction as F
-import random, ast, re
+from __future__ import division, print_function
+
+import ast
+import random
+import re
 import sys
+from itertools import permutations, product, \
+    chain
 
 if sys.version_info[0] < 3:
     input = raw_input
@@ -34,7 +35,8 @@ else:
 
 def choose4():
     'four random digits >0 as characters'
-    return [str(random.randint(1,9)) for i in range(4)]
+    return [str(random.randint(1, 9)) for i in range(4)]
+
 
 def ask4():
     'get four random digits >0 from the player'
@@ -44,12 +46,14 @@ def ask4():
         digits = ''.join(digits.strip().split())
     return list(digits)
 
+
 def welcome(digits):
-    print (__doc__)
-    print ("Your four digits: " + ' '.join(digits))
+    print(__doc__)
+    print("Your four digits: " + ' '.join(digits))
+
 
 def check(answer, digits):
-    allowed = set('() +-*/\t'+''.join(digits))
+    allowed = set('() +-*/\t' + ''.join(digits))
     ok = all(ch in allowed for ch in answer) and \
          all(digits.count(dig) == answer.count(dig) for dig in set(digits)) \
          and not re.search('\d\d', answer)
@@ -59,6 +63,7 @@ def check(answer, digits):
         except:
             ok = False
     return ok
+
 
 def solve(digits):
     """\
@@ -85,23 +90,23 @@ def solve(digits):
     # permute all the digits
     digiperm = sorted(set(permutations(digits)))
     # All the possible operator combinations
-    opcomb   = list(product('+-*/', repeat=digilen-1))
+    opcomb = list(product('+-*/', repeat=digilen - 1))
     # All the bracket insertion points:
-    brackets = ( [()] + [(x,y)
-                         for x in range(0, exprlen, 2)
-                         for y in range(x+4, exprlen+2, 2)
-                         if (x,y) != (0,exprlen+1)]
-                 + [(0, 3+1, 4+2, 7+3)] ) # double brackets case
+    brackets = ([()] + [(x, y)
+                        for x in range(0, exprlen, 2)
+                        for y in range(x + 4, exprlen + 2, 2)
+                        if (x, y) != (0, exprlen + 1)]
+                + [(0, 3 + 1, 4 + 2, 7 + 3)])  # double brackets case
     for d in digiperm:
         for ops in opcomb:
             if '/' in ops:
-                d2 = [('F(%s)' % i) for i in d] # Use Fractions for accuracy
+                d2 = [('F(%s)' % i) for i in d]  # Use Fractions for accuracy
             else:
                 d2 = d
             ex = list(chain.from_iterable(zip_longest(d2, ops, fillvalue='')))
             for b in brackets:
                 exp = ex[::]
-                for insertpoint, bracket in zip(b, '()'*(len(b)//2)):
+                for insertpoint, bracket in zip(b, '()' * (len(b) // 2)):
                     exp.insert(insertpoint, bracket)
                 txt = ''.join(exp)
                 try:
@@ -110,13 +115,14 @@ def solve(digits):
                     continue
                 if num == 24:
                     if '/' in ops:
-                        exp = [ (term if not term.startswith('F(') else term[2])
-                               for term in exp ]
+                        exp = [(term if not term.startswith('F(') else term[2])
+                               for term in exp]
                     ans = ' '.join(exp).rstrip()
-                    print ("Solution found:",ans)
+                    print("Solution found:", ans)
                     return ans
-    print ("No solution found for:", ' '.join(digits))
+    print("No solution found for:", ' '.join(digits))
     return '!'
+
 
 def main():
     digits = choose4()
@@ -125,7 +131,7 @@ def main():
     answer = ''
     chk = ans = False
     while not (chk and ans == 24):
-        trial +=1
+        trial += 1
         answer = input("Expression %i: " % trial)
         chk = check(answer, digits)
         if answer == '?':
@@ -136,24 +142,25 @@ def main():
         if answer == '!':
             digits = choose4()
             trial = 0
-            print ("\nNew digits:", ' '.join(digits))
+            print("\nNew digits:", ' '.join(digits))
             continue
         if answer == '!!':
             digits = ask4()
             trial = 0
-            print ("\nNew digits:", ' '.join(digits))
+            print("\nNew digits:", ' '.join(digits))
             continue
         if not chk:
-            print ("The input '%s' was wonky!" % answer)
+            print("The input '%s' was wonky!" % answer)
         else:
             if '/' in answer:
                 # Use Fractions for accuracy in divisions
-                answer = ''.join( (('F(%s)' % char) if char in '123456789' else char)
-                                  for char in answer )
+                answer = ''.join((('F(%s)' % char) if char in '123456789' else char)
+                                 for char in answer)
             ans = eval(answer)
-            print (" = ", ans)
+            print(" = ", ans)
             if ans == 24:
-                print ("Thats right!")
-    print ("Thank you and goodbye")
+                print("Thats right!")
+    print("Thank you and goodbye")
+
 
 main()

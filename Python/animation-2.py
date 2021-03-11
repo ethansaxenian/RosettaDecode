@@ -1,5 +1,7 @@
-import pygame, sys
+import pygame
+import sys
 from pygame.locals import *
+
 pygame.init()
 
 YSIZE = 40
@@ -16,7 +18,7 @@ DIR = RIGHT
 TIMETICK = 180
 TICK = USEREVENT + 2
 
-TEXTBOX = pygame.Rect(10,10,XSIZE,YSIZE)
+TEXTBOX = pygame.Rect(10, 10, XSIZE, YSIZE)
 
 pygame.time.set_timer(TICK, TIMETICK)
 
@@ -26,20 +28,24 @@ pygame.display.set_caption("Animation")
 font = pygame.font.SysFont(None, FONTSIZE)
 screen = pygame.display.get_surface()
 
+
 def rotate():
     index = DIR and -1 or 1
     global TEXT
-    TEXT = TEXT[index:]+TEXT[:index]
+    TEXT = TEXT[index:] + TEXT[:index]
+
 
 def click(position):
     if TEXTBOX.collidepoint(position):
         global DIR
         DIR = not DIR
 
+
 def draw():
-    surface = font.render(TEXT, True, (255,255,255), (0,0,0))
+    surface = font.render(TEXT, True, (255, 255, 255), (0, 0, 0))
     global TEXTBOX
     TEXTBOX = screen.blit(surface, TEXTBOX)
+
 
 def input(event):
     if event.type == QUIT:
@@ -49,6 +55,7 @@ def input(event):
     elif event.type == TICK:
         draw()
         rotate()
+
 
 while True:
     input(pygame.event.wait())

@@ -1,12 +1,15 @@
-from __future__ import division # Only necessary for Python 2.X
+from __future__ import division  # Only necessary for Python 2.X
+
 from math import factorial
 from random import randrange
 
 MAX_N = 20
 TIMES = 1000000
 
+
 def analytical(n):
-	return sum(factorial(n) / pow(n, i) / factorial(n -i) for i in range(1, n+1))
+    return sum(factorial(n) / pow(n, i) / factorial(n - i) for i in range(1, n + 1))
+
 
 def test(n, times):
     count = 0
@@ -18,9 +21,10 @@ def test(n, times):
             x = 1 << randrange(n)
     return count / times
 
+
 if __name__ == '__main__':
     print(" n\tavg\texp.\tdiff\n-------------------------------")
-    for n in range(1, MAX_N+1):
+    for n in range(1, MAX_N + 1):
         avg = test(n, TIMES)
         theory = analytical(n)
         diff = (avg / theory - 1) * 100

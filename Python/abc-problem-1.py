@@ -62,6 +62,7 @@ def can_make_word(word, block_collection=blocks):
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
     print(", ".join("'%s': %s" % (w, can_make_word(w)) for w in
                     ["", "a", "baRk", "booK", "treat",

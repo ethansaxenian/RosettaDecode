@@ -22,7 +22,9 @@ def partitions(n):
 
     return partitions.p[-1]
 
+
 partitions.p = [1]
+
 
 def main():
     ns = set([23, 123, 1234, 12345])
@@ -34,5 +36,6 @@ def main():
         p = partitions(i)
         if i in ns:
             print "%6d: %s" % (i, p)
+
 
 main()
