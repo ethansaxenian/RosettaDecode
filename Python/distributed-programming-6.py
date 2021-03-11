@@ -40,16 +40,16 @@ if __name__ == '__main__':
     # connect to server and send data
     rpcclient = RPCClient(HOST, PORT)
 
-    print 'Testing the echo() method:'
-    print rpcclient.echo('Hello world!')
-    print
-    print 'Calculating 42/2 on the remote machine:'
-    print rpcclient.div(42, 2)
-    print
-    print 'is_computer_on on the remote machine returns:'
-    print rpcclient.is_computer_on()
-    print
-    print 'Testing keyword args:'
-    print '42/2 is:', rpcclient.div(divisor=2, dividend=42)
+    print('Testing the echo() method:')
+    print(rpcclient.echo('Hello world!'))
+    print()
+    print('Calculating 42/2 on the remote machine:')
+    print(rpcclient.div(42, 2))
+    print()
+    print('is_computer_on on the remote machine returns:')
+    print(rpcclient.is_computer_on())
+    print()
+    print('Testing keyword args:')
+    print('42/2 is:', rpcclient.div(divisor=2, dividend=42))
     rpcclient._close()
     del rpcclient

@@ -23,5 +23,5 @@ def parse_ip_port(netloc):
 for address in tests:
     ip, port = parse_ip_port(address)
     hex_ip = {4:'{:08X}', 6:'{:032X}'}[ip.version].format(int(ip))
-    print("{:39s}  {:>32s}  IPv{}  port={}".format(
-        str(ip), hex_ip, ip.version, port ))
+    print(("{:39s}  {:>32s}  IPv{}  port={}".format(
+        str(ip), hex_ip, ip.version, port )))

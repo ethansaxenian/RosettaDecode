@@ -25,4 +25,4 @@ if __name__ == '__main__':
     test_words += ['aardvarks are ant eaters', 'immediately', 'abba']
     for w in test_words:
         wnew, c = best_shuffle(w)
-        print("%29s, %-29s ,(%i)" % (w, wnew, c))
+        print(("%29s, %-29s ,(%i)" % (w, wnew, c)))

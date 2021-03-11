@@ -13,28 +13,28 @@ def ethMult(n):
     def halved(h):
         qr = divmod(h, 2)
         if 0 < h:
-            print('halve:', str(qr).rjust(8, ' '))
+            print(('halve:', str(qr).rjust(8, ' ')))
         return Just(qr) if 0 < h else Nothing()
 
     def addedWhereOdd(a, remx):
         odd, x = remx
         if odd:
-            print(
+            print((
                 str(a).rjust(2, ' '), '+',
                 str(x).rjust(3, ' '), '->',
                 str(a + x).rjust(3, ' ')
-            )
+            ))
             return a + x
         else:
-            print(str(x).rjust(8, ' '))
+            print((str(x).rjust(8, ' ')))
             return a
 
     return lambda m: reduce(
         addedWhereOdd,
-        zip(
+        list(zip(
             unfoldr(halved)(n),
             iterate(doubled)(m)
-        ),
+        )),
         0
     )
 
@@ -43,17 +43,17 @@ def ethMult(n):
 def main():
     '''Tests of multiplication.'''
 
-    print(
+    print((
         '\nProduct:    ' + str(
             ethMult(17)(34)
         ),
         '\n_______________\n'
-    )
-    print(
+    ))
+    print((
         '\nProduct:    ' + str(
             ethMult(34)(17)
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -87,9 +87,9 @@ def iterate(f):
 def showLog(*s):
     '''Arguments printed with
        intercalated arrows.'''
-    print(
+    print((
         ' -> '.join(map(str, s))
-    )
+    ))
 
 
 # unfoldr(lambda x: Just((x, x - 1)) if 0 != x else Nothing())(10)

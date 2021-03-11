@@ -58,4 +58,4 @@ def windowsmorse(text):
 #    windowsmorse(thisfile.read())
 
 while True:
-    windowsmorse(input('A string to change into morse: '))
+    windowsmorse(eval(input('A string to change into morse: ')))

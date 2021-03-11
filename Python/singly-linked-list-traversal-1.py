@@ -1,2 +1,2 @@
 for node in lst:
-    print node.value
+    print(node.value)

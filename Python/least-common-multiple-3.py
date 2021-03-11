@@ -17,6 +17,6 @@ def lcm(a, b):
     return 0
 
 if __name__ == '__main__':
-    print( lcm(12, 18) )    # 36
-    print( lcm(-6, 14) )    # 42
+    print(( lcm(12, 18) ))    # 36
+    print(( lcm(-6, 14) ))    # 42
     assert lcm(0, 2) == lcm(2, 0) == 0

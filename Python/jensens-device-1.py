@@ -15,4 +15,4 @@ i = Ref()
 
 # note the correspondence between the mathematical notation and the
 # call to sum it's almost as good as sum(1/i for i in range(1,101))
-print harmonic_sum(i, 1, 100, lambda: 1.0/i.value)
+print(harmonic_sum(i, 1, 100, lambda: 1.0/i.value))

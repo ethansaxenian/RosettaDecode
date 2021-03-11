@@ -24,7 +24,7 @@ for n in range(2,len(N)):
 
 es = clock()
 z = 0
-for n in combinations_with_replacement(range(10),D):
+for n in combinations_with_replacement(list(range(10)),D):
     t = 0
     for g in n:
         t += g*g
@@ -38,5 +38,5 @@ for n in combinations_with_replacement(range(10),D):
         t1 /= F[g]
     z += t1
 ee = clock() - es
-print "\nD==" + str(D) + "\n  " + str(z) + " numbers produce 1 and " + str(10**D-z) + " numbers produce 89"
-print "Time ~= " + str(ee) + " secs"
+print("\nD==" + str(D) + "\n  " + str(z) + " numbers produce 1 and " + str(10**D-z) + " numbers produce 89")
+print("Time ~= " + str(ee) + " secs")

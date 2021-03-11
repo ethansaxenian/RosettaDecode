@@ -21,14 +21,14 @@ def main():
     def bracketed(x):
         return '(' + str(x) + ')'
 
-    print(
+    print((
         tabulated('Middle three digits, where defined:\n')(str)(
             either(bracketed)(str)
         )(mid3digits)([
             123, 12345, 1234567, 987654321, 10001, -10001, -123,
             -100, 100, -12345, 1, 2, -1, -10, 2002, -2002, 0
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -72,7 +72,7 @@ def tabulated(s):
     '''Heading -> x display function -> fx display function ->
                 f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(str), xs))
+        w = max(list(map(compose(len)(str), xs)))
         return s + '\n' + '\n'.join(
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         )

@@ -4,7 +4,7 @@ def no_args():
 no_args()
 
 def fixed_args(x, y):
-    print('x=%r, y=%r' % (x, y))
+    print(('x=%r, y=%r' % (x, y)))
 # call
 fixed_args(1, 2)        # x=1, y=2
 
@@ -43,7 +43,7 @@ def return_something():
 x = return_something()
 
 def is_builtin(x):
-	print(x.__name__ in dir(__builtins__))
+	print((x.__name__ in dir(__builtins__)))
 # calls
 is_builtin(pow)         # True
 is_builtin(is_builtin)  # False
@@ -54,7 +54,7 @@ def takes_anything(*args, **kwargs):
     for each in args:
         print(each)
     for key, value in sorted(kwargs.items()):
-        print("%s:%s" % (key, value))
+        print(("%s:%s" % (key, value)))
     # Passing those to another, wrapped, function:
     wrapped_fn(*args, **kwargs)
     # (Function being wrapped can have any parameter list

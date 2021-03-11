@@ -29,7 +29,7 @@ if __name__ == '__main__':
   try:
     while True:
       # handle Ctrl+C
-      input()
+      eval(input())
 
   except KeyboardInterrupt:
     pass

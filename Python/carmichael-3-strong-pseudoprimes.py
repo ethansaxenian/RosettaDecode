@@ -38,11 +38,11 @@ class Isprime():
             primes, nmax = self.primes, self.nmax
             newmax = max(nmax*2, n)
             for p in primes:
-                multiples.update(range(p*((nmax + p + 1) // p), newmax+1, p))
+                multiples.update(list(range(p*((nmax + p + 1) // p), newmax+1, p)))
             for i in range(nmax+1, newmax+1):
                 if i not in multiples:
                     primes.append(i)
-                    multiples.update(range(i*2, newmax+1, i))
+                    multiples.update(list(range(i*2, newmax+1, i)))
             self.nmax = newmax
             return n not in multiples
 
@@ -68,4 +68,4 @@ def carmichael(p1):
 isprime = Isprime(2)
 
 ans = sorted(sum((carmichael(n) for n in range(62) if isprime(n)), []))
-print(',\n'.join(repr(ans[i:i+5])[1:-1] for i in range(0, len(ans)+1, 5)))
+print((',\n'.join(repr(ans[i:i+5])[1:-1] for i in range(0, len(ans)+1, 5))))

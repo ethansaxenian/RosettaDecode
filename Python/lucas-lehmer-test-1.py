@@ -24,13 +24,13 @@ long_bits_width = precision * log(10, 2)
 upb_prime = int( long_bits_width - 1 ) / 2    # no unsigned #
 upb_count = 45      # find 45 mprimes if int was given enough bits #
 
-print (" Finding Mersenne primes in M[2..%d]:"%upb_prime)
+print((" Finding Mersenne primes in M[2..%d]:"%upb_prime))
 
 count=0
 for p in range(2, int(upb_prime+1)):
   if is_prime(p) and is_mersenne_prime(p):
-    print("M%d"%p),
+    print(("M%d"%p), end=' ')
     stdout.flush()
     count += 1
   if count >= upb_count: break
-print
+print()

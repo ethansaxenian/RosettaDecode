@@ -8,7 +8,7 @@ from random import randint
 def ruleSample(intRule):
     '''16 steps in the evolution of a specified Wolfram rule.'''
     return 'Rule ' + str(intRule) + ':\n' + (
-        unlines(map(
+        unlines(list(map(
             showCells,
             take(16)(
                 iterate(nextRowByRule(intRule))(
@@ -17,7 +17,7 @@ def ruleSample(intRule):
                     )
                 )
             )
-        ))
+        )))
     )
 
 
@@ -44,9 +44,9 @@ def nextRowByRule(intRule):
 def main():
     '''Samples of Wolfram rule evolutions.'''
 
-    print(
-        unlines(map(ruleSample, [104, 30, 110]))
-    )
+    print((
+        unlines(list(map(ruleSample, [104, 30, 110])))
+    ))
 
 
 # boolsFromInt :: Int -> [Bool]

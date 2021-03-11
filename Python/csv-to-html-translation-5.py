@@ -34,4 +34,4 @@ htmltxt = csv2html_robust(csvtxt, True, {
     'TBODY': {'bgcolor': "orange"}
 })
 
-print(htmltxt.decode('utf8'))
+print((htmltxt.decode('utf8')))

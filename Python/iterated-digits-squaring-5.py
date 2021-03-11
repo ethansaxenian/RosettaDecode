@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from itertools import count
 
 def check89(n):
@@ -11,7 +11,7 @@ def check89(n):
 a, sq, is89 = [1], [x**2 for x in range(1, 10)], [False]
 for n in range(1, 500):
     b, a = a, a + [0]*81
-    is89 += map(check89, range(len(b), len(a)))
+    is89 += list(map(check89, list(range(len(b), len(a)))))
 
     for i,v in enumerate(b):
         for s in sq: a[i + s] += v

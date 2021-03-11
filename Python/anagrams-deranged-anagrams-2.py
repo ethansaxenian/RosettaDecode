@@ -22,7 +22,7 @@ def main():
     words = read_words(Path(WORDS_FILE))
     anagram = longest_deranged_anagram(words)
     if anagram:
-        print('The longest deranged anagram is: {}, {}'.format(*anagram))
+        print(('The longest deranged anagram is: {}, {}'.format(*anagram)))
     else:
         print('No deranged anagrams were found')
 
@@ -45,7 +45,7 @@ def longest_deranged_anagram(words: Iterable[str]
     for length in decreasing_lengths:
         words = words_by_lengths[length]
         anagrams_by_letters = mapping_by_function(sort_str, words)
-        for anagrams in anagrams_by_letters.values():
+        for anagrams in list(anagrams_by_letters.values()):
             deranged_pair = next(deranged_word_pairs(anagrams), None)
             if deranged_pair is not None:
                 return deranged_pair
@@ -74,7 +74,7 @@ def sort_str(string: str) -> str:
 def deranged_word_pairs(words: Iterable[str]) -> Iterator[Tuple[str, str]]:
     """Yields deranged words from an input list of words"""
     pairs = combinations(words, 2)  # type: Iterator[Tuple[str, str]]
-    yield from filter(is_deranged, pairs)
+    yield from list(filter(is_deranged, pairs))
 
 
 def is_deranged(word_pair: Tuple[str, str]) -> bool:

@@ -7,5 +7,5 @@ class Stack:
         self._items.append(item)
     def pop(self):
         return self._items.pop()
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self._items)

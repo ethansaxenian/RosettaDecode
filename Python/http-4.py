@@ -1,2 +1,2 @@
-import urllib2
-print urllib2.urlopen("http://rosettacode.org").read()
+import urllib.request, urllib.error, urllib.parse
+print(urllib.request.urlopen("http://rosettacode.org").read())

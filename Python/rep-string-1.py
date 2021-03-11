@@ -19,5 +19,5 @@ matchstr = """\
 """
 for line in matchstr.split():
     ln = is_repeated(line)
-    print('%r has a repetition length of %i i.e. %s'
-           % (line, ln, repr(line[:ln]) if ln else '*not* a rep-string'))
+    print(('%r has a repetition length of %i i.e. %s'
+           % (line, ln, repr(line[:ln]) if ln else '*not* a rep-string')))

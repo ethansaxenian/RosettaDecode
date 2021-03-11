@@ -8,7 +8,7 @@ def spermutations(n):
     p = [[i, 0 if i == 0 else -1] # [num, direction]
          for i in range(n)]
 
-    if DEBUG: print ' #', p
+    if DEBUG: print(' #', p)
     yield tuple(pp[0] for pp in p), sign
 
     while any(pp[1] for pp in p): # moving
@@ -35,26 +35,26 @@ def spermutations(n):
             if i2 == n - 1 or p[i2 + 1][0] > n1:
                 # The direction of the chosen element is set to zero
                 p[i2][1] = 0
-        if DEBUG: print ' #', p
+        if DEBUG: print(' #', p)
         yield tuple(pp[0] for pp in p), sign
 
         for i3, pp in enumerate(p):
             n3, d3 = pp
             if n3 > n1:
                 pp[1] = 1 if i3 < i2 else -1
-                if DEBUG: print ' # Set Moving'
+                if DEBUG: print(' # Set Moving')
 
 
 if __name__ == '__main__':
     from itertools import permutations
 
     for n in (3, 4):
-        print '\nPermutations and sign of %i items' % n
+        print('\nPermutations and sign of %i items' % n)
         sp = set()
         for i in spermutations(n):
             sp.add(i[0])
-            print('Perm: %r Sign: %2i' % i)
+            print(('Perm: %r Sign: %2i' % i))
             #if DEBUG: raw_input('?')
         # Test
-        p = set(permutations(range(n)))
+        p = set(permutations(list(range(n))))
         assert sp == p, 'Two methods of generating permutations do not agree'

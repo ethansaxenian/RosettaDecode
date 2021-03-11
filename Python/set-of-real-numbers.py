@@ -39,8 +39,8 @@ sets = [
 settexts = '(0, 1] ∪ [0, 2);[0, 2) ∩ (1, 2];[0, 3) − (0, 1);[0, 3) − [0, 1]'.split(';')
 
 for s,t in zip(sets, settexts):
-    print("Set %s %s. %s" % (t,
+    print(("Set %s %s. %s" % (t,
                              ', '.join("%scludes %i"
                                      % ('in' if v in s else 'ex', v)
                                      for v in range(3)),
-                             s.eqn))
+                             s.eqn)))

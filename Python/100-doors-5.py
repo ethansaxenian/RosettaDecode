@@ -3,4 +3,4 @@ for i in range(1, 101):
         state = 'open'
     else:
         state = 'close'
-    print("Door {}:{}".format(i, state))
+    print(("Door {}:{}".format(i, state)))

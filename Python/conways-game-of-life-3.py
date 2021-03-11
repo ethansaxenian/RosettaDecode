@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 def conway_life(len=10, wid=10, gen=5):
 
     curr_gen = DataFrame(np.random.randint(0, 2, (len+2, wid+2)),
-                         index = range(len+2),
-                         columns = range(wid+2))
+                         index = list(range(len+2)),
+                         columns = list(range(wid+2)))
     curr_gen[0] = 0
     curr_gen[wid+1] = 0
     curr_gen[0: 1] = 0
@@ -39,8 +39,8 @@ def conway_life(len=10, wid=10, gen=5):
 
         # 初始化空表
         next_gen = DataFrame(np.random.randint(0, 1, (len+2, wid+2)),
-                             index = range(len+2),
-                             columns = range(wid+2))
+                             index = list(range(len+2)),
+                             columns = list(range(wid+2)))
 
 
         # 生成下一代

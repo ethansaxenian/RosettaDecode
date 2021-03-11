@@ -56,7 +56,7 @@ def Decrypt():
     #decrypts an encoded message
     global m,P,C,x,h,p,Text,y,w
     P = []
-    C = str(input("Enter ciphertext blocks:"))
+    C = str(eval(input("Enter ciphertext blocks:")))
     C = C.lstrip('[')
     C = C.rstrip(']')
     C = C.split(',')
@@ -79,12 +79,12 @@ def Decrypt():
     PText = str()
     for i in range(len(Text)):
         PText = PText + str(Text[i])
-    print("Plaintext is:", PText)
+    print(("Plaintext is:", PText))
 
 def Encrypt():
     #encrypts a plaintext message using the current key
     global plaintext,numP,q,j,z,X,C
-    plaintext =(input("Enter Plaintext :"))
+    plaintext =(eval(input("Enter Plaintext :")))
     plaintext = plaintext.lower()
     numP = []
     for i in range(len(plaintext)):
@@ -108,28 +108,28 @@ def Encrypt():
         b = X[i]
         r = cipher(b,e)
         C.append(r)
-    print("Ciphertext:",C)
-    print("Number of Ciphertext blocks:",len(C))
+    print(("Ciphertext:",C))
+    print(("Number of Ciphertext blocks:",len(C)))
 
 def setup():
     global n,e,d
     while True:
         try:
-            n = int(input(" Enter a value for n :"))
+            n = int(eval(input(" Enter a value for n :")))
             if n > 2:
                 break
         except ValueError:
             print('please enter a number')
     while 1!=2 :
         try:
-            e = int(input(" Enter a value for e :"))
+            e = int(eval(input(" Enter a value for e :")))
             if e >= 2:
                 break
         except ValueError:
             print('please enter a number')
     while True:
         try:
-            d = int(input(" Enter a value for d. If d unknown, enter 0 :"))
+            d = int(eval(input(" Enter a value for d. If d unknown, enter 0 :")))
             if d >= 0:
                 break
         except ValueError:
@@ -149,15 +149,15 @@ print( '\n' )
 
 mm = str()
 while mm != 'quit':
-    mm = input("Enter Command...")
+    mm = eval(input("Enter Command..."))
     if mm.lower() == 'encrypt':
         Encrypt()
     elif mm.lower() == 'decrypt':
         Decrypt()
     elif mm.lower() == 'n':
         try:
-            print('current n = ',n)
-            n = int(input(" Enter a value for n :"))
+            print(('current n = ',n))
+            n = int(eval(input(" Enter a value for n :")))
         except ValueError:
             print('That is not a valid entry')
     elif mm.lower() == 'help':
@@ -169,18 +169,18 @@ while mm != 'quit':
         print( '\n' )
     elif mm.lower() == 'e':
         try:
-            print('current e = ',e)
-            e = int(input(" Enter a value for e :"))
+            print(('current e = ',e))
+            e = int(eval(input(" Enter a value for e :")))
         except ValueError:
             print('That is not a valid entry')
     elif mm.lower() == 'd':
         try:
-            print('current d = ',d)
-            d = int(input(" Enter a value for d :"))
+            print(('current d = ',d))
+            d = int(eval(input(" Enter a value for d :")))
         except ValueError:
             print('That is not a valid entry')
     else:
         if mm != 'quit':
             ii= random.randint(0,6)
             statements = ["I sorry, Dave. I'm afraid i can't do that","I'm begging you....read the directions","Nah ahh ahh, didnt say the magic word","This input is....UNACCEPTABLE!!","Seriously....was that even a word???","Please follow the directions","Just type 'help' if you are really that lost"]
-            print(statements[ii])
+            print((statements[ii]))

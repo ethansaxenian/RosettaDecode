@@ -33,15 +33,15 @@ def main():
     levels = enumFromTo(0)(3)
     t = ' ' * (
         len(' -> ') +
-        max(map(compose(len)(str), levels))
+        max(list(map(compose(len)(str), levels)))
     )
-    print(
+    print((
         fTable(__doc__ + ':')(lambda x: '\n' + str(x))(
             lambda xs: xs[0] + '\n' + (
-                unlines(map(lambda x: t + x, xs[1:])))
+                unlines([t + x for x in xs[1:]]))
         )
         (sierpinskiCarpet)(levels)
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -53,7 +53,7 @@ def bind(xs):
        with any value produced by the first
        passed as an argument to the second.'''
     return lambda f: list(chain.from_iterable(
-        map(f, xs)
+        list(map(f, xs))
     ))
 
 
@@ -115,7 +115,7 @@ def zipWith(f):
        custom function, rather than with the
        default tuple constructor.'''
     return lambda xs: lambda ys: (
-        map(f, xs, ys)
+        list(map(f, xs, ys))
     )
 
 
@@ -129,7 +129,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

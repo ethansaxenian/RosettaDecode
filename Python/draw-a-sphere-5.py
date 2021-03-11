@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 from visual import *
 
 title = "VPython: Draw a sphere"

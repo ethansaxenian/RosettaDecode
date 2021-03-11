@@ -8,11 +8,11 @@ def intrptWIN():
       try:
          time.sleep(0.5)
          n += 1
-         print n
-      except KeyboardInterrupt, e:
+         print(n)
+      except KeyboardInterrupt as e:
          procDone = True
 
 t1 = time.time()
 intrptWIN()
 tdelt = time.time() - t1
-print 'Program has run for %5.3f seconds.' % tdelt
+print('Program has run for %5.3f seconds.' % tdelt)

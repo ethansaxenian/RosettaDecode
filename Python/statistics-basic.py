@@ -26,14 +26,14 @@ def histogram(numbers):
     mx = max(h)
     print()
     for n, i in enumerate(h):
-        print('%3.1f: %s' % (n / 10, '+' * int(i / mx * maxwidth)))
+        print(('%3.1f: %s' % (n / 10, '+' * int(i / mx * maxwidth))))
     print()
 
 if __name__ == '__main__':
     import random
     for i in range(1, 6):
         n = [random.random() for j in range(10**i)]
-        print("\n##\n## %i numbers\n##" % 10**i)
-        print('  Naive  method: sd: %8.6f, mean: %8.6f' % sd1(n))
-        print('  Second method: sd: %8.6f, mean: %8.6f' % sd2(n))
+        print(("\n##\n## %i numbers\n##" % 10**i))
+        print(('  Naive  method: sd: %8.6f, mean: %8.6f' % sd1(n)))
+        print(('  Second method: sd: %8.6f, mean: %8.6f' % sd2(n)))
         histogram(n)

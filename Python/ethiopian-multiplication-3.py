@@ -1,6 +1,6 @@
 tutor = True
 
-from itertools import izip, takewhile
+from itertools import takewhile
 
 def iterate(function, arg):
     while 1:
@@ -12,25 +12,25 @@ def double(x): return x * 2
 def even(x): return x % 2 == 0
 
 def show_heading(multiplier, multiplicand):
-    print "Multiplying %d by %d" % (multiplier, multiplicand),
-    print "using Ethiopian multiplication:"
-    print
+    print("Multiplying %d by %d" % (multiplier, multiplicand), end=' ')
+    print("using Ethiopian multiplication:")
+    print()
 
 TABLE_FORMAT = "%8s %8s %8s %8s %8s"
 
 def show_table(table):
     for p, q in table:
-        print TABLE_FORMAT % (p, q, "->",
-                              p, q if not even(p) else "-" * len(str(q)))
+        print(TABLE_FORMAT % (p, q, "->",
+                              p, q if not even(p) else "-" * len(str(q))))
 
 def show_result(result):
-    print TABLE_FORMAT % ('', '', '', '', "=" * (len(str(result)) + 1))
-    print TABLE_FORMAT % ('', '', '', '', result)
+    print(TABLE_FORMAT % ('', '', '', '', "=" * (len(str(result)) + 1)))
+    print(TABLE_FORMAT % ('', '', '', '', result))
 
 def ethiopian(multiplier, multiplicand):
     def column1(x): return takewhile(lambda v: v >= 1, iterate(halve, x))
     def column2(x): return iterate(double, x)
-    def rows(x, y): return izip(column1(x), column2(y))
+    def rows(x, y): return zip(column1(x), column2(y))
     table = rows(multiplier, multiplicand)
     if tutor:
         table = list(table)

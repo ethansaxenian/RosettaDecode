@@ -27,12 +27,12 @@ def deconv(a, b):
 
 # should return g
 
-print(conv(h,f))
+print((conv(h,f)))
 
 # should return h
 
-print(deconv(g,f))
+print((deconv(g,f)))
 
 # should return f
 
-print(deconv(g,h))
+print((deconv(g,h)))

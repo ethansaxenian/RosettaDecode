@@ -1,3 +1,4 @@
+from functools import reduce
 def powersequence(val):
     ''' Generate a 'powerset' for sequence types that are indexable by integers.
         Uses a binary count to enumerate the members and returns a list
@@ -11,7 +12,7 @@ def powersequence(val):
             [(), (3,), (4,), (3, 4), (5,), (3, 5), (4, 5), (3, 4, 5)]
             >>>
     '''
-    vtype = type(val); vlen = len(val); vrange = range(vlen)
+    vtype = type(val); vlen = len(val); vrange = list(range(vlen))
     return [ reduce( lambda x,y: x+y, (val[i:i+1] for i in vrange if 2**i & n), vtype())
              for n in range(2**vlen) ]
 

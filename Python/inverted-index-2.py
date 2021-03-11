@@ -1,4 +1,5 @@
 from collections import Counter
+from functools import reduce
 
 
 def termsearch(terms): # Searches full inverted index
@@ -6,7 +7,7 @@ def termsearch(terms): # Searches full inverted index
         return set()
     return reduce(set.intersection,
                   (set(x[0] for x in txtindx)
-                   for term, txtindx in finvindex.items()
+                   for term, txtindx in list(finvindex.items())
                    if term in terms),
                   set(texts.keys()) )
 
@@ -29,24 +30,24 @@ def phrasesearch(phrase):
 
 
 finvindex = {word:set((txt, wrdindx)
-                      for txt, wrds in texts.items()
+                      for txt, wrds in list(texts.items())
                       for wrdindx in (i for i,w in enumerate(wrds) if word==w)
                       if word in wrds)
              for word in words}
 print('\nFull Inverted Index')
-pp({k:sorted(v) for k,v in finvindex.items()})
+pp({k:sorted(v) for k,v in list(finvindex.items())})
 
-print('\nTerm Search on full inverted index for: ' + repr(terms))
+print(('\nTerm Search on full inverted index for: ' + repr(terms)))
 pp(sorted(termsearch(terms)))
 
 phrase = '"what is it"'
-print('\nPhrase Search for: ' + phrase)
-print(phrasesearch(phrase))
+print(('\nPhrase Search for: ' + phrase))
+print((phrasesearch(phrase)))
 
 # Show multiple match capability
 phrase = '"it is"'
-print('\nPhrase Search for: ' + phrase)
+print(('\nPhrase Search for: ' + phrase))
 ans = phrasesearch(phrase)
 print(ans)
 ans = Counter(ans)
-print('  The phrase is found most commonly in text: ' + repr(ans.most_common(1)[0][0]))
+print(('  The phrase is found most commonly in text: ' + repr(ans.most_common(1)[0][0])))

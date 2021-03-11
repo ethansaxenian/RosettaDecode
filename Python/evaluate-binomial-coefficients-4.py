@@ -20,6 +20,6 @@ def product(xs: List[Any]) -> int:
 
 
 if __name__ == '__main__':
-    print(binomialCoefficient(5)(3))
+    print((binomialCoefficient(5)(3)))
     # k=0 to k=5, where n=5
-    print(list(map(binomialCoefficient(5), enumFromTo(0)(5))))
+    print((list(map(binomialCoefficient(5), enumFromTo(0)(5)))))

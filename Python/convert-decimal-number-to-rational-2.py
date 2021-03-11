@@ -23,23 +23,23 @@ def main():
     '''Conversions at different levels of precision.'''
 
     xs = [0.9054054, 0.518518, 0.75]
-    print(
+    print((
         fTable(__doc__ + ' (epsilon of 1/10000):\n')(str)(
             lambda r: showRatio(r) + ' -> ' + repr(fromRatio(r))
         )(
             approxRatio(1 / 10000)
         )(xs)
-    )
+    ))
     print('\n')
 
     e = minBound(float)
-    print(
+    print((
         fTable(__doc__ + ' (epsilon of ' + repr(e) + '):\n')(str)(
             lambda r: showRatio(r) + ' -> ' + repr(fromRatio(r))
         )(
             approxRatio(e)
         )(xs)
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -104,7 +104,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

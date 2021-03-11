@@ -1,3 +1,3 @@
 import sys
-for n in xrange(sys.maxint):
-    print oct(n)
+for n in range(sys.maxsize):
+    print(oct(n))

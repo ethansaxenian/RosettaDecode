@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import random
 from time import sleep
 
@@ -9,10 +9,10 @@ if first:
     me = ''.join(random.sample('HT'*3, 3))
     print('I choose first and will win on first seeing {} in the list of tosses'.format(me))
     while len(you) != 3 or any(ch not in 'HT' for ch in you) or you == me:
-        you = input('What sequence of three Heads/Tails will you win with: ')
+        you = eval(input('What sequence of three Heads/Tails will you win with: '))
 else:
     while len(you) != 3 or any(ch not in 'HT' for ch in you):
-        you = input('After you: What sequence of three Heads/Tails will you win with: ')
+        you = eval(input('After you: What sequence of three Heads/Tails will you win with: '))
     me = ('H' if you[1] == 'T' else 'T') + you[:2]
     print('I win on first seeing {} in the list of tosses'.format(me))
 

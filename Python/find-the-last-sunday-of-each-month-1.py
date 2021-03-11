@@ -10,4 +10,4 @@ if len(sys.argv) > 1:
 
 for month in range(1, 13):
     last_sunday = max(week[-1] for week in calendar.monthcalendar(year, month))
-    print('{}-{}-{:2}'.format(year, calendar.month_abbr[month], last_sunday))
+    print(('{}-{}-{:2}'.format(year, calendar.month_abbr[month], last_sunday)))

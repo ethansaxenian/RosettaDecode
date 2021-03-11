@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 from scipy.misc import factorial as fact
 from scipy.misc import comb

@@ -62,10 +62,10 @@ def main():
             ('list comprehension', mulTable),
             ('list monad', mulTable2)
     ]:
-        print(
+        print((
             'By ' + s + ' (' + f.__name__ + '):\n\n',
             f(12).strip() + '\n'
-        )
+        ))
 
 
 # GENERIC -------------------------------------------------
@@ -76,7 +76,7 @@ def bind(xs):
        Equivalent to concatMap with its arguments flipped.'''
     return lambda f: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 

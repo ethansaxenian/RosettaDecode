@@ -7,8 +7,8 @@ def bernoulli2():
         yield A[0] # (which is Bm)
         m += 1
 
-bn2 = [ix for ix in zip(range(61), bernoulli2())]
+bn2 = [ix for ix in zip(list(range(61)), bernoulli2())]
 bn2 = [(i, b) for i,b in bn2 if b]
 width = max(len(str(b.numerator)) for i,b in bn2)
 for i,b in bn2:
-    print('B(%2i) = %*i/%i' % (i, width, b.numerator, b.denominator))
+    print(('B(%2i) = %*i/%i' % (i, width, b.numerator, b.denominator)))

@@ -9,5 +9,5 @@ def real2cf(x):
 from fractions import Fraction
 from itertools import islice
 
-print(list(real2cf(Fraction(13, 11))))    # => [1, 5, 2]
-print(list(islice(real2cf(2 ** 0.5), 20)))    # => [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+print((list(real2cf(Fraction(13, 11)))))    # => [1, 5, 2]
+print((list(islice(real2cf(2 ** 0.5), 20))))    # => [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]

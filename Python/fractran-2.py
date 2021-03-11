@@ -9,5 +9,5 @@ def fractran_primes():
                 yield prime, i
 
 if __name__ == '__main__':
-    for (prime, i), j in zip(fractran_primes(), range(15)):
-        print("Generated prime %2i from the %6i'th member of the fractran series" % (prime, i))
+    for (prime, i), j in zip(fractran_primes(), list(range(15))):
+        print(("Generated prime %2i from the %6i'th member of the fractran series" % (prime, i)))

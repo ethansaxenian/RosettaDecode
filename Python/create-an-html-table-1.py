@@ -4,7 +4,7 @@ def rand9999():
     return random.randint(1000, 9999)
 
 def tag(attr='', **kwargs):
-    for tag, txt in kwargs.items():
+    for tag, txt in list(kwargs.items()):
         return '<{tag}{attr}>{txt}</{tag}>'.format(**locals())
 
 if __name__ == '__main__':

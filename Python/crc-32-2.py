@@ -16,4 +16,4 @@ def crc_update(buf, crc):
     return crc ^ 0xffffffff
 
 crc_table = create_table()
-print(hex(crc_update(b"The quick brown fox jumps over the lazy dog", 0)))
+print((hex(crc_update(b"The quick brown fox jumps over the lazy dog", 0))))

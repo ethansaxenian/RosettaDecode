@@ -44,10 +44,10 @@ def stillRising(bc, x):
 
 # TEST ---
 if __name__ == '__main__':
-    print(
+    print((
         '\n'.join(longestOrds(
             urllib.request.urlopen(
                 'http://wiki.puzzlers.org/pub/wordlists/unixdict.txt'
             ).read().decode("utf-8").split()
         ))
-    )
+    ))

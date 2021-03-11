@@ -30,7 +30,7 @@ def main():
         k, xs = kxs
         return k + ': ' + showList(xs)
 
-    print(
+    print((
         fTable(
             __doc__ + ':\n'
         )(labelledList)(fmapFn(showList)(snd))(
@@ -44,7 +44,7 @@ def main():
             ('Not rows', [1, 2, 3]),
             ('Nothing', [])
         ])
-    )
+    ))
 
 
 # TEST RESULT FORMATTING ----------------------------------
@@ -57,7 +57,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

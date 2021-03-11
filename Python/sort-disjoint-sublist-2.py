@@ -8,7 +8,7 @@ def disjointSort(ixs):
        numeric or lexical order.'''
     def go(xs):
         ks = sorted(ixs)
-        dct = dict(zip(ks, sorted(xs[k] for k in ks)))
+        dct = dict(list(zip(ks, sorted(xs[k] for k in ks))))
         return list(dct[i] if i in dct else x for i, x in enumerate(xs))
     return lambda xs: go(xs)
 
@@ -18,7 +18,7 @@ def disjointSort(ixs):
 def main():
     '''Tests'''
 
-    print(
+    print((
         tabulated('Disjoint sublists at indices [6, 1, 7] sorted:\n')
         (str)(str)(
             disjointSort([6, 1, 7])
@@ -26,7 +26,7 @@ def main():
             [7, 6, 5, 4, 3, 2, 1, 0],
             ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
         ])
-    )
+    ))
 
 
 # Generic functions for test and display ------------------
@@ -45,7 +45,7 @@ def tabulated(s):
     '''Heading -> x display function -> fx display function ->
                 f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join(
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         )

@@ -4,10 +4,7 @@ def nubBy(p, xs):
         if xs:
             x = xs[0]
             return [x] + go(
-                list(filter(
-                    lambda y: not p(x, y),
-                    xs[1:]
-                ))
+                list([y for y in xs[1:] if not p(x, y)])
             )
         else:
             return []

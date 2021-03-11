@@ -1,5 +1,5 @@
 def rot_right(a):
-    return zip(*a[::-1])
+    return list(zip(*a[::-1]))
 
 def sp(m, n, start = 0):
     """ Generate number range spiral of dimensions m x n
@@ -15,4 +15,4 @@ def spiral(m):
     return sp(m, m)
 
 for row in spiral(5):
-    print(''.join('%3i' % i for i in row))
+    print((''.join('%3i' % i for i in row)))

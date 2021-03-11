@@ -20,17 +20,17 @@ data = {
     }
 
 def toposort2(data):
-    for k, v in data.items():
+    for k, v in list(data.items()):
         v.discard(k) # Ignore self dependencies
-    extra_items_in_deps = reduce(set.union, data.values()) - set(data.keys())
+    extra_items_in_deps = reduce(set.union, list(data.values())) - set(data.keys())
     data.update({item:set() for item in extra_items_in_deps})
     while True:
-        ordered = set(item for item,dep in data.items() if not dep)
+        ordered = set(item for item,dep in list(data.items()) if not dep)
         if not ordered:
             break
         yield ' '.join(sorted(ordered))
-        data = {item: (dep - ordered) for item,dep in data.items()
+        data = {item: (dep - ordered) for item,dep in list(data.items())
                 if item not in ordered}
     assert not data, "A cyclic dependency exists amongst %r" % data
 
-print ('\n'.join( toposort2(data) ))
+print(('\n'.join( toposort2(data) )))

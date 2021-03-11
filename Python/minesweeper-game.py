@@ -65,7 +65,7 @@ def gridandmines(gridsize=gridsize, minerange=minerange):
     minmines, maxmines = minerange
     minecount = xgrid * ygrid
     minecount = random.randint(int(minecount*minmines), int(minecount*maxmines))
-    grid = set(product(range(xgrid), range(ygrid)))
+    grid = set(product(list(range(xgrid)), list(range(ygrid))))
     mines = set(random.sample(grid, minecount))
     show = {xy:'.' for xy in grid}
     return grid, mines, show
@@ -100,10 +100,10 @@ if __name__ == '__main__':
     grid, mines, showgrid = gridandmines()
     markedmines = set([])
     print( __doc__ )
-    print( '\nThere are %i true mines of fixed position in the grid\n' % len(mines) )
+    print(( '\nThere are %i true mines of fixed position in the grid\n' % len(mines) ))
     printgrid(showgrid)
     while markedmines != mines:
-        inp = raw_input('m x y/c x y/p/r: ').strip().split()
+        inp = input('m x y/c x y/p/r: ').strip().split()
         if inp:
             if inp[0] == 'm':
                 x, y = [int(i)-1 for i in inp[1:3]]
@@ -130,7 +130,7 @@ if __name__ == '__main__':
                 printgrid(showgrid)
                 break
 
-    print( '\nYou got %i and missed %i of the %i mines'
+    print(( '\nYou got %i and missed %i of the %i mines'
            % (len(mines.intersection(markedmines)),
               len(markedmines.difference(mines)),
-              len(mines)) )
+              len(mines)) ))

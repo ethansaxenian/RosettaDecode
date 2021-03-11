@@ -10,7 +10,7 @@ ddata = ""
 
 def init(board):
     global data, nrows, sdata, ddata, px, py
-    data = filter(None, board.splitlines())
+    data = [_f for _f in board.splitlines() if _f]
     nrows = max(len(r) for r in data)
 
     maps = {' ':' ', '.': '.', '@':' ', '#':'#', '$':' '}
@@ -36,7 +36,7 @@ def push(x, y, dx, dy, data):
     return data2.tostring()
 
 def is_solved(data):
-    for i in xrange(len(data)):
+    for i in range(len(data)):
         if (sdata[i] == '.') != (data[i] == '*'):
             return False
     return True
@@ -93,4 +93,4 @@ level = """\
 
 psyco.full()
 init(level)
-print level, "\n\n", solve()
+print(level, "\n\n", solve())

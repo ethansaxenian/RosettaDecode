@@ -1,3 +1,4 @@
+from functools import reduce
 # Python 2.7
 def chinese_remainder(n, a):
     sum = 0
@@ -23,4 +24,4 @@ def mul_inv(a, b):
 if __name__ == '__main__':
     n = [3, 5, 7]
     a = [2, 3, 2]
-    print chinese_remainder(n, a)
+    print(chinese_remainder(n, a))

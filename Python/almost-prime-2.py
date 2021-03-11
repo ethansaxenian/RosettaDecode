@@ -20,8 +20,8 @@ def k_almost_primes(n, k=2):
         if i not in multiples:
             if len(lists[1]) < 10:
                 lists[1].append(i)
-            multiples.update(range(i * i, n + 1, i))
-    print("k=1: {}".format(lists[1]))
+            multiples.update(list(range(i * i, n + 1, i)))
+    print(("k=1: {}".format(lists[1])))
 
     for j in range(2, k + 1):
         for m in multiples:
@@ -30,7 +30,7 @@ def k_almost_primes(n, k=2):
             if ll == j and len(lists[j]) < 10:
                 lists[j].append(m)
 
-        print("k={}: {}".format(j, lists[j]))
+        print(("k={}: {}".format(j, lists[j])))
 
 
 k_almost_primes(200, 5)

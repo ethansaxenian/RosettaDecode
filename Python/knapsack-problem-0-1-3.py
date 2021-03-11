@@ -29,8 +29,8 @@ items = (
 max_weight = 400
 
 solution = solve(items, max_weight)
-print "items:"
+print("items:")
 for x in solution:
-    print x[0]
-print "value:", total_value(solution, max_weight)
-print "weight:", sum([x[1] for x in solution])
+    print(x[0])
+print("value:", total_value(solution, max_weight))
+print("weight:", sum([x[1] for x in solution]))

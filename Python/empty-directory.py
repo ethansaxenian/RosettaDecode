@@ -1,5 +1,5 @@
 import os;
-if os.listdir(raw_input("directory")):
-    print "not empty"
+if os.listdir(input("directory")):
+    print("not empty")
 else:
-    print "empty"
+    print("empty")

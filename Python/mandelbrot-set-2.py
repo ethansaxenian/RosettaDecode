@@ -8,7 +8,7 @@ def mandelbrot(z , c , n=40):
     else:
         return z ** 2 + c
 
-print("\n".join(["".join(["#" if not math.isnan(mandelbrot(0, x + 1j * y).real) else " "
+print(("\n".join(["".join(["#" if not math.isnan(mandelbrot(0, x + 1j * y).real) else " "
                  for x in [a * 0.02 for a in range(-80, 30)]])
                  for y in [a * 0.05 for a in range(-20, 20)]])
-     )
+     ))

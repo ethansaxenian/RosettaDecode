@@ -11,11 +11,11 @@ def neg_fitness(trial):
 def mutate(parent):
     return [(choice(alphabet) if random() < p else ch) for ch in parent]
 
-parent = [choice(alphabet) for _ in xrange(len(target))]
+parent = [choice(alphabet) for _ in range(len(target))]
 i = 0
-print "%3d" % i, "".join(parent)
+print("%3d" % i, "".join(parent))
 while parent != target:
-    copies = (mutate(parent) for _ in xrange(c))
+    copies = (mutate(parent) for _ in range(c))
     parent = min(copies, key=neg_fitness)
-    print "%3d" % i, "".join(parent)
+    print("%3d" % i, "".join(parent))
     i += 1

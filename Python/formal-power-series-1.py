@@ -7,7 +7,7 @@ from itertools import islice
 from fractions import Fraction
 from functools import reduce
 try:
-    from itertools import izip as zip # for 2.6
+     # for 2.6
 except:
     pass
 

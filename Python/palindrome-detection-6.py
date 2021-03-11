@@ -2,7 +2,7 @@ def p_loop():
   import re, string
   re1=""       # Beginning of Regex
   re2=""       # End of Regex
-  pal=raw_input("Please Enter a word or phrase: ")
+  pal=input("Please Enter a word or phrase: ")
   pd = pal.replace(' ','')
   for c in string.punctuation:
      pd = pd.replace(c,"")
@@ -20,7 +20,7 @@ def p_loop():
   #print(regex)  # To test regex before re.search
   m = re.search(r'^'+regex,pd,re.IGNORECASE)
   if (m):
-     print("\n   "+'"'+pal+'"')
+     print(("\n   "+'"'+pal+'"'))
      print("   is a Palindrome\n")
      return 1
   else:

@@ -32,7 +32,7 @@ def takeNFibs(xs):
 def main():
     '''Various n-step sequences'''
 
-    print(
+    print((
         fTable(__doc__ + ':\n')(fst)(showList)(
             compose(flip(takeNFibs)(15))(snd)
         )([('Lucas', [2, 1])] + list(zip(
@@ -41,7 +41,7 @@ def main():
             )],
             [fibInit(n) for n in enumFromTo(2)(10)]
         )))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -91,7 +91,7 @@ def fTable(s):
     '''Heading -> x display function -> fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         ])

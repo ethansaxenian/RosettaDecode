@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 
 def fix(x):
@@ -10,7 +10,7 @@ class YahooSearch:
         self.query = query
         self.page = page
         self.url = "http://search.yahoo.com/search?p=%s&b=%s" %(self.query, ((self.page - 1) * 10 + 1))
-        self.content = urllib.urlopen(self.url).read()
+        self.content = urllib.request.urlopen(self.url).read()
 
     def getresults(self):
         self.results = []
@@ -42,4 +42,4 @@ class YahooResult:
 x = YahooSearch("test")
 
 for result in x.search_results:
-    print result.title
+    print(result.title)

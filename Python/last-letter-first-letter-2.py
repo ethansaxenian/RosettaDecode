@@ -29,7 +29,7 @@ def search(sequences, ord_minc, curr_word, current_path,
 def find_longest_chain(words):
     ord_minc = ord(min(word[0] for word in words))
     ord_maxc = ord(max(word[0] for word in words))
-    sequences = [[] for _ in xrange(ord_maxc - ord_minc + 1)]
+    sequences = [[] for _ in range(ord_maxc - ord_minc + 1)]
     for word in words:
         sequences[ord(word[0]) - ord_minc].append([word, False])
 
@@ -65,11 +65,11 @@ whismur wingull yamask""".lower().split()
     pokemon = sorted(set(pokemon))
 
     sol = find_longest_chain(pokemon)
-    print "Maximum path length:", len(sol)
-    print "Paths of that length:", nsolutions
-    print "Example path of that length:"
-    for i in xrange(0, len(sol), 7):
-        print " ", " ".join(sol[i : i+7])
+    print("Maximum path length:", len(sol))
+    print("Paths of that length:", nsolutions)
+    print("Example path of that length:")
+    for i in range(0, len(sol), 7):
+        print(" ", " ".join(sol[i : i+7]))
 
 psyco.full()
 main()

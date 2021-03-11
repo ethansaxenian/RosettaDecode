@@ -46,9 +46,9 @@ def nextPascal(xs):
 def main():
     '''First 16 Catalan numbers.'''
 
-    print(
+    print((
         nCatalans(16)
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------

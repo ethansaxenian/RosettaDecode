@@ -1,1 +1,1 @@
-print open('xxx.txt').readlines()[:7][-1]
+print(open('xxx.txt').readlines()[:7][-1])

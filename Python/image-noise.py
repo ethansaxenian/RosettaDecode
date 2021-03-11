@@ -1,6 +1,6 @@
 import time
 import random
-import Tkinter
+import tkinter
 import Image, ImageTk # PIL libray
 
 class App(object):
@@ -9,7 +9,7 @@ class App(object):
         self.root.title("Image Noise Test")
 
         self.img = Image.new("RGB", size)
-        self.label = Tkinter.Label(root)
+        self.label = tkinter.Label(root)
         self.label.pack()
 
         self.time = 0.0
@@ -24,7 +24,7 @@ class App(object):
         white = (255, 255, 255)
         black = (0, 0, 0)
         npixels = self.size[0] * self.size[1]
-        data = [white if rnd() > 0.5 else black for i in xrange(npixels)]
+        data = [white if rnd() > 0.5 else black for i in range(npixels)]
         self.img.putdata(data)
         self.pimg = ImageTk.PhotoImage(self.img)
         self.label["image"] = self.pimg
@@ -38,15 +38,15 @@ class App(object):
                 self.fps = self.frames / self.time
             except:
                 self.fps = "INSTANT"
-            print ("%d frames in %3.2f seconds (%s FPS)" %
-                  (self.frames, self.time, self.fps))
+            print(("%d frames in %3.2f seconds (%s FPS)" %
+                  (self.frames, self.time, self.fps)))
             self.time = 0
             self.frames = 0
 
         self.root.after(1, self.loop)
 
 def main():
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     app = App((320, 240), root)
     root.mainloop()
 

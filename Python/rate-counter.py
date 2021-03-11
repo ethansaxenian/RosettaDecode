@@ -19,9 +19,9 @@ class Tlogger(object):
 
     def report(self):
         if ( self.counts > 4*self.tottime):
-            print "Subtask execution rate: %f times/second"% (self.counts/self.tottime);
+            print("Subtask execution rate: %f times/second"% (self.counts/self.tottime));
         else:
-            print "Average execution time: %f seconds"%(self.tottime/self.counts);
+            print("Average execution time: %f seconds"%(self.tottime/self.counts));
         self.lastreport = time.time()
 
 
@@ -46,12 +46,12 @@ def main( ):
     timer = timeit.Timer(s)
     rzlts = timer.repeat(5, 5000)
     for t in rzlts:
-        print "Time for 5000 executions of statement = ",t
+        print("Time for 5000 executions of statement = ",t)
 
     # subprocess execution timing
-    print "#times:",sys.argv[1]
-    print "Command:",sys.argv[2:]
-    print ""
+    print("#times:",sys.argv[1])
+    print("Command:",sys.argv[2:])
+    print("")
     for k in range(3):
        taskTimer( int(sys.argv[1]), sys.argv[2:])
 

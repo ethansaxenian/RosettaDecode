@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from itertools import izip
+
 from math import fabs
 
 def degree(poly):
@@ -18,7 +18,7 @@ def poly_div(N, D):
             d = [0]*(dN - dD) + D
             mult = q[dN - dD] = N[-1] / float(d[-1])
             d = [coeff*mult for coeff in d]
-            N = [fabs ( coeffN - coeffd ) for coeffN, coeffd in izip(N, d)]
+            N = [fabs ( coeffN - coeffd ) for coeffN, coeffd in zip(N, d)]
             dN = degree(N)
         r = N
     else:
@@ -27,8 +27,8 @@ def poly_div(N, D):
     return q, r
 
 if __name__ == '__main__':
-    print "POLYNOMIAL LONG DIVISION"
+    print("POLYNOMIAL LONG DIVISION")
     N = [-42, 0, -12, 1]
     D = [-3, 1, 0, 0]
-    print "  %s / %s =" % (N,D),
-    print " %s remainder %s" % poly_div(N, D)
+    print("  %s / %s =" % (N,D), end=' ')
+    print(" %s remainder %s" % poly_div(N, D))

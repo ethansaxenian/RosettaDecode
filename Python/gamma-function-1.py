@@ -19,4 +19,4 @@ def gamma (x):
 
 if __name__ == '__main__':
     for i in range(1,11):
-        print "  %20.14e" % gamma(i/3.0)
+        print("  %20.14e" % gamma(i/3.0))

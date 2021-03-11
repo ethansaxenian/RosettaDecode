@@ -111,17 +111,17 @@ if __name__ == '__main__':
                 maxscore=20,
                 rounds=[])
     print('ONE GAME')
-    print('Winning order: %r; Respective scores: %r\n' % playpig(game))
+    print(('Winning order: %r; Respective scores: %r\n' % playpig(game)))
     print(game)
     game = Game(players=tuple(RandPlay(i) for i in range(playercount)),
                 maxscore=maxscore,
                 rounds=[])
     algos = (RollTo20, RandPlay, Desparat)
-    print('\n\nMULTIPLE STATISTICS using %r\n  for %i GAMES'
-          % (', '.join(p.__name__ for p in algos), maxgames,))
+    print(('\n\nMULTIPLE STATISTICS using %r\n  for %i GAMES'
+          % (', '.join(p.__name__ for p in algos), maxgames,)))
     winners = Counter(repr(playpig(game._replace(players=tuple(random.choice(algos)(i)
                                                                for i in range(playercount)),
                                                  rounds=[]))[0])
                       for i in range(maxgames))
-    print('  Players(position) winning on left; occurrences on right:\n    %s'
-          % ',\n    '.join(str(w) for w in winners.most_common()))
+    print(('  Players(position) winning on left; occurrences on right:\n    %s'
+          % ',\n    '.join(str(w) for w in winners.most_common())))

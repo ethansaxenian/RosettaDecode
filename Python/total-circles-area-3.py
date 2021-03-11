@@ -1,9 +1,9 @@
-from __future__ import division
+
 from math import sqrt
 from itertools import count
 from pprint import pprint as pp
 try:
-    from itertools import izip as zip
+    
 except:
     pass
 
@@ -75,10 +75,10 @@ def remove_covered_circles(circles):
     #pp(covered)
 
 def main(circles):
-    print('Originally %i circles' % len(circles))
-    print('Bounding box: %r' % (bounding_box(circles),))
+    print(('Originally %i circles' % len(circles)))
+    print(('Bounding box: %r' % (bounding_box(circles),)))
     remove_covered_circles(circles)
-    print('  down to %i  due to some being wholly covered by others' % len(circles))
+    print(('  down to %i  due to some being wholly covered by others' % len(circles)))
     minx, maxx, miny, maxy = bounding_box(circles)
     # Shift to 0,0 and compute r**2 once
     circles2 = [(x - minx, y - miny, r*r) for x, y, r in circles]
@@ -91,15 +91,15 @@ def main(circles):
             inside += 1
         if not pcount % 100000:
             area = (inside/pcount) * scalex * scaley
-            print('Points: %8i, Area estimate: %r'
-                  % (pcount, area))
+            print(('Points: %8i, Area estimate: %r'
+                  % (pcount, area)))
             # Hack to check if precision OK
             this = '%.4f' % area
             if this == last:
                 break
             else:
                 last = this
-    print('The value has settled to %s' % this)
+    print(('The value has settled to %s' % this))
 
 
 if __name__ == '__main__':

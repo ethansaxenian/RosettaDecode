@@ -5,4 +5,4 @@ class Multiply:
         return a * b
 
 multiply = Multiply()
-print multiply(2, 4)    # prints 8
+print(multiply(2, 4))    # prints 8

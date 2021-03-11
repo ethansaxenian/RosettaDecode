@@ -52,5 +52,5 @@ def solveApollonius(c1, c2, c3, s1, s2, s3):
 
 if __name__ == '__main__':
     c1, c2, c3 = Circle(0, 0, 1), Circle(4, 0, 1), Circle(2, 4, 2)
-    print(solveApollonius(c1, c2, c3, 1, 1, 1))    #Expects "Circle[x=2.00,y=2.10,r=3.90]" (green circle in image)
-    print(solveApollonius(c1, c2, c3, -1, -1, -1)) #Expects "Circle[x=2.00,y=0.83,r=1.17]" (red circle in image)
+    print((solveApollonius(c1, c2, c3, 1, 1, 1)))    #Expects "Circle[x=2.00,y=2.10,r=3.90]" (green circle in image)
+    print((solveApollonius(c1, c2, c3, -1, -1, -1))) #Expects "Circle[x=2.00,y=0.83,r=1.17]" (red circle in image)

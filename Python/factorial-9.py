@@ -22,6 +22,6 @@ def gamma(z):
 def factorial(n):
   return gamma(n+1)
 
-print "factorial(-0.5)**2=",factorial(-0.5)**2
+print("factorial(-0.5)**2=",factorial(-0.5)**2)
 for i in range(10):
-  print "factorial(%d)=%s"%(i,factorial(i))
+  print("factorial(%d)=%s"%(i,factorial(i)))

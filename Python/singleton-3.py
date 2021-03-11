@@ -5,5 +5,5 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class Logger(object):
-    __metaclass__ = Singleton
+class Logger(object, metaclass=Singleton):
+    pass

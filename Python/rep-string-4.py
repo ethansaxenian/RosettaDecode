@@ -20,6 +20,6 @@ def _checker(matchobj):
     return '%r is not a rep-string' % (g0,)
 
 def checkit(txt):
-    print(re.sub(r'(.+)(\1+)(.*)|(.*)', _checker, txt))
+    print((re.sub(r'(.+)(\1+)(.*)|(.*)', _checker, txt)))
 
 checkit(matchstr)

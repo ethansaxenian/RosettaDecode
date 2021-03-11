@@ -7,5 +7,5 @@ def identity(size):
 
     for rows in matrix:
         for elements in rows:
-            print elements,
-        print ""
+            print(elements, end=' ')
+        print("")

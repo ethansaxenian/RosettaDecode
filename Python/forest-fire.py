@@ -42,9 +42,9 @@ def quickprint(grid):
                 t += 1
                 if grid[(x,y)] == burning:
                     b += 1
-    print(('Of %6i cells, %6i are trees of which %6i are currently burning.'
+    print((('Of %6i cells, %6i are trees of which %6i are currently burning.'
           + ' (%6.3f%%, %6.3f%%)')
-          % (ll, t, b, 100. * t / ll, 100. * b / ll))
+          % (ll, t, b, 100. * t / ll, 100. * b / ll)))
 
 
 def gnew(grid):
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     iter = 0
     while True:
         quickprint(grid)
-        inp = raw_input('Print/Quit/<int>/<return> %6i: ' % iter).lower().strip()
+        inp = input('Print/Quit/<int>/<return> %6i: ' % iter).lower().strip()
         if inp:
             if inp[0] == 'p':
                 gprint(grid)

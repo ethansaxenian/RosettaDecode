@@ -22,5 +22,5 @@ if __name__ == '__main__':
     try:
         server.requestLoop()
     except KeyboardInterrupt:
-        print 'Exiting...'
+        print('Exiting...')
         server.shutdown()

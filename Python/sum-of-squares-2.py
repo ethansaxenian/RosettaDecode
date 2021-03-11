@@ -1,9 +1,9 @@
 # using lambda and map:
-sum(map(lambda x: x * x, [1, 2, 3, 4, 5]))
+sum([x * x for x in [1, 2, 3, 4, 5]])
 # or
-sum(map(lambda x: x ** 2, [1, 2, 3, 4, 5]))
+sum([x ** 2 for x in [1, 2, 3, 4, 5]])
 # or
-sum(map(lambda x: pow(x, 2), [1, 2, 3, 4, 5]))
+sum([pow(x, 2) for x in [1, 2, 3, 4, 5]])
 
 # using pow and repeat
 from itertools import repeat
@@ -13,7 +13,7 @@ sum(map(pow, [1, 2, 3, 4, 5], repeat(2)))
 from itertools import starmap
 from operator import mul
 a = [1, 2, 3, 4, 5]
-sum(starmap(mul, zip(a, a)))
+sum(starmap(mul, list(zip(a, a))))
 
 # using reduce
 from functools import reduce

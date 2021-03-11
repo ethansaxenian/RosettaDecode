@@ -83,5 +83,5 @@ def input(events):
 
 
 while True:
-    input(pygame.event.get())
+    eval(input(pygame.event.get()))
     pygame.display.flip()

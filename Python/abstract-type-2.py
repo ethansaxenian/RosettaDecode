@@ -1,10 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
 
-class BaseQueue():
+class BaseQueue(metaclass=ABCMeta):
     """Abstract Class
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self):
         self.contents = list()
@@ -19,4 +18,4 @@ class BaseQueue():
 
     def Print_Contents(self):
         for i in self.contents:
-            print i,
+            print(i, end=' ')

@@ -9,7 +9,7 @@ def partitions(*args):
             for r in p(s0, *args[1:]):
                 res.append([c] + r)
         return res
-    s = range(sum(args))
+    s = list(range(sum(args)))
     return p(s, *args)
 
-print partitions(2, 0, 2)
+print(partitions(2, 0, 2))

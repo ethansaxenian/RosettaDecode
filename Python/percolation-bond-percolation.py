@@ -23,14 +23,14 @@ def pgrid(grid, percolated=None):
     cell, hwall, vwall = grid
     h, v, f = HVF
     for n in range(N):
-        print('    ' + ''.join(h[hwall[n][m]] for m in range(M)))
-        print('%i)  ' % (n % 10) + ''.join(v[vwall[n][m]] + f[cell[n][m] if m < M else 0]
-                                          for m in range(M+1))[:-1])
+        print(('    ' + ''.join(h[hwall[n][m]] for m in range(M))))
+        print(('%i)  ' % (n % 10) + ''.join(v[vwall[n][m]] + f[cell[n][m] if m < M else 0]
+                                          for m in range(M+1))[:-1]))
     n = N
-    print('    ' + ''.join(h[hwall[n][m]] for m in range(M)))
+    print(('    ' + ''.join(h[hwall[n][m]] for m in range(M))))
     if percolated:
         where = percolated.args[0][0]
-        print('!)  ' + '  ' * where + ' ' + f[1])
+        print(('!)  ' + '  ' * where + ' ' + f[1]))
 
 def pour_on_top(grid):
     cell, hwall, vwall = grid
@@ -75,9 +75,9 @@ if __name__ == '__main__':
             if percolated:
                 pcount[p] += 1
                 if not sample_printed:
-                    print('\nSample percolating %i x %i grid' % (M, N))
+                    print(('\nSample percolating %i x %i grid' % (M, N)))
                     pgrid(grid, percolated)
                     sample_printed = True
-    print('\n p: Fraction of %i tries that percolate through' % t )
+    print(('\n p: Fraction of %i tries that percolate through' % t ))
 
-    pp({p:c/float(t) for p, c in pcount.items()})
+    pp({p:c/float(t) for p, c in list(pcount.items())})

@@ -13,7 +13,7 @@ def best_shuffle(s):
         # Find the best character to replace x.
         best = None
         rankb = -2
-        for c, rankc in count.items():
+        for c, rankc in list(count.items()):
             # Prefer characters with more supply.
             # (Save characters with less supply.)
             # Avoid identical characters.
@@ -47,4 +47,4 @@ def best_shuffle(s):
 
 for s in "abracadabra", "seesaw", "elk", "grrrrrr", "up", "a":
     shuffled, score = best_shuffle(s)
-    print("%s, %s, (%d)" % (s, shuffled, score))
+    print(("%s, %s, (%d)" % (s, shuffled, score)))

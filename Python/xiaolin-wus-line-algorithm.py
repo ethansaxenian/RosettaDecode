@@ -4,7 +4,7 @@ algorithm
 usage: python xiaolinwu.py [output-file]
 
 """
-from __future__ import division
+
 import sys
 
 from PIL import Image
@@ -63,7 +63,7 @@ def draw_line(img, p1, p2, color):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print 'usage: python xiaolinwu.py [output-file]'
+        print('usage: python xiaolinwu.py [output-file]')
         sys.exit(-1)
 
     blue = (0, 0, 255)
@@ -75,4 +75,4 @@ if __name__ == '__main__':
     draw_line(img, (10, 10), (490, 490), yellow)
     filename = sys.argv[1]
     img.save(filename)
-    print 'image saved to', filename
+    print('image saved to', filename)

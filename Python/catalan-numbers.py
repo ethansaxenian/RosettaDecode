@@ -39,10 +39,10 @@ def catR2(n):
 if __name__ == '__main__':
     def pr(results):
         fmt = '%-10s %-10s %-10s'
-        print((fmt % tuple(c.__name__ for c in defs)).upper())
-        print(fmt % (('=' * 10,) * 3))
+        print(((fmt % tuple(c.__name__ for c in defs)).upper()))
+        print((fmt % (('=' * 10,) * 3)))
         for r in zip(*results):
-            print(fmt % r)
+            print((fmt % r))
 
     defs = (cat_direct, catR1, catR2)
     results = [tuple(c(i) for i in range(15)) for c in defs]

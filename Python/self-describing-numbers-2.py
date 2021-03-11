@@ -1,6 +1,6 @@
 def impl(d, c, m):
     if m < 0: return
-    if d == c[:len(d)]: print d
+    if d == c[:len(d)]: print(d)
     for i in range(c[len(d)],m+1):
         dd = d+[i]
         if i<len(dd) and c[i]==dd[i]: continue

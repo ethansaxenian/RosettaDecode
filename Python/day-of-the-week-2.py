@@ -19,13 +19,13 @@ def main():
         enumFromTo(2008)(2121)
     ))
     total = len(xs)
-    print(
+    print((
         fTable(main.__doc__ + ':\n\n' + '(Total ' + str(total) + ')\n')(
             lambda i: str(1 + i)
         )(str)(index(xs))(
             enumFromTo(0)(total - 1)
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -63,7 +63,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

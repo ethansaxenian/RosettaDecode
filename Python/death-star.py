@@ -3,7 +3,8 @@ import sys, math, collections
 Sphere = collections.namedtuple("Sphere", "cx cy cz r")
 V3 = collections.namedtuple("V3", "x y z")
 
-def normalize((x, y, z)):
+def normalize(xxx_todo_changeme):
+    (x, y, z) = xxx_todo_changeme
     len = math.sqrt(x**2 + y**2 + z**2)
     return V3(x / len, y / len, z / len)
 
@@ -25,10 +26,10 @@ def draw_sphere(k, ambient, light):
     pos = Sphere(20.0, 20.0, 0.0, 20.0)
     neg = Sphere(1.0, 1.0, -6.0, 20.0)
 
-    for i in xrange(int(math.floor(pos.cy - pos.r)),
+    for i in range(int(math.floor(pos.cy - pos.r)),
                     int(math.ceil(pos.cy + pos.r) + 1)):
         y = i + 0.5
-        for j in xrange(int(math.floor(pos.cx - 2 * pos.r)),
+        for j in range(int(math.floor(pos.cx - 2 * pos.r)),
                         int(math.ceil(pos.cx + 2 * pos.r) + 1)):
             x = (j - pos.cx) / 2.0 + 0.5 + pos.cx
 
@@ -61,7 +62,7 @@ def draw_sphere(k, ambient, light):
             intensity = int((1 - b) * len(shades))
             intensity = min(len(shades), max(0, intensity))
             sys.stdout.write(shades[intensity])
-        print
+        print()
 
 light = normalize(V3(-50, 30, 50))
 draw_sphere(2, 0.5, light)

@@ -2,19 +2,20 @@ from itertools import permutations
 from operator import mul
 from math import fsum
 from spermutations import spermutations
+from functools import reduce
 
 def prod(lst):
     return reduce(mul, lst, 1)
 
 def perm(a):
     n = len(a)
-    r = range(n)
+    r = list(range(n))
     s = permutations(r)
     return fsum(prod(a[i][sigma[i]] for i in r) for sigma in s)
 
 def det(a):
     n = len(a)
-    r = range(n)
+    r = list(range(n))
     s = spermutations(n)
     return fsum(sign * prod(a[i][sigma[i]] for i in r)
                 for sigma, sign in s)
@@ -42,4 +43,4 @@ if __name__ == '__main__':
         ):
         print('')
         pp(a)
-        print('Perm: %s Det: %s' % (perm(a), det(a)))
+        print(('Perm: %s Det: %s' % (perm(a), det(a))))

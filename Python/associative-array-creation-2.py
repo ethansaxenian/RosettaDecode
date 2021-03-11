@@ -9,12 +9,12 @@ d2 = dict(spam=1, eggs=2)
 
 # dictionaries from tuple list
 d1 = dict([('spam', 1), ('eggs', 2)])
-d2 = dict(zip(['spam', 'eggs'], [1, 2]))
+d2 = dict(list(zip(['spam', 'eggs'], [1, 2])))
 
 # iterating over keys
 for key in d:
-    print key, d[key]
+    print(key, d[key])
 
 # iterating over (key, value) pairs
-for key, value in d.iteritems():
-    print key, value
+for key, value in d.items():
+    print(key, value)

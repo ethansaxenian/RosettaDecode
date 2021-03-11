@@ -14,10 +14,10 @@ term_regex = r'''(?mx)
 def parse_sexp(sexp):
     stack = []
     out = []
-    if dbg: print("%-6s %-14s %-44s %-s" % tuple("term value out stack".split()))
+    if dbg: print(("%-6s %-14s %-44s %-s" % tuple("term value out stack".split())))
     for termtypes in re.finditer(term_regex, sexp):
-        term, value = [(t,v) for t,v in termtypes.groupdict().items() if v][0]
-        if dbg: print("%-7s %-14s %-44r %-r" % (term, value, out, stack))
+        term, value = [(t,v) for t,v in list(termtypes.groupdict().items()) if v][0]
+        if dbg: print(("%-7s %-14s %-44r %-r" % (term, value, out, stack)))
         if   term == 'brackl':
             stack.append(out)
             out = []
@@ -53,8 +53,8 @@ if __name__ == '__main__':
     sexp = ''' ( ( data "quoted data" 123 4.5)
          (data (123 (4.5) "(more" "data)")))'''
 
-    print('Input S-expression: %r' % (sexp, ))
+    print(('Input S-expression: %r' % (sexp, )))
     parsed = parse_sexp(sexp)
-    print("\nParsed to Python:", parsed)
+    print(("\nParsed to Python:", parsed))
 
-    print("\nThen back to: '%s'" % print_sexp(parsed))
+    print(("\nThen back to: '%s'" % print_sexp(parsed)))

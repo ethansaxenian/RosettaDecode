@@ -5,9 +5,9 @@ class List:
         self.prev = prev
 
     def append(self, data):
-        if self.next == None:
+        if self.__next__ == None:
             self.next = List(data, None, self)
-            return self.next
+            return self.__next__
         else:
             return self.next.append(data)
 
@@ -19,11 +19,11 @@ for i in [ 20, 30, 40 ]:
 # Traverse forwards
 node = head
 while node != None:
-    print(node.data)
-    node = node.next
+    print((node.data))
+    node = node.__next__
 
 # Traverse Backwards
 node = tail
 while node != None:
-    print(node.data)
+    print((node.data))
     node = node.prev

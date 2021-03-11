@@ -47,14 +47,14 @@ def tester(func=probchoice, items='good bad ugly'.split(),
 
   counter = defaultdict(int)
   it = func(items, probs)
-  for dummy in xrange(trials):
-    counter[it.next()] += 1
-  print "\n##\n## %s\n##" % func.func_name.upper()
-  print "Trials:              ", trials
-  print "Items:               ", ' '.join(items)
-  print "Target probability:  ", problist2string(probs)
-  print "Attained probability:", problist2string(
-    counter[x]/float(trials) for x in items)
+  for dummy in range(trials):
+    counter[next(it)] += 1
+  print("\n##\n## %s\n##" % func.__name__.upper())
+  print("Trials:              ", trials)
+  print("Items:               ", ' '.join(items))
+  print("Target probability:  ", problist2string(probs))
+  print("Attained probability:", problist2string(
+    counter[x]/float(trials) for x in items))
 
 if __name__ == '__main__':
   items = 'aleph beth gimel daleth he waw zayin heth'.split()

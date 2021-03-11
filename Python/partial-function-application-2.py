@@ -9,5 +9,5 @@ def f2(a): return a * a
 fsf1 = partial(fs, f1)
 fsf2 = partial(fs, f2)
 
-print fsf1(1, 2, 3, 4)
-print fsf2(1, 2, 3, 4)
+print(fsf1(1, 2, 3, 4))
+print(fsf2(1, 2, 3, 4))

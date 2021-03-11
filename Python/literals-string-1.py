@@ -3,5 +3,5 @@
 ' " '
 " ' "
 '\x20' == ' '
-u'unicode string'
-u'\u05d0' # unicode literal
+'unicode string'
+'\u05d0' # unicode literal

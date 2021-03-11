@@ -6,6 +6,6 @@ def sierpinski(n):
         SPACE = " " * (2 ** I)
         return [SPACE+X+SPACE for X in TRIANGLE] + [X+" "+X for X in TRIANGLE]
 
-    return functools.reduce(aggregate, range(n), ["*"])
+    return functools.reduce(aggregate, list(range(n)), ["*"])
 
-print("\n".join(sierpinski(4)))
+print(("\n".join(sierpinski(4))))

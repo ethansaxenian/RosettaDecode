@@ -26,9 +26,9 @@ def main():
         balls = random_balls()
         if not dutch_flag_check(balls):
             break
-    print("Original Ball order:", balls)
+    print(("Original Ball order:", balls))
     sorted_balls = dutch_flag_sort(balls)
-    print("Sorted Ball Order:", sorted_balls)
+    print(("Sorted Ball Order:", sorted_balls))
     assert dutch_flag_check(sorted_balls), 'Whoops. Not sorted!'
 
 if __name__ == '__main__':

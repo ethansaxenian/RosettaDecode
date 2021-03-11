@@ -19,7 +19,7 @@ def sedolCheckSumDigitLR(s):
     return bindLR(
         reduce(
             goLR,
-            zip(s, [1, 3, 1, 7, 3, 9]),
+            list(zip(s, [1, 3, 1, 7, 3, 9])),
             Right(0)
         )
     )(lambda d: Right(str((10 - (d % 10)) % 10)))
@@ -39,7 +39,7 @@ def sedolValLR(c):
 def main():
     '''Append checksums where valid.'''
 
-    print(
+    print((
         fTable(__doc__ + ':\n')(str)(
             either(str)(str)
         )(sedolCheckSumDigitLR)(
@@ -57,7 +57,7 @@ def main():
                B00030
             '''.split()
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -109,7 +109,7 @@ def fTable(s):
     '''Heading -> x display function -> fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         ])

@@ -1,4 +1,4 @@
-from __future__ import division  # Only necessary for Python 2.X
+  # Only necessary for Python 2.X
 
 from math import factorial
 from random import randrange
@@ -28,4 +28,4 @@ if __name__ == '__main__':
         avg = test(n, TIMES)
         theory = analytical(n)
         diff = (avg / theory - 1) * 100
-        print("%2d %8.4f %8.4f %6.3f%%" % (n, avg, theory, diff))
+        print(("%2d %8.4f %8.4f %6.3f%%" % (n, avg, theory, diff)))

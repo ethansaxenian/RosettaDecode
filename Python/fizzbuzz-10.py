@@ -6,23 +6,23 @@ from itertools import count, cycle, islice
 # fizzBuzz :: () -> Generator [String]
 def fizzBuzz():
     '''A non-finite stream of fizzbuzz terms.'''
-    return map(
+    return list(map(
         lambda f, b, n: (f + b) or n,
         cycle([''] * 2 + ['Fizz']),
         cycle([''] * 4 + ['Buzz']),
-        map(str, count(1))
-    )
+        list(map(str, count(1)))
+    ))
 
 
 # main :: IO ()
 def main():
     '''Display of first 100 terms of the fizzbuzz series.
     '''
-    print(unlines(
+    print((unlines(
         take(100)(
             fizzBuzz()
         )
-    ))
+    )))
 
 
 # GENERIC -------------------------------------------------

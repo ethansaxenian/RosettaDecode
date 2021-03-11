@@ -17,7 +17,7 @@
 
 '''
 
-from __future__ import division, print_function
+
 
 import ast
 import random
@@ -28,7 +28,7 @@ from itertools import permutations, product, \
 
 if sys.version_info[0] < 3:
     input = raw_input
-    from itertools import izip_longest as zip_longest
+    from itertools import zip_longest as zip_longest
 else:
     from itertools import zip_longest
 
@@ -42,7 +42,7 @@ def ask4():
     'get four random digits >0 from the player'
     digits = ''
     while len(digits) != 4 or not all(d in '123456789' for d in digits):
-        digits = input('Enter the digits to solve for: ')
+        digits = eval(input('Enter the digits to solve for: '))
         digits = ''.join(digits.strip().split())
     return list(digits)
 
@@ -132,7 +132,7 @@ def main():
     chk = ans = False
     while not (chk and ans == 24):
         trial += 1
-        answer = input("Expression %i: " % trial)
+        answer = eval(input("Expression %i: " % trial))
         chk = check(answer, digits)
         if answer == '?':
             solve(digits)

@@ -16,8 +16,8 @@ def range_extract(lst):
         i += 1
 
 def printr(ranges):
-    print( ','.join( (('%i-%i' % r) if len(r) == 2 else '%i' % r)
-                     for r in ranges ) )
+    print(( ','.join( (('%i-%i' % r) if len(r) == 2 else '%i' % r)
+                     for r in ranges ) ))
 
 if __name__ == '__main__':
     for lst in [[-8, -7, -6, -3, -2, -1, 0, 1, 3, 4, 5, 7,

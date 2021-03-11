@@ -18,12 +18,12 @@ def Kaprekar(n, base):
 def Find(m, n, base):
     return [encode(i, base) for i in range(m,n+1) if Kaprekar(encode(i, base), base)]
 
-m = int(raw_input('Where to start?\n'))
-n = int(raw_input('Where to stop?\n'))
-base = int(raw_input('Enter base:'))
+m = int(input('Where to start?\n'))
+n = int(input('Where to stop?\n'))
+base = int(input('Enter base:'))
 KNumbers = Find(m, n, base)
 for i in KNumbers:
-    print i
-print 'The number of Kaprekar Numbers found are',
-print len(KNumbers)
-raw_input()
+    print(i)
+print('The number of Kaprekar Numbers found are', end=' ')
+print(len(KNumbers))
+input()

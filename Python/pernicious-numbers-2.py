@@ -35,11 +35,11 @@ def main():
     '''First 25, and any in the range
        [888,888,877..888,888,888]
     '''
-    print(
+    print((
         take(25)(
             oeisA052294()
         )
-    )
+    ))
     print([
         x for x in enumFromTo(888888877)(
             888888888
@@ -85,10 +85,7 @@ def isPrime(n):
     if 0 == n % 3:
         return False
 
-    return not any(map(
-        lambda x: 0 == n % x or 0 == n % (2 + x),
-        range(5, 1 + int(n ** 0.5), 6)
-    ))
+    return not any([0 == n % x or 0 == n % (2 + x) for x in range(5, 1 + int(n ** 0.5), 6)])
 
 
 # take :: Int -> [a] -> [a]

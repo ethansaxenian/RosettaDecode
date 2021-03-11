@@ -1,6 +1,6 @@
 def _menu(items):
     for indexitem in enumerate(items):
-        print ("  %2i) %s" % indexitem)
+        print(("  %2i) %s" % indexitem))
 
 def _ok(reply, itemcount):
     try:
@@ -17,10 +17,10 @@ def selector(items, prompt):
     while not _ok(reply, itemcount):
         _menu(items)
         # Use input instead of raw_input for Python 3.x
-        reply = raw_input(prompt).strip()
+        reply = input(prompt).strip()
     return items[int(reply)]
 
 if __name__ == '__main__':
     items = ['fee fie', 'huff and puff', 'mirror mirror', 'tick tock']
     item = selector(items, 'Which is from the three pigs: ')
-    print ("You chose: " + item)
+    print(("You chose: " + item))

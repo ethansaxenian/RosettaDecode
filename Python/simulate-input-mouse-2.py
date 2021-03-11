@@ -15,7 +15,7 @@ def sine_mouse_wave():
     height /= 2
     height -= 10  # Stay in the screen bounds.
 
-    for x in xrange(width):
+    for x in range(width):
         y = int(height * math.sin((TWO_PI * x) / width) + height)
         autopy.mouse.move(x, y)
         time.sleep(random.uniform(0.001, 0.003))

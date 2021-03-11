@@ -7,4 +7,4 @@ for eachline in f:
         for eachchar in eachword:
             characters += 1
 
-print lines, words, characters
+print(lines, words, characters)

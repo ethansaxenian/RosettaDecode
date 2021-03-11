@@ -12,7 +12,7 @@ def chess2index(chess, boardsize=boardsize):
     return (x, y)
 
 def boardstring(board, boardsize=boardsize):
-    r = range(boardsize)
+    r = list(range(boardsize))
     lines = ''
     for y in r:
         lines += '\n' + ','.join('%2i' % board[(x,y)] if board[(x,y)] else '  '
@@ -45,21 +45,21 @@ def knights_tour(start, boardsize=boardsize, _debug=False):
     board[P] = move
     move += 1
     if _debug:
-        print(boardstring(board, boardsize=boardsize))
+        print((boardstring(board, boardsize=boardsize)))
     while move <= len(board):
         P = min(accessibility(board, P, boardsize))[1]
         board[P] = move
         move += 1
         if _debug:
-            print(boardstring(board, boardsize=boardsize))
-            input('\n%2i next: ' % move)
+            print((boardstring(board, boardsize=boardsize)))
+            eval(input('\n%2i next: ' % move))
     return board
 
 if __name__ == '__main__':
     while 1:
-        boardsize = int(input('\nboardsize: '))
+        boardsize = int(eval(input('\nboardsize: ')))
         if boardsize < 5:
             continue
-        start = input('Start position: ')
+        start = eval(input('Start position: '))
         board = knights_tour(start, boardsize)
-        print(boardstring(board, boardsize=boardsize))
+        print((boardstring(board, boardsize=boardsize)))

@@ -14,7 +14,7 @@ class Narcissistics:
         self.ord0 = ord('0')
 
     def check_perm(self, out = [0] * 10):
-        for i in xrange(10):
+        for i in range(10):
             out[i] = 0
 
         s = str(self.dsum[0])
@@ -25,7 +25,7 @@ class Narcissistics:
                 return
 
         if len(s) == self.len:
-            print self.dsum[0],
+            print(self.dsum[0], end=' ')
 
     def narc2(self, pos, d):
         if not pos:
@@ -43,16 +43,16 @@ class Narcissistics:
 
     def show(self, n):
         self.len = n
-        for i in xrange(len(self.power)):
+        for i in range(len(self.power)):
             self.power[i] = i ** n
         self.dsum[n] = 0
-        print "length %d:" % n,
+        print("length %d:" % n, end=' ')
         self.narc2(n, 9)
-        print
+        print()
 
 def main():
     narc = Narcissistics(14)
-    for i in xrange(1, narc.max_len + 1):
+    for i in range(1, narc.max_len + 1):
         narc.show(i)
 
 main()

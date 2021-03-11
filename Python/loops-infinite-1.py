@@ -1,2 +1,2 @@
 while 1:
-   print "SPAM"
+   print("SPAM")

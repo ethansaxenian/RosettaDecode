@@ -29,4 +29,4 @@ def A000631(k): return Z_S(2, A000642, k)
 
 def A000602(k): return A000642(k) + (A000642((k-1) // 2) if k % 2 == 1 else 0) - A000631(k-1)
 
-for k in range(500): print(k, A000602(k))
+for k in range(500): print((k, A000602(k)))

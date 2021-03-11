@@ -17,7 +17,7 @@ def anyvalidcomb(items, maxwt, val=0, wt=0):
                 yield this_comb + comb, value, weight
 
 maxwt = 400
-COMB, VAL, WT = range(3)
+COMB, VAL, WT = list(range(3))
 Item  = namedtuple('Items', 'name weight value number')
 items = [ Item(*x) for x in
           (
@@ -46,6 +46,6 @@ items = [ Item(*x) for x in
            ) ]
 
 bagged = max( anyvalidcomb(items, maxwt), key=lambda c: (c[VAL], -c[WT])) # max val or min wt if values equal
-print("Bagged the following %i items" % len(bagged[COMB]))
-print('\n\t'.join('%i off: %s' % (len(list(grp)), item.name) for item, grp in groupby(sorted(bagged[COMB]))))
-print("for a total value of %i and a total weight of %i" % bagged[1:])
+print(("Bagged the following %i items" % len(bagged[COMB])))
+print(('\n\t'.join('%i off: %s' % (len(list(grp)), item.name) for item, grp in groupby(sorted(bagged[COMB])))))
+print(("for a total value of %i and a total weight of %i" % bagged[1:]))

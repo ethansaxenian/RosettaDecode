@@ -22,10 +22,10 @@ x=str(time.ctime()).split()
 y=x[3].split(":")
 
 s=y[-1]
-y=map(binary,y[:-1])
+y=list(map(binary,y[:-1]))
 
-print bin_bit(y[0])
-print
-print bin_bit(y[1])
-print
-print secs(s)
+print(bin_bit(y[0]))
+print()
+print(bin_bit(y[1]))
+print()
+print(secs(s))

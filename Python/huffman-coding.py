@@ -3,7 +3,7 @@ from collections import defaultdict
 
 def encode(symb2freq):
     """Huffman encode the given dict mapping symbols to weights"""
-    heap = [[wt, [sym, ""]] for sym, wt in symb2freq.items()]
+    heap = [[wt, [sym, ""]] for sym, wt in list(symb2freq.items())]
     heapify(heap)
     while len(heap) > 1:
         lo = heappop(heap)
@@ -22,6 +22,6 @@ for ch in txt:
 # in Python 3.1+:
 # symb2freq = collections.Counter(txt)
 huff = encode(symb2freq)
-print "Symbol\tWeight\tHuffman Code"
+print("Symbol\tWeight\tHuffman Code")
 for p in huff:
-    print "%s\t%s\t%s" % (p[0], symb2freq[p[0]], p[1])
+    print("%s\t%s\t%s" % (p[0], symb2freq[p[0]], p[1]))

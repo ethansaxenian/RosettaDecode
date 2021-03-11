@@ -17,6 +17,6 @@ for k in [
     lambda x: x[0],          # unique first character (case-sensitive)
     lambda x: x[0].lower(),  # unique first character (case-insensitive)
 ]:
-    print (
+    print((
         nubByKey(k, xs)
-    )
+    ))

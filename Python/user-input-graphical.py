@@ -1,7 +1,7 @@
-import Tkinter,tkSimpleDialog
+import tkinter,tkinter.simpledialog
 
-root = Tkinter.Tk()
+root = tkinter.Tk()
 root.withdraw()
 
-number = tkSimpleDialog.askinteger("Integer", "Enter a Number")
-string = tkSimpleDialog.askstring("String", "Enter a String")
+number = tkinter.simpledialog.askinteger("Integer", "Enter a Number")
+string = tkinter.simpledialog.askstring("String", "Enter a String")

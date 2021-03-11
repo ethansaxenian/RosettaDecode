@@ -46,11 +46,11 @@ def main():
             i -= 1
         else:
             number[i] += 1
-            for j in xrange(i + 1, cache_size):
+            for j in range(i + 1, cache_size):
                 number[j] = number[i]
             i = cache_size - 1
             result += check(number)
 
-    print result
+    print(result)
 
 main()

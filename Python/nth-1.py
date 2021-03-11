@@ -5,4 +5,4 @@ def nth(n):
 
 if __name__ == '__main__':
     for j in range(0,1001, 250):
-        print(' '.join(nth(i) for i in list(range(j, j+25))))
+        print((' '.join(nth(i) for i in list(range(j, j+25)))))

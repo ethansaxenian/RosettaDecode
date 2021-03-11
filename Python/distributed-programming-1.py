@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import SimpleXMLRPCServer
+import xmlrpc.server
 
 class MyHandlerInstance:
     def echo(self, data):
@@ -19,7 +19,7 @@ def foo_function():
 HOST = "localhost"
 PORT = 8000
 
-server = SimpleXMLRPCServer.SimpleXMLRPCServer((HOST, PORT))
+server = xmlrpc.server.SimpleXMLRPCServer((HOST, PORT))
 
 # register built-in system.* functions.
 server.register_introspection_functions()
@@ -34,5 +34,5 @@ try:
     # serve forever
     server.serve_forever()
 except KeyboardInterrupt:
-    print 'Exiting...'
+    print('Exiting...')
     server.server_close()

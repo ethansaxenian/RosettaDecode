@@ -43,5 +43,5 @@ tyrogue vigoroth vulpix wailord wartortle whismur wingull yamask'''
     pokemon = pokemon.strip().lower().split()
     pokemon = sorted(set(pokemon))
     l = llfl(pokemon)
-    for i in range(0, len(l), 8): print(' '.join(l[i:i+8]))
-    print(len(l))
+    for i in range(0, len(l), 8): print((' '.join(l[i:i+8])))
+    print((len(l)))

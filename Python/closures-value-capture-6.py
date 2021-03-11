@@ -1,2 +1,2 @@
-funcs = map(lambda i: lambda: i * i, range(10))
-print funcs[3]() # prints 9
+funcs = [lambda: i * i for i in range(10)]
+print(funcs[3]()) # prints 9

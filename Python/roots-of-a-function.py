@@ -12,10 +12,10 @@ while x <= stop:
 
     if value == 0:
         # We hit a root
-        print "Root found at", x
+        print("Root found at", x)
     elif (value > 0) != sign:
         # We passed a root
-        print "Root found near", x
+        print("Root found near", x)
 
     # Update our sign
     sign = value > 0

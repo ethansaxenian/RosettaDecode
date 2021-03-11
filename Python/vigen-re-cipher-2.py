@@ -4,6 +4,6 @@ key = "VIGENERECIPHER"
 encr = encrypt(text, key)
 decr = decrypt(encr, key)
 
-print text
-print encr
-print decr
+print(text)
+print(encr)
+print(decr)

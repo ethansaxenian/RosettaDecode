@@ -47,11 +47,11 @@ if __name__ == '__main__':
          'kappa', 'lambda', 'mu', 'theta', 'zeta']
     )
 
-    print (
+    print((
         'Not found' if None is mb1 else (
             'Word found at index ' + str(mb1)
         )
-    )
+    ))
 
     # BINARY SEARCH FOR WORD OF GIVEN LENGTH (IN WORD-LENGTH SORTED LIST)
 
@@ -61,8 +61,8 @@ if __name__ == '__main__':
          'kappa', 'theta', 'lambda', 'epsilon']
     )
 
-    print (
+    print((
         'Not found' if None is mb2 else (
             'Word of given length found at index ' + str(mb2)
         )
-    )
+    ))

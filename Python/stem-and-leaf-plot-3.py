@@ -1,18 +1,16 @@
 from itertools import (groupby)
 from functools import (reduce)
+from functools import reduce
 
 
 # stemLeaf :: (String -> Int) -> (String -> String) -> String -> String
 def stemLeaf(f, g, s):
-    return '\n'.join(map(
-        lambda x: str(x[0]).rjust(2) + ' | ' +
-        reduce(lambda a, tpl: a + tpl[1] + ' ', x[1], ''),
-        (groupby(sorted(
-            map(lambda x: (f(x), g(x)), s.split())
+    return '\n'.join([str(x[0]).rjust(2) + ' | ' +
+        reduce(lambda a, tpl: a + tpl[1] + ' ', x[1], '') for x in (groupby(sorted(
+            [(f(x), g(x)) for x in s.split()]
         ),
             lambda x: x[0]
-        ))
-    ))
+        ))])
 
 
 # main :: IO()
@@ -31,7 +29,7 @@ def main():
          ' 105 57 122 109 124 115 43 120 43 27 27 18 28 48 125 107 114 34 133'
          ' 45 120 30 127 31 116 146')
 
-    print (stemLeaf(stem, leaf, s))
+    print((stemLeaf(stem, leaf, s)))
 
 
 main()

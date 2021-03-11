@@ -45,9 +45,9 @@ def cut_it(h, w):
         return count
 
 def main():
-    for w in xrange(1, 10):
-        for h in xrange(1, w + 1):
+    for w in range(1, 10):
+        for h in range(1, w + 1):
             if not((w * h) & 1):
-                print "%d x %d: %d" % (w, h, cut_it(w, h))
+                print("%d x %d: %d" % (w, h, cut_it(w, h)))
 
 main()

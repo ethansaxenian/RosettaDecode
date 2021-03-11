@@ -13,6 +13,6 @@ try:
     result = l.search_s(base, ldap.SCOPE_SUBTREE, criteria, attributes)
 
     results = [entry for dn, entry in result if isinstance(entry, dict)]
-    print results
+    print(results)
 finally:
     l.unbind()

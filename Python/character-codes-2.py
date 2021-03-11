@@ -1,2 +1,2 @@
-print ord(u'π')   # prints "960"
-print unichr(960) # prints "π"
+print(ord('π'))   # prints "960"
+print(chr(960)) # prints "π"

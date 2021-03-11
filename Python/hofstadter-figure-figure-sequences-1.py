@@ -33,7 +33,7 @@ ffs.s = [None, 2]
 if __name__ == '__main__':
     first10 = [ffr(i) for i in range(1,11)]
     assert first10 == [1, 3, 7, 12, 18, 26, 35, 45, 56, 69], "ffr() value error(s)"
-    print("ffr(n) for n = [1..10] is", first10)
+    print(("ffr(n) for n = [1..10] is", first10))
     #
     bin = [None] + [0]*1000
     for i in range(40, 0, -1):

@@ -1,5 +1,5 @@
 def insertion_sort(L):
-    for i in xrange(1, len(L)):
+    for i in range(1, len(L)):
         j = i-1
         key = L[i]
         while (L[j] > key) and (j >= 0):

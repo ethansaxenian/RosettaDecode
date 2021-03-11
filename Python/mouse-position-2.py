@@ -1,6 +1,6 @@
 #simple way of ,get cursor xy data
 
-from Tkinter import *
+from tkinter import *
 win=Tk()
 win.geometry("200x300")
 def xy(event):

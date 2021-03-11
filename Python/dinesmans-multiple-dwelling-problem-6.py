@@ -6,11 +6,11 @@ from itertools import chain, permutations
 # main :: IO ()
 def main():
     '''Solution or null result.'''
-    print(report(
+    print((report(
         concatMap(dinesman)(
-            permutations(range(1, 6))
+            permutations(list(range(1, 6)))
         )
-    ))
+    )))
 
 
 # dinesman :: (Int, Int, Int, Int, Int) -> [(Int, Int, Int, Int, Int)]
@@ -52,7 +52,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).
     '''
     return lambda xs: list(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 

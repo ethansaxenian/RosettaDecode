@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 def order_disjoint_list_items(data, items):
     #Modifies data list in-place

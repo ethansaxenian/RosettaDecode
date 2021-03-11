@@ -24,16 +24,16 @@ def fact():
 # main :: IO ()
 def main():
     '''Tests'''
-    print(
+    print((
         'Terms 0 thru 10 inclusive:\n  %r'
         % take(11)(leftFact())
-    )
+    ))
 
     print('\nTerms 20 thru 110 (inclusive) by tens:')
     for x in takeFromThenTo(20)(30)(110)(leftFact()):
         print(x)
 
-    print(
+    print((
         '\n\nDigit counts for terms 1k through 10k (inclusive) by k:\n  %r'
         % list(map(
             compose(len)(str),
@@ -41,7 +41,7 @@ def main():
                 leftFact()
             )
         ))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -57,7 +57,7 @@ def enumFrom(x):
     '''A non-finite stream of enumerable values,
        starting from the given value.'''
     return count(x) if isinstance(x, int) else (
-        map(chr, count(ord(x)))
+        list(map(chr, count(ord(x))))
     )
 
 

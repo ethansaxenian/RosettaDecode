@@ -11,6 +11,6 @@ for word in dictionary:
     if reversed_word in dictionary and word > reversed_word:
         results.append((word, reversed_word))
 
-print(len(results))
+print((len(results)))
 for words in random.sample(results, 5):
-    print(' '.join(words))
+    print((' '.join(words)))

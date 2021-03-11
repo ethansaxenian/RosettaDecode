@@ -7,9 +7,9 @@ from unicodedata import decomposition, name
 from pprint import pprint as pp
 
 commonleaders = ['the'] # lowercase leading words to ignore
-replacements = {u'ß': 'ss',  # Map single char to replacement string
-                u'ſ': 's',
-                u'ʒ': 's',
+replacements = {'ß': 'ss',  # Map single char to replacement string
+                'ſ': 's',
+                'ʒ': 's',
                 }
 
 hexdigits = set('0123456789abcdef')
@@ -28,7 +28,7 @@ def splitchar(c):
         if len(de)> 1 and 'PRECEDE' in n:
             # E.g. ŉ  LATIN SMALL LETTER N PRECEDED BY APOSTROPHE
             de[1], de[0] = de[0], de[1]
-        tmp = [ unichr(int(k, 16)) for k in de]
+        tmp = [ chr(int(k, 16)) for k in de]
         base, others = tmp[0], tmp[1:]
         if 'LIGATURE' in n:
             # Assume two character ligature
@@ -58,7 +58,7 @@ def sortkeygen(s):
         [u'x', 9, u'y', 99]
     '''
     # Ignore leading and trailing spaces
-    s = unicode(s).strip()
+    s = str(s).strip()
     # All space types are equivalent
     s = ' '.join(s.split())
     # case insentsitive
@@ -93,63 +93,63 @@ if __name__ == '__main__':
 
     ns = naturalsort
 
-    print '\n# Ignoring leading spaces'
+    print('\n# Ignoring leading spaces')
     txt = ['%signore leading spaces: 2%+i' % (' '*i, i-2) for i in range(4)]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Ignoring multiple adjacent spaces (m.a.s)'
+    print('\n# Ignoring multiple adjacent spaces (m.a.s)')
     txt = ['ignore m.a.s%s spaces: 2%+i' % (' '*i, i-2) for i in range(4)]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Equivalent whitespace characters'
+    print('\n# Equivalent whitespace characters')
     txt = ['Equiv.%sspaces: 3%+i' % (ch, i-3)
            for i,ch in enumerate(reversed(string.whitespace))]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Case Indepenent sort'
+    print('\n# Case Indepenent sort')
     s = 'CASE INDEPENENT'
     txt = [s[:i].lower() + s[i:] + ': 3%+i' % (i-3) for i in range(1,5)]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Numeric fields as numerics'
+    print('\n# Numeric fields as numerics')
     txt = ['foo100bar99baz0.txt', 'foo100bar10baz0.txt',
            'foo1000bar99baz10.txt', 'foo1000bar99baz9.txt']
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Title sorts'
+    print('\n# Title sorts')
     txt = ['The Wind in the Willows','The 40th step more',
                          'The 39 steps', 'Wanda']
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Equivalent accented characters (and case)'
+    print('\n# Equivalent accented characters (and case)')
     txt = ['Equiv. %s accents: 2%+i' % (ch, i-2)
-           for i,ch in enumerate(u'\xfd\xddyY')]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+           for i,ch in enumerate('\xfd\xddyY')]
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Separated ligatures'
-    txt = [u'\462 ligatured ij', 'no ligature',]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; pp(sorted(txt))
-    print 'Naturally sorted:'; pp(ns(txt))
+    print('\n# Separated ligatures')
+    txt = ['\462 ligatured ij', 'no ligature',]
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); pp(sorted(txt))
+    print('Naturally sorted:'); pp(ns(txt))
 
-    print '\n# Character replacements'
-    s = u'ʒſßs' # u'\u0292\u017f\xdfs'
+    print('\n# Character replacements')
+    s = 'ʒſßs' # u'\u0292\u017f\xdfs'
     txt = ['Start with an %s: 2%+i' % (ch, i-2)
            for i,ch in enumerate(s)]
-    print 'Text strings:'; pp(txt)
-    print 'Normally sorted :'; print '\n'.join(sorted(txt))
-    print 'Naturally sorted:'; print '\n'.join(ns(txt))
+    print('Text strings:'); pp(txt)
+    print('Normally sorted :'); print('\n'.join(sorted(txt)))
+    print('Naturally sorted:'); print('\n'.join(ns(txt)))

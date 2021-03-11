@@ -25,7 +25,7 @@ items = (
     ("socks", 4, 50), ("book", 30, 10),
     )
 bagged = max( anycomb(items), key=totalvalue) # max val or min wt if values equal
-print("Bagged the following items\n  " +
-      '\n  '.join(sorted(item for item,_,_ in bagged)))
+print(("Bagged the following items\n  " +
+      '\n  '.join(sorted(item for item,_,_ in bagged))))
 val, wt = totalvalue(bagged)
-print("for a total value of %i and a total weight of %i" % (val, -wt))
+print(("for a total value of %i and a total weight of %i" % (val, -wt)))

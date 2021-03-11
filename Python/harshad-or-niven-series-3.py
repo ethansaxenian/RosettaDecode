@@ -9,7 +9,7 @@ def harshads():
     def go(x):
         return [x] if 0 == (x % digitSum(x)) else []
     return chain.from_iterable(
-        map(go, count(1))
+        list(map(go, count(1)))
     )
 
 
@@ -34,14 +34,14 @@ def main():
             dropwhile(lambda x: 1000 >= x, xs)
         )
 
-    print(
+    print((
         fTable(__doc__ + ':\n')(
             lambda x: x.__name__
         )(showList)(lambda f: f(harshads()))([
             firstTwenty,
             firstAbove1000
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -111,7 +111,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

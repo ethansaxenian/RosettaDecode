@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from itertools import permutations
 from enum import Enum
 
@@ -18,7 +18,7 @@ def ok(conn, perm):
 
 
 def solve():
-    return [perm for perm in permutations(range(1, 9))
+    return [perm for perm in permutations(list(range(1, 9)))
             if all(ok(conn, perm) for conn in connections)]
 
 

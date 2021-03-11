@@ -1,2 +1,2 @@
 def spam():
-    raise SillyError, 'egg' # equivalent to raise SillyError('egg')
+    raise SillyError('egg') # equivalent to raise SillyError('egg')

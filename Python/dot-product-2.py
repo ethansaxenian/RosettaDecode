@@ -18,13 +18,13 @@ def dotProduct(xs):
 def main():
     '''Dot product of other vectors with [1, 3, -5]'''
 
-    print(
+    print((
         fTable(main.__doc__ + ':\n')(str)(str)(
             compose(
                 either(append('Undefined :: '))(str)
             )(dotProduct([1, 3, -5]))
         )([[4, -2, -1, 8], [4, -2], [4, 2, -1], [4, -2, -1]])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -76,7 +76,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

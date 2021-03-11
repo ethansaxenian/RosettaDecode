@@ -1,4 +1,4 @@
 def maxsubseq(seq):
-  return max((seq[begin:end] for begin in xrange(len(seq)+1)
-                             for end in xrange(begin, len(seq)+1)),
+  return max((seq[begin:end] for begin in range(len(seq)+1)
+                             for end in range(begin, len(seq)+1)),
              key=sum)

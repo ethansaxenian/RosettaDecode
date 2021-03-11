@@ -1,3 +1,4 @@
+from functools import reduce
 # deficientPerfectAbundantCountsUpTo :: Int -> (Int, Int, Int)
 def deficientPerfectAbundantCountsUpTo(n):
     '''Counts of deficient, perfect, and abundant
@@ -12,4 +13,4 @@ def deficientPerfectAbundantCountsUpTo(n):
             )
         )
 
-    return reduce(go, range(1, 1 + n), (0, 0, 0))
+    return reduce(go, list(range(1, 1 + n)), (0, 0, 0))

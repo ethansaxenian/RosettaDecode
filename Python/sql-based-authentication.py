@@ -20,7 +20,7 @@ def create_user(username, passwd):
     ''' if user was successfully created, returns its ID; returns None on error '''	
     db = connect_db()	
     if not db:	
-        print "Can't connect MySQL!"
+        print("Can't connect MySQL!")
         return None
 
     cursor = db.cursor()	
@@ -38,13 +38,13 @@ def create_user(username, passwd):
         db.close()
         return id[0]	
     except:	
-        print 'Username was already taken. Please select another'	
+        print('Username was already taken. Please select another')	
         return None
 
 def authenticate_user(username, passwd):	
     db = connect_db()	
     if not db:	
-        print "Can't connect MySQL!"
+        print("Can't connect MySQL!")
         return False
 
     cursor = db.cursor()	
@@ -73,10 +73,10 @@ if __name__ == '__main__':
 
     new_user_id = create_user(user, passwd)
     if new_user_id is None:
-        print 'Failed to create user %s' % user
+        print('Failed to create user %s' % user)
         sys.exit(1)
     auth = authenticate_user(user, passwd)	
     if auth:	
-        print 'User %s authenticated successfully' % user	
+        print('User %s authenticated successfully' % user)	
     else:	
-        print 'User %s failed' % user
+        print('User %s failed' % user)

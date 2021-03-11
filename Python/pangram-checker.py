@@ -6,4 +6,4 @@ def ispangram(sentence, alphabet=string.ascii_lowercase):
     alphaset = set(alphabet)
     return alphaset <= set(sentence.lower())
 
-print ( ispangram(input('Sentence: ')) )
+print(( ispangram(eval(input('Sentence: '))) ))

@@ -12,15 +12,15 @@ import random
 def worker(workernum, barrier):
     # task 1
     sleeptime = random.random()
-    print('Starting worker '+str(workernum)+" task 1, sleeptime="+str(sleeptime))
+    print(('Starting worker '+str(workernum)+" task 1, sleeptime="+str(sleeptime)))
     time.sleep(sleeptime)
-    print('Exiting worker'+str(workernum))
+    print(('Exiting worker'+str(workernum)))
     barrier.wait()
     # task 2
     sleeptime = random.random()
-    print('Starting worker '+str(workernum)+" task 2, sleeptime="+str(sleeptime))
+    print(('Starting worker '+str(workernum)+" task 2, sleeptime="+str(sleeptime)))
     time.sleep(sleeptime)
-    print('Exiting worker'+str(workernum))
+    print(('Exiting worker'+str(workernum)))
 
 barrier = threading.Barrier(3)
 

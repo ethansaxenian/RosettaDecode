@@ -27,8 +27,8 @@ a = np.array(((
 )))
 
 q, r = qr(a)
-print('q:\n', q.round(6))
-print('r:\n', r.round(6))
+print(('q:\n', q.round(6)))
+print(('r:\n', r.round(6)))
 
 # task 2: use qr decomp for polynomial regression example
 def polyfit(x, y, n):
@@ -42,4 +42,4 @@ def lsqr(a, b):
 x = np.array((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 y = np.array((1, 6, 17, 34, 57, 86, 121, 162, 209, 262, 321))
 
-print('\npolyfit:\n', polyfit(x, y, 2))
+print(('\npolyfit:\n', polyfit(x, y, 2)))

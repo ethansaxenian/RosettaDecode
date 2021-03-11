@@ -20,6 +20,6 @@ def raymonds_hamming():
 
     return result
 
-print list(islice(raymonds_hamming(), 20))
-print islice(raymonds_hamming(), 1689, 1690).next()
-print islice(raymonds_hamming(), 999999, 1000000).next()
+print(list(islice(raymonds_hamming(), 20)))
+print(next(islice(raymonds_hamming(), 1689, 1690)))
+print(next(islice(raymonds_hamming(), 999999, 1000000)))

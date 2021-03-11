@@ -9,4 +9,4 @@ def agm(a, g, tolerance=Decimal("1e-65")):
 
 
 getcontext().prec = 70
-print agm(Decimal(1), 1 / Decimal(2).sqrt())
+print(agm(Decimal(1), 1 / Decimal(2).sqrt()))

@@ -14,6 +14,6 @@ def stemleaf(x):
     for s in ((str(v),' '+str(v))[v<10] for v in x) : d[s[:-1]][s[-1]]+=1
     m=max(len(s) for s in d)
     for k in d:
-        print('%s%s | %s'%(' '*(m-len(k)),k,' '.join(sorted(d[k].elements()))))
+        print(('%s%s | %s'%(' '*(m-len(k)),k,' '.join(sorted(d[k].elements())))))
 
 stemleaf(x)

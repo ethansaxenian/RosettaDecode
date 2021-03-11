@@ -1,1 +1,1 @@
-FIRST_NAME, LAST_NAME, PHONE = range(3)
+FIRST_NAME, LAST_NAME, PHONE = list(range(3))

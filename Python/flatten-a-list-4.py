@@ -12,7 +12,7 @@ def flatten(x):
 
 def main():
     '''Test: flatten an arbitrarily nested list.'''
-    print(
+    print((
         fTable(__doc__ + ':')(showList)(showList)(
             flatten
         )([
@@ -21,7 +21,7 @@ def main():
             [[1], [[2]], [[[3, 4]]]],
             [[1], 2, [[3, 4], 5], [[[]]], [[[6]]], 7, 8, []]
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -39,7 +39,7 @@ def concatMap(f):
        wraps its output in a list,
        (using an empty list to represent computational failure).'''
     return lambda xs: list(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 
@@ -51,7 +51,7 @@ def fTable(s):
                  fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + (' -> ') + fxShow(f(x))
             for x in xs

@@ -15,7 +15,7 @@ def worker():
         try:
             if not running:
                 break
-            print '%s acquired semaphore' % me.getName()
+            print('%s acquired semaphore' % me.getName())
             time.sleep(2.0)
         finally:
             sem.release()

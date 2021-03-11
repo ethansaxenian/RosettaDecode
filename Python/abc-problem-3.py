@@ -15,4 +15,4 @@ def abc(w, blk):
 blocks = 'BO XK DQ CP NA GT RE TG QD FS JW HU VI AN OB ER FS LY PC ZM'.split()
 
 for w in ", A, bark, book, treat, common, SQUAD, conFUsEd".split(', '):
-    print '\'' + w + '\'' + ' ->', abc(w, blocks)
+    print('\'' + w + '\'' + ' ->', abc(w, blocks))

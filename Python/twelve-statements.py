@@ -18,12 +18,12 @@ constraintinfo = (
 
 def printer(st, matches):
     if False in matches:
-        print('Missed by one statement: %i, %s' % docs[matches.index(False)])
+        print(('Missed by one statement: %i, %s' % docs[matches.index(False)]))
     else:
         print('Full match:')
-    print('  ' + ', '.join('%i:%s' % (i, 'T' if t else 'F') for i, t in enumerate(st, 1)))
+    print(('  ' + ', '.join('%i:%s' % (i, 'T' if t else 'F') for i, t in enumerate(st, 1))))
 
-funcs, docs = zip(*constraintinfo)
+funcs, docs = list(zip(*constraintinfo))
 
 full, partial = [], []
 

@@ -36,10 +36,10 @@ def shuffle(board, count=1):
 
 
 def pr(board, comment=''):
-    print(str(comment))
-    print('     ' + ' '.join(ascii_lowercase[i] for i in range(N)))
-    print('  ' + '\n  '.join(' '.join(['%2s' % j] + [str(i) for i in line])
-                             for j, line in enumerate(board, 1)))
+    print((str(comment)))
+    print(('     ' + ' '.join(ascii_lowercase[i] for i in range(N))))
+    print(('  ' + '\n  '.join(' '.join(['%2s' % j] + [str(i) for i in line])
+                             for j, line in enumerate(board, 1))))
 
 def init(board):
     setbits(board, count=randrange(N)+1)
@@ -58,7 +58,7 @@ def flipcol(i):
         row[i] ^= 1
 
 if __name__ == '__main__':
-    print(__doc__ % (N, N))
+    print((__doc__ % (N, N)))
     target, prompt = init(board)
     pr(target, 'Target configuration is:')
     print('')
@@ -78,8 +78,8 @@ if __name__ == '__main__':
         elif ans == 'X':
             break
         else:
-            print("  I don't understand %r... Try again. "
-                  "(X to exit or T to show target)\n" % ans[:9])
+            print(("  I don't understand %r... Try again. "
+                  "(X to exit or T to show target)\n" % ans[:9]))
             turns -= 1
     else:
         print('\nWell done!\nBye.')

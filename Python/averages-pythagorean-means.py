@@ -14,7 +14,7 @@ def hmean(num):
     return len(num) / sum(1 / n for n in num)
 
 
-numbers = range(1, 11)  # 1..10
+numbers = list(range(1, 11))  # 1..10
 a, g, h = amean(numbers), gmean(numbers), hmean(numbers)
-print(a, g, h)
+print((a, g, h))
 assert a >= g >= h

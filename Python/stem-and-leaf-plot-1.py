@@ -36,4 +36,4 @@ def stemplot(stem):
     return ''.join(out)
 
 if __name__ == '__main__':
-    print( stemplot(data0) )
+    print(( stemplot(data0) ))

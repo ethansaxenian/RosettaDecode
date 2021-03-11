@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     ai = Integrator(lambda t: sin(pi * t))
     sleep(2)
-    print ai.S
+    print((ai.S))
     ai.K = lambda t: 0
     sleep(0.5)
-    print ai.S
+    print((ai.S))

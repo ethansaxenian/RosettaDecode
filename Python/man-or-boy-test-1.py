@@ -10,4 +10,4 @@ def a(in_k, x1, x2, x3, x4, x5):
     return x4() + x5() if k[0] <= 0 else b()
 
 x = lambda i: lambda: i
-print(a(10, x(1), x(-1), x(-1), x(1), x(0)))
+print((a(10, x(1), x(-1), x(-1), x(1), x(0))))

@@ -14,9 +14,9 @@ except ImportError:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
-print "Press Y or N to continue"
+print("Press Y or N to continue")
 while True:
     char = getch()
     if char.lower() in ("y", "n"):
-        print char
+        print(char)
         break

@@ -13,13 +13,13 @@ def succString(blnPruned):
 
 # TEST ----------------------------------------------------
 def main():
-    print(
+    print((
         '\n'.join(
             [succString(bln)(
                 '41.0 pine martens in 1491 -1.5 mushrooms ≠ 136'
             ) for bln in [False, True]]
         )
-    )
+    ))
 
 
 # GENERIC ---------------------------------------------------

@@ -99,12 +99,12 @@ def find_nearest(k, t, p):
 
 
 def show_nearest(k, heading, kd, p):
-    print(heading + ":")
-    print("Point:           ", p)
+    print((heading + ":"))
+    print(("Point:           ", p))
     n = find_nearest(k, kd, p)
-    print("Nearest neighbor:", n.nearest)
-    print("Distance:        ", sqrt(n.dist_sqd))
-    print("Nodes visited:   ", n.nodes_visited, "\n")
+    print(("Nearest neighbor:", n.nearest))
+    print(("Distance:        ", sqrt(n.dist_sqd)))
+    print(("Nodes visited:   ", n.nodes_visited, "\n"))
 
 
 def random_point(k):

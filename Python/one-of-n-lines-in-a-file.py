@@ -14,7 +14,7 @@ def one_of_n_test(n=10, trials=1000000):
     bins = [0] * n
     if n:
         for i in range(trials):
-            bins[one_of_n(range(n))] += 1
+            bins[one_of_n(list(range(n)))] += 1
     return bins
 
-print(one_of_n_test())
+print((one_of_n_test()))

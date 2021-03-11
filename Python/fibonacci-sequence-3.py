@@ -3,6 +3,6 @@ def fibIter(n):
         return n
     fibPrev = 1
     fib = 1
-    for num in xrange(2, n):
+    for num in range(2, n):
         fibPrev, fib = fib, fib + fibPrev
     return fib

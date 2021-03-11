@@ -63,9 +63,9 @@ def times():
 
     functions = [bruteForceClosestPair, closestPair]
     for f in functions:
-        print 'Time for', f.__name__, timeit.Timer(
+        print('Time for', f.__name__, timeit.Timer(
             '%s(pointList)' % f.__name__,
-            'from closestpair import %s, pointList' % f.__name__).timeit(number=1)
+            'from closestpair import %s, pointList' % f.__name__).timeit(number=1))
 
 
 
@@ -73,15 +73,15 @@ pointList = [randint(0,1000)+1j*randint(0,1000) for i in range(2000)]
 
 if __name__ == '__main__':
     pointList = [(5+9j), (9+3j), (2+0j), (8+4j), (7+4j), (9+10j), (1+9j), (8+2j), 10j, (9+6j)]
-    print pointList
-    print '  bruteForceClosestPair:', bruteForceClosestPair(pointList)
-    print '            closestPair:', closestPair(pointList)
+    print(pointList)
+    print('  bruteForceClosestPair:', bruteForceClosestPair(pointList))
+    print('            closestPair:', closestPair(pointList))
     for i in range(10):
         pointList = [randrange(11)+1j*randrange(11) for i in range(10)]
-        print '\n', pointList
-        print ' bruteForceClosestPair:', bruteForceClosestPair(pointList)
-        print '           closestPair:', closestPair(pointList)
-    print '\n'
+        print('\n', pointList)
+        print(' bruteForceClosestPair:', bruteForceClosestPair(pointList))
+        print('           closestPair:', closestPair(pointList))
+    print('\n')
     times()
     times()
     times()

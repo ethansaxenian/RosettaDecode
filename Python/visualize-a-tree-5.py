@@ -192,7 +192,7 @@ def main():
         ])
     ])
 
-    print(
+    print((
         '\n\n'.join([
             'Fully compacted (parents not all centered):',
             drawTree2(True)(False)(
@@ -207,7 +207,7 @@ def main():
                 tree2
             )
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -235,7 +235,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).
     '''
     return lambda xs: list(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 

@@ -9,12 +9,12 @@ def count_changes(amount_cents, coins):
     # max([]) instead of max() for Psyco
     cycle = max([c+1 for c in coins if c <= amount_cents]) * n
     table = [0] * cycle
-    for i in xrange(n):
+    for i in range(n):
         table[i] = 1
 
     pos = n
-    for s in xrange(1, amount_cents + 1):
-        for i in xrange(n):
+    for s in range(1, amount_cents + 1):
+        for i in range(n):
             if i == 0 and pos >= cycle:
                 pos = 0
             if coins[i] <= s:
@@ -30,9 +30,9 @@ def main():
     eu_coins = [200, 100, 50, 20, 10, 5, 2, 1]
 
     for coins in (us_coins, eu_coins):
-        print count_changes(     100, coins[2:])
-        print count_changes(  100000, coins)
-        print count_changes( 1000000, coins)
-        print count_changes(10000000, coins), "\n"
+        print(count_changes(     100, coins[2:]))
+        print(count_changes(  100000, coins))
+        print(count_changes( 1000000, coins))
+        print(count_changes(10000000, coins), "\n")
 
 main()

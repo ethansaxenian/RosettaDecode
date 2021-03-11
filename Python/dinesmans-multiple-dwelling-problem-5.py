@@ -9,7 +9,7 @@ print([
         'Fletcher on ' + str(f),
         'Miller on ' + str(m),
         'Smith on ' + str(s)
-    ) for [b, c, f, m, s] in permutations(range(1, 6))
+    ) for [b, c, f, m, s] in permutations(list(range(1, 6)))
     if all([
         5 != b,
         1 != c,

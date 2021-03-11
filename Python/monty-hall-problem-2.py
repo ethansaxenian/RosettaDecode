@@ -28,6 +28,6 @@ for i in range(1000):
     if lst[0] == 1: # if the switched value is 1 then switch adds 1
         switch+=1
 
-print("Stay =",stay)
-print("Switch = ",switch)
+print(("Stay =",stay))
+print(("Switch = ",switch))
 #Done by Sam Witton 09/04/2014

@@ -36,7 +36,7 @@ def main():
     '''Tests of the partitions function'''
 
     f = partitions
-    print(
+    print((
         fTable(main.__doc__ + ':')(
             lambda x: '\n' + f.__name__ + '(' + repr(x) + ')'
         )(
@@ -47,7 +47,7 @@ def main():
             [2, 0, 2],
             [1, 1, 1]
         ])
-    )
+    ))
 
 
 # DISPLAY -------------------------------------------------
@@ -60,7 +60,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

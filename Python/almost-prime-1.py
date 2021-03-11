@@ -19,4 +19,4 @@ def almostprime(n, k=2):
 
 if __name__ == '__main__':
     for k in range(1, 6):
-        print('%i: %r' % (k, list(islice((n for n in count() if almostprime(n, k)), 10))))
+        print(('%i: %r' % (k, list(islice((n for n in count() if almostprime(n, k)), 10)))))

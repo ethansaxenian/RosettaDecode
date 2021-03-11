@@ -1,10 +1,11 @@
 from collections import namedtuple
 from functools import partial
-from itertools import repeat, imap, izip
+from itertools import repeat
 from decimal import Decimal, getcontext
 
 # Requires the egg: https://pypi.python.org/pypi/dmath/
 from dmath import atan2, asin, sin, cos, pi as piCompute
+from functools import reduce
 
 getcontext().prec = 40 # Set FP precision.
 sqrt = Decimal.sqrt
@@ -24,7 +25,7 @@ def vnorm(v):
     l = vlen(v)
     return Vec(v.x / l, v.y / l)
 
-vangle = lambda (x, y): atan2(y, x)
+vangle = lambda x_y: atan2(x_y[1], x_y[0])
 
 def anorm(a):
     if a > pi:  return a - pi * D2
@@ -33,7 +34,9 @@ def anorm(a):
 
 Circle = namedtuple("Circle", "x y r")
 
-def circle_cross((x0, y0, r0), (x1, y1, r1)):
+def circle_cross(xxx_todo_changeme, xxx_todo_changeme3):
+    (x0, y0, r0) = xxx_todo_changeme
+    (x1, y1, r1) = xxx_todo_changeme3
     d = vdist(Vec(x0, y0), Vec(x1, y1))
     if d >= r0 + r1 or d <= abs(r0 - r1):
         return []
@@ -47,7 +50,7 @@ def circle_cross((x0, y0, r0), (x1, y1, r1)):
           r0 ** 2 + d ** 2 > r1 ** 2 \
           else pi + vangle(dr)
     da = asin(h / r0)
-    return map(anorm, [ang - da, ang + da])
+    return list(map(anorm, [ang - da, ang + da]))
 
 # Angles of the start and end points of the circle arc.
 Angle2 = namedtuple("Angle2", "a1 a2")
@@ -57,16 +60,16 @@ Arc = namedtuple("Arc", "c aa")
 arcPoint = lambda (x, y, r), a: \
     vadd(Vec(x, y), Vec(r * cos(a), r * sin(a)))
 
-arc_start  = lambda (c, (a0, a1)):  arcPoint(c, a0)
-arc_mid    = lambda (c, (a0, a1)):  arcPoint(c, (a0 + a1) / D2)
-arc_end    = lambda (c, (a0, a1)):  arcPoint(c, a1)
-arc_center = lambda ((x, y, r), _): Vec(x, y)
+arc_start  = lambda c_a0_a1:  arcPoint(c_a0_a1[0], c_a0_a1[1][0])
+arc_mid    = lambda c_a0_a11:  arcPoint(c_a0_a11[0], (c_a0_a11[1][0] + c_a0_a11[1][1]) / D2)
+arc_end    = lambda c_a0_a12:  arcPoint(c_a0_a12[0], c_a0_a12[1][1])
+arc_center = lambda x_y_r__: Vec(x_y_r__[0][0], x_y_r__[0][1])
 
-arc_area = lambda ((_0, _1, r), (a0, a1)):  r ** 2 * (a1 - a0) / D2
+arc_area = lambda _0__1_r_a0_a1:  _0__1_r_a0_a1[0][2] ** 2 * (_0__1_r_a0_a1[1][1] - _0__1_r_a0_a1[1][0]) / D2
 
 def split_circles(cs):
-    cSplit = lambda (c, angs): \
-        imap(Arc, repeat(c), imap(Angle2, angs, angs[1:]))
+    cSplit = lambda c_angs: \
+        map(Arc, repeat(c_angs[0]), map(Angle2, c_angs[1], c_angs[1][1:]))
 
     # If an arc that was part of one circle is inside *another* circle,
     # it will not be part of the zero-winding path, so reject it.
@@ -81,9 +84,9 @@ def split_circles(cs):
     f = lambda c: \
         (c, sorted([-pi, pi] +
                    concat_map(partial(circle_cross, c), cs)))
-    cAngs = map(f, cs)
+    cAngs = list(map(f, cs))
     arcs = concat_map(cSplit, cAngs)
-    return filter(lambda ar: not in_any_circle(ar), arcs)
+    return [ar for ar in arcs if not in_any_circle(ar)]
 
 # Given a list of arcs, build sets of closed paths from them.
 # If one arc's end point is no more than 1e-4 from another's
@@ -112,7 +115,7 @@ def make_paths(arcs):
 def polyline_area(vvs):
     tri_area = lambda a, b, c: vcross(vsub(b, a), vsub(c, b)) / D2
     v, vs = vvs[0], vvs[1:]
-    return sum(tri_area(v, v1, v2) for v1, v2 in izip(vs, vs[1:]))
+    return sum(tri_area(v, v1, v2) for v1, v2 in zip(vs, vs[1:]))
 
 def path_area(arcs):
     f = lambda (a, e), arc: \
@@ -121,7 +124,7 @@ def path_area(arcs):
     return a + polyline_area(e)
 
 circles_area = lambda cs: \
-    sum(imap(path_area, make_paths(split_circles(cs))))
+    sum(map(path_area, make_paths(split_circles(cs))))
 
 def main():
     raw_circles = """\
@@ -151,8 +154,8 @@ def main():
         -0.6855727502  1.6465021616 1.0593087096
          0.0152957411  0.0638919221 0.9771215985""".splitlines()
 
-    circles = [Circle(*imap(Decimal, row.split()))
+    circles = [Circle(*map(Decimal, row.split()))
                for row in raw_circles]
-    print "Total Area:", circles_area(circles)
+    print("Total Area:", circles_area(circles))
 
 main()

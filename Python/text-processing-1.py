@@ -40,17 +40,17 @@ for line in fileinput.input():
   tot_file += tot_line
   num_file += num_line
 
-  print "Line: %11s  Reject: %2i  Accept: %2i  Line_tot: %10.3f  Line_avg: %10.3f" % (
+  print("Line: %11s  Reject: %2i  Accept: %2i  Line_tot: %10.3f  Line_avg: %10.3f" % (
         date,
         len(data) -num_line,
         num_line, tot_line,
-        tot_line/num_line if (num_line>0) else 0)
+        tot_line/num_line if (num_line>0) else 0))
 
-print ""
-print "File(s)  = %s" % (", ".join(infiles),)
-print "Total    = %10.3f" % (tot_file,)
-print "Readings = %6i" % (num_file,)
-print "Average  = %10.3f" % (tot_file / num_file,)
+print("")
+print("File(s)  = %s" % (", ".join(infiles),))
+print("Total    = %10.3f" % (tot_file,))
+print("Readings = %6i" % (num_file,))
+print("Average  = %10.3f" % (tot_file / num_file,))
 
-print "\nMaximum run(s) of %i consecutive false readings ends at line starting with date(s): %s" % (
-    nodata_max, ", ".join(nodata_maxline))
+print("\nMaximum run(s) of %i consecutive false readings ends at line starting with date(s): %s" % (
+    nodata_max, ", ".join(nodata_maxline)))

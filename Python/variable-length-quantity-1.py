@@ -20,4 +20,4 @@ def toint(vlq):
 
 def vlqsend(vlq):
     for i, byte in enumerate(vlq.split('_')[::-1]):
-        print('Sent byte {0:3}: {1:#04x}'.format(i, int(byte,2)))
+        print(('Sent byte {0:3}: {1:#04x}'.format(i, int(byte,2))))

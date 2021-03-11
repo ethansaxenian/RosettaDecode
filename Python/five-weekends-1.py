@@ -25,10 +25,10 @@ def fiveweekendspermonth(start=START, stop=STOP):
 
 dates = fiveweekendspermonth()
 indent = '  '
-print('There are %s months of which the first and last five are:' % len(dates))
-print(indent +('\n'+indent).join(d.strftime(FMT) for d in dates[:5]))
-print(indent +'...')
-print(indent +('\n'+indent).join(d.strftime(FMT) for d in dates[-5:]))
+print(('There are %s months of which the first and last five are:' % len(dates)))
+print((indent +('\n'+indent).join(d.strftime(FMT) for d in dates[:5])))
+print((indent +'...'))
+print((indent +('\n'+indent).join(d.strftime(FMT) for d in dates[-5:])))
 
-print('\nThere are %i years in the range that do not have months with five weekends'
-      % len(set(range(START.year, STOP.year)) - {d.year for d in dates}))
+print(('\nThere are %i years in the range that do not have months with five weekends'
+      % len(set(range(START.year, STOP.year)) - {d.year for d in dates})))

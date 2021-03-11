@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from string import ascii_lowercase
 
 SYMBOLTABLE = list(ascii_lowercase)

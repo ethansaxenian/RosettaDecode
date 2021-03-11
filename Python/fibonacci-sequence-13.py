@@ -8,4 +8,4 @@ def fib():
     while True:
         yield next(a)+next(b)
 
-print(tuple(islice(fib(), 10)))
+print((tuple(islice(fib(), 10))))

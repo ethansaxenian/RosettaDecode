@@ -27,7 +27,7 @@ def _test(consolidate=consolidate):
     assert (answer == [{'A', 'C', 'B', 'D', 'G', 'F', 'I', 'H', 'K'}])
     assert (len(list(itertools.permutations(sets))) == 720)
 
-    print('_test(%s) complete' % consolidate.__name__)
+    print(('_test(%s) complete' % consolidate.__name__))
 
 if __name__ == '__main__':
     _test(consolidate)

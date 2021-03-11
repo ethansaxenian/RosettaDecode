@@ -25,4 +25,4 @@ def abc(word, blocks=BLOCKS):
 
 if __name__ == '__main__':
     for word in [''] + 'A BARK BoOK TrEAT COmMoN SQUAD conFUsE'.split():
-        print('Can we spell %9r? %r' % (word, abc(word)))
+        print(('Can we spell %9r? %r' % (word, abc(word))))

@@ -15,5 +15,5 @@ def q1(n):
 
 if __name__ == '__main__':
     tmp = q1(100000)
-    print("Q(i+1) < Q(i) for i [1..100000] is true %i times." %
-          sum(k1 < k0 for k0, k1 in zip(q.seq[1:], q.seq[2:])))
+    print(("Q(i+1) < Q(i) for i [1..100000] is true %i times." %
+          sum(k1 < k0 for k0, k1 in zip(q.seq[1:], q.seq[2:]))))

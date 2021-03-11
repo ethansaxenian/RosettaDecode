@@ -8,4 +8,4 @@ def fibMemo():
 
 fm = fibMemo()
 for i in range(1,31):
-    print fm(i),
+    print(fm(i), end=' ')

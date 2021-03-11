@@ -11,18 +11,18 @@ def even(x):
 
 def ethiopian(multiplier, multiplicand):
     if tutor:
-        print("Ethiopian multiplication of %i and %i" %
-              (multiplier, multiplicand))
+        print(("Ethiopian multiplication of %i and %i" %
+              (multiplier, multiplicand)))
     result = 0
     while multiplier >= 1:
         if even(multiplier):
             if tutor:
-                print("%4i %6i STRUCK" %
-                      (multiplier, multiplicand))
+                print(("%4i %6i STRUCK" %
+                      (multiplier, multiplicand)))
         else:
             if tutor:
-                print("%4i %6i KEPT" %
-                      (multiplier, multiplicand))
+                print(("%4i %6i KEPT" %
+                      (multiplier, multiplicand)))
             result += multiplicand
         multiplier   = halve(multiplier)
         multiplicand = double(multiplicand)

@@ -1,3 +1,3 @@
-import tkMessageBox
+import tkinter.messagebox
 
-result = tkMessageBox.showinfo("Some Window Label", "Goodbye, World!")
+result = tkinter.messagebox.showinfo("Some Window Label", "Goodbye, World!")

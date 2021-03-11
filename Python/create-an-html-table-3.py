@@ -23,7 +23,7 @@ def attribString(dct):
     kvs = dct['kvs'] if 'kvs' in dct else None
     return ' ' + reduce(
         lambda a, k: a + k + '="' + kvs[k] + '" ',
-        kvs.keys(), ''
+        list(kvs.keys()), ''
     ).strip() if kvs else ''
 
 
@@ -37,11 +37,7 @@ def main():
     # Table details -------------------------------------
     strCaption = 'Table generated with Python'
     colNames = take(n)(enumFrom('A'))
-    dataRows = map(
-        lambda x: (x, map(
-            lambda _: random.randint(100, 9999),
-            colNames
-        )), take(n)(enumFrom(1)))
+    dataRows = [(x, [random.randint(100, 9999) for _ in colNames]) for x in take(n)(enumFrom(1))]
     tableStyle = {
         'style': "width:25%; border:2px solid silver;"
     }
@@ -74,10 +70,10 @@ def main():
         ) for tpl in dataRows)
     )
 
-    print(
+    print((
         treeHTML(tableTree)
         # dataRows
-    )
+    ))
 
 
 # GENERIC -----------------------------------------------
@@ -90,7 +86,7 @@ def Node(v):
 # enumFrom :: Enum a => a -> [a]
 def enumFrom(x):
     return itertools.count(x) if type(x) is int else (
-        map(chr, itertools.count(ord(x)))
+        list(map(chr, itertools.count(ord(x))))
     )
 
 

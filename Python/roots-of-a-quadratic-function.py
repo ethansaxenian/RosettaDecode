@@ -58,16 +58,16 @@ testcases = [
 
 print('Naive:')
 for c in testcases:
-    print("{} {:.5} {:.5}".format(*quad_discriminating_roots(*c)))
+    print(("{} {:.5} {:.5}".format(*quad_discriminating_roots(*c))))
 
 print('\nMiddlebrook:')
 for c in testcases:
-    print(("{:.5} "*2).format(*middlebrook(*c)))
+    print((("{:.5} "*2).format(*middlebrook(*c))))
 
 print('\nWhat Every...')
 for c in testcases:
-    print(("{:.5} "*2).format(*whatevery(*c)))
+    print((("{:.5} "*2).format(*whatevery(*c))))
 
 print('\nNumpy:')
 for c in testcases:
-    print(("{:.5} "*2).format(*numpy.roots(c)))
+    print((("{:.5} "*2).format(*numpy.roots(c))))

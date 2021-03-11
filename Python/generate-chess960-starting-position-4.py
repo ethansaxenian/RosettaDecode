@@ -28,4 +28,4 @@ def generate960():
     return  list(starts2)
 
 gen = generate960()
-print(''.join(choice(gen)))
+print((''.join(choice(gen))))

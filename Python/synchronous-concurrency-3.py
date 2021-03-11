@@ -2,7 +2,7 @@ def reader():
     for line in open('input.txt'):
         yield line.rstrip()
     count = yield None
-    print('Printed %d lines.' % count)
+    print(('Printed %d lines.' % count))
 
 r = reader()
 

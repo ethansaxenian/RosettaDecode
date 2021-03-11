@@ -1,8 +1,8 @@
 # Uneven list of lists
 uls = [[10, 11], [20], [], [30, 31, 32]]
 
-print (
+print((
     list(zip(*uls))
-)
+))
 
 #  --> []

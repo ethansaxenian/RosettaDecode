@@ -17,7 +17,7 @@ def cnRemainder(ms):
             return Right(
                 sum(map(
                     mul,
-                    cms, map(mul, rs, invs)
+                    cms, list(map(mul, rs, invs))
                 )) % mp
             )
         return bindLR(
@@ -54,7 +54,7 @@ def eGcd(a, b):
 def main():
     '''Tests of soluble and insoluble cases.'''
 
-    print(
+    print((
         fTable(
             __doc__ + ':\n\n         (moduli, residues) -> ' + (
                 'Either solution or explanation\n'
@@ -70,7 +70,7 @@ def main():
             ([3, 5, 7], [2, 3, 2]),
             ([2, 3, 2], [3, 5, 7])
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -140,7 +140,7 @@ def fTable(s):
                  fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + (' -> ') + fxShow(f(x))
             for x in xs
@@ -195,7 +195,7 @@ def zipWithEither(f):
        if any application of f returns no result.
     '''
     def go(xs, ys):
-        ls, rs = partitionEithers(map(f, xs, ys))
+        ls, rs = partitionEithers(list(map(f, xs, ys)))
         return Left(ls[0]) if ls else Right(rs)
     return lambda xs: lambda ys: go(xs, ys)
 

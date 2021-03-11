@@ -9,7 +9,7 @@ class LinkedList(object):
     node = self
     while node != None:
       yield node.value
-      node = node.next;
+      node = node.__next__;
 
 lst = LinkedList("big",  next=
   LinkedList(value="fjords",next=
@@ -19,5 +19,5 @@ lst = LinkedList("big",  next=
           LinkedList(value="nymph", next=None))))));
 
 for value in lst:
-  print value,;
-print
+  print(value, end=' ');
+print()

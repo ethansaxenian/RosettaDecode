@@ -1,10 +1,7 @@
 from operator import mul
 
 def matrixMul(m1, m2):
-  return map(
-    lambda row:
-      map(
+  return [list(map(
         lambda *column:
           sum(map(mul, row, column)),
-        *m2),
-    m1)
+        *m2)) for row in m1]

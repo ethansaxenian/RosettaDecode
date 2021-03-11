@@ -215,4 +215,4 @@ if __name__ == '__main__':
     cfg.enable_option('seedsremoved')
     cfg.enable_option('numberofbananas', 1024)
     cfg.enable_option('numberofstrawberries', 62000)
-    print cfg
+    print(cfg)

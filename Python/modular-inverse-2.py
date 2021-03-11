@@ -1,5 +1,6 @@
 from functools import (reduce)
 from itertools import (chain)
+from functools import reduce
 
 
 # modInv :: Int -> Int -> Maybe Int
@@ -33,7 +34,7 @@ def gcdExt(x):
 
 # main :: IO ()
 def main():
-    print (
+    print((
         mapMaybe(
             lambda y: bindMay(modInv(42)(y))(
                 lambda mInv: Just((y, mInv))
@@ -41,7 +42,7 @@ def main():
         )(
             enumFromTo(2010)(2025)
         )
-    )
+    ))
 
 # -> [(2011, 814), (2015, 48), (2017, 1969), (2021, 1203)]
 

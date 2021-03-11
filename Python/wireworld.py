@@ -65,6 +65,6 @@ ww = readfile(infile)
 infile.close()
 
 for gen in range(10):
-    print ( ("\n%3i " % gen) + '=' * (ww.w-4) + '\n' )
-    print ( world2string(ww) )
+    print(( ("\n%3i " % gen) + '=' * (ww.w-4) + '\n' ))
+    print(( world2string(ww) ))
     ww = nextgen(ww)

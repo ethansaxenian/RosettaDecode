@@ -15,7 +15,7 @@ dealt = 9
 
 ## Functions
 def printcard(card):
-    print(' '.join('%8s' % f[i] for f,i in zip(features, card)))
+    print((' '.join('%8s' % f[i] for f,i in zip(features, card))))
 
 def getdeal(dealt=dealt):
     deal = sample(deck, dealt)
@@ -30,9 +30,9 @@ def getsets(deal):
     return sets
 
 def printit(deal, sets):
-    print('Dealt %i cards:' % len(deal))
+    print(('Dealt %i cards:' % len(deal)))
     for card in deal: printcard(card)
-    print('\nFound %i sets:' % len(sets))
+    print(('\nFound %i sets:' % len(sets)))
     for s in sets:
         for card in s: printcard(card)
         print('')

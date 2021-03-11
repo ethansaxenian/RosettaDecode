@@ -1,3 +1,3 @@
 while(True):
-      x = input("What is your age? ")
+      x = eval(input("What is your age? "))
       print(x)

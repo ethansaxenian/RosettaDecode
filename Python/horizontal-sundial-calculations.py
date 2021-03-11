@@ -1,11 +1,11 @@
-from __future__ import print_function
+
 import math
 try: raw_input
 except: raw_input = input
 
-lat = float(raw_input("Enter latitude       => "))
-lng = float(raw_input("Enter longitude      => "))
-ref = float(raw_input("Enter legal meridian => "))
+lat = float(input("Enter latitude       => "))
+lng = float(input("Enter longitude      => "))
+ref = float(input("Enter legal meridian => "))
 print()
 
 slat = math.sin(math.radians(lat))

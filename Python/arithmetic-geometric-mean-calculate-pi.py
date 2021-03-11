@@ -10,4 +10,4 @@ for i in range(18):
     z -= var * var * n
     n += n
     a, g = x
-print(a * a / z)
+print((a * a / z))

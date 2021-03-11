@@ -14,11 +14,11 @@ def hough(im, ntx=460, mry=360):
     dr = rmax / (mry/2)
     dth = pi / ntx
 
-    for jx in xrange(nimx):
-        for iy in xrange(mimy):
+    for jx in range(nimx):
+        for iy in range(mimy):
             col = pim[jx, iy]
             if col == 255: continue
-            for jtx in xrange(ntx):
+            for jtx in range(ntx):
                 th = dth * jtx
                 r = jx*cos(th) + iy*sin(th)
                 iry = mry/2 + int(r/dr+0.5)

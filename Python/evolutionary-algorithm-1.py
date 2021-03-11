@@ -5,7 +5,7 @@ target  = list("METHINKS IT IS LIKE A WEASEL")
 charset = letters + ' '
 parent  = [choice(charset) for _ in range(len(target))]
 minmutaterate  = .09
-C = range(100)
+C = list(range(100))
 
 perfectfitness = float(len(target))
 
@@ -22,13 +22,13 @@ def mutate(parent, rate):
 
 def que():
     '(from the favourite saying of Manuel in Fawlty Towers)'
-    print ("#%-4i, fitness: %4.1f%%, '%s'" %
-           (iterations, fitness(parent)*100./perfectfitness, ''.join(parent)))
+    print(("#%-4i, fitness: %4.1f%%, '%s'" %
+           (iterations, fitness(parent)*100./perfectfitness, ''.join(parent))))
 
 def mate(a, b):
     place = 0
-    if choice(xrange(10)) < 7:
-        place = choice(xrange(len(target)))
+    if choice(range(10)) < 7:
+        place = choice(range(len(target)))
     else:
         return a, b
 

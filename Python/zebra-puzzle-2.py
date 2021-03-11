@@ -9,9 +9,9 @@ class Test: elems= "Drink Person Color Smoke Pet".split()
 class House: elems= "One Two Three Four Five".split()
 
 for c in (Content, Test, House):
-  c.values = range(len(c.elems))
+  c.values = list(range(len(c.elems)))
   for i, e in enumerate(c.elems):
-    exec "%s.%s = %d" % (c.__name__, e, i)
+    exec("%s.%s = %d" % (c.__name__, e, i))
 
 def finalChecks(M):
   def diff(a, b, ca, cb):
@@ -72,10 +72,10 @@ def constrained(M, atest):
 
 def show(M):
   for h in House.values:
-    print "%5s:" % House.elems[h],
+    print("%5s:" % House.elems[h], end=' ')
     for t in Test.values:
-      print "%10s" % Content.elems[M[t][h]],
-    print
+      print("%10s" % Content.elems[M[t][h]], end=' ')
+    print()
 
 def solve(M, t, n):
   if n == 1 and constrained(M, t):
@@ -85,13 +85,13 @@ def solve(M, t, n):
       show(M)
       return
 
-  for i in xrange(n):
+  for i in range(n):
     solve(M, t, n - 1)
     M[t][0 if n % 2 else i], M[t][n - 1] = \
       M[t][n - 1], M[t][0 if n % 2 else i]
 
 def main():
-  M = [[None] * len(Test.elems) for _ in xrange(len(House.elems))]
+  M = [[None] * len(Test.elems) for _ in range(len(House.elems))]
   for t in Test.values:
     for h in House.values:
       M[t][h] = Content.values[t * 5 + h]

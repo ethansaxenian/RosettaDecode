@@ -25,11 +25,11 @@ if __name__ == '__main__':
     for n in range(1, mx + 1):
         factors = pfactor(n)
         if n <= 10 or n >= mx - 20:
-            print( '%4i %5s %s' % (n,
+            print(( '%4i %5s %s' % (n,
                                    '' if factors != [n] or n == 1 else 'prime',
-                                   'x'.join(str(i) for i in factors)) )
+                                   'x'.join(str(i) for i in factors)) ))
         if n == 11:
             print('...')
 
-    print('\nNumber of primes gathered up to', n, 'is', len(primes))
-    print(pfactor.cache_info())
+    print(('\nNumber of primes gathered up to', n, 'is', len(primes)))
+    print((pfactor.cache_info()))

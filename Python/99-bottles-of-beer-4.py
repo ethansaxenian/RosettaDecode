@@ -49,7 +49,7 @@ def beer_song(
         liquid=liquid,
     )
 
-    verses = map(verse, range(initial_count, -1, -1))
+    verses = list(map(verse, list(range(initial_count, -1, -1))))
     return '\n\n'.join(verses)
 
 
@@ -125,4 +125,4 @@ def get_asset(
 
 
 if __name__ == '__main__':
-    print(beer_song())
+    print((beer_song()))

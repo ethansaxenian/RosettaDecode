@@ -5,6 +5,6 @@ def median(aray):
 
 
 a = (4.1, 5.6, 7.2, 1.7, 9.3, 4.4, 3.2)
-print a, median(a)
+print(a, median(a))
 a = (4.1, 7.2, 1.7, 9.3, 4.4, 3.2)
-print a, median(a)
+print(a, median(a))

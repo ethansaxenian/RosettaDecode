@@ -1,24 +1,25 @@
 from functools import (reduce)
 from operator import (add)
+from functools import reduce
 
 
 # pts :: Int -> [(Int, Int, Int)]
 def pts(n):
     m = 1 + n
-    return [(x, y, z) for x in xrange(1, m)
-            for y in xrange(x, m)
-            for z in xrange(y, m) if x**2 + y**2 == z**2]
+    return [(x, y, z) for x in range(1, m)
+            for y in range(x, m)
+            for z in range(y, m) if x**2 + y**2 == z**2]
 
 
 # pts2 :: Int -> [(Int, Int, Int)]
 def pts2(n):
     m = 1 + n
     return bindList(
-        xrange(1, m)
+        range(1, m)
     )(lambda x: bindList(
-        xrange(x, m)
+        range(x, m)
     )(lambda y: bindList(
-        xrange(y, m)
+        range(y, m)
     )(lambda z: [(x, y, z)] if x**2 + y**2 == z**2 else [])))
 
 
@@ -29,9 +30,9 @@ def pts3(n):
         lambda x: concatMap(
             lambda y: concatMap(
                 lambda z: [(x, y, z)] if x**2 + y**2 == z**2 else []
-            )(xrange(y, m))
-        )(xrange(x, m))
-    )(xrange(1, m))
+            )(range(y, m))
+        )(range(x, m))
+    )(range(1, m))
 
 
 # GENERIC ---------------------------------------------------------
@@ -39,7 +40,7 @@ def pts3(n):
 # concatMap :: (a -> [b]) -> [a] -> [b]
 def concatMap(f):
     return lambda xs: (
-        reduce(add, map(f, xs), [])
+        reduce(add, list(map(f, xs)), [])
     )
 
 
@@ -47,13 +48,13 @@ def concatMap(f):
 # bindList :: [a] -> (a -> [b])  -> [b]
 def bindList(xs):
     return lambda f: (
-        reduce(add, map(f, xs), [])
+        reduce(add, list(map(f, xs)), [])
     )
 
 
 def main():
     for f in [pts, pts2, pts3]:
-        print (f(20))
+        print((f(20)))
 
 
 main()

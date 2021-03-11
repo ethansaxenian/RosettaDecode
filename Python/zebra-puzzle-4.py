@@ -9,11 +9,11 @@ Pet    = ["Dog",        "Snails",   "Fox",          "Horse",       "Zebra"     ]
 Drink  = ["Tea",        "Coffee",   "Milk",         "Orangejuice", "Water"     ]
 
 # add variables: house numbers 1 to 5
-problem.addVariables(Nation, range(1,5+1))
-problem.addVariables(Color,  range(1,5+1))
-problem.addVariables(Smoke,  range(1,5+1))
-problem.addVariables(Pet,    range(1,5+1))
-problem.addVariables(Drink,  range(1,5+1))
+problem.addVariables(Nation, list(range(1,5+1)))
+problem.addVariables(Color,  list(range(1,5+1)))
+problem.addVariables(Smoke,  list(range(1,5+1)))
+problem.addVariables(Pet,    list(range(1,5+1)))
+problem.addVariables(Drink,  list(range(1,5+1)))
 
 # add constraint: the values in each list are exclusive
 problem.addConstraint(AllDifferentConstraint(), Nation)
@@ -58,4 +58,4 @@ for n in Pet:
 for n in Drink:
     drink[sol[n]] = n
 for d in [nation, color, smoke, pet, drink]:
-    print("%6s: %14s%14s%14s%14s%14s" % (d[0], d[1], d[2], d[3], d[4], d[5]))
+    print(("%6s: %14s%14s%14s%14s%14s" % (d[0], d[1], d[2], d[3], d[4], d[5])))

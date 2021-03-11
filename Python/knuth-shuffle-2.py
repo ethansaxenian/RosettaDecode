@@ -35,7 +35,7 @@ def swapped(xs, ij):
 def randoms(n):
     '''Pseudo-random list of n - 1 indices.
     '''
-    return list(map(randomRInt(0)(n - 1), range(1, n)))
+    return list(map(randomRInt(0)(n - 1), list(range(1, n))))
 
 
 # TEST ----------------------------------------------------
@@ -43,11 +43,11 @@ def randoms(n):
 def main():
     '''Repeated Knuth shuffles of ['a' .. 'k']'''
 
-    print(
+    print((
         fTable(main.__doc__ + ':\n')(str)(lambda x: ''.join(x))(
             lambda _: knuthShuffle(list('abcdefghijk'))
-        )(range(1, 11))
-    )
+        )(list(range(1, 11)))
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -80,7 +80,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

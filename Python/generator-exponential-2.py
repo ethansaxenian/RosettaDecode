@@ -12,13 +12,13 @@ def powers(n):
     def f(x):
         return pow(x, n)
 
-    return map(f, count(0))
+    return list(map(f, count(0)))
 
 
 # main :: IO ()
 def main():
     '''Taking the difference between two derived generators.'''
-    print(
+    print((
         take(10)(
             drop(20)(
                 differenceGen(powers(2))(
@@ -26,7 +26,7 @@ def main():
                 )
             )
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -37,7 +37,7 @@ def differenceGen(ga):
     '''All values of ga except any
        already seen in gb.'''
     def go(a, b):
-        stream = zip(a, b)
+        stream = list(zip(a, b))
         bs = set([])
         while True:
             xy = next(stream, None)

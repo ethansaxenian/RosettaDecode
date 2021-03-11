@@ -29,6 +29,6 @@ def zeckendorf(n):
     return digits
 
 n = 20
-print('Fibonacci digit multipliers: %r' % sequence_down_from_n(n, fib))
+print(('Fibonacci digit multipliers: %r' % sequence_down_from_n(n, fib)))
 for i in range(n + 1):
-    print('%3i: %8s' % (i, ''.join(str(d) for d in zeckendorf(i))))
+    print(('%3i: %8s' % (i, ''.join(str(d) for d in zeckendorf(i)))))

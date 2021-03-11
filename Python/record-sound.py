@@ -14,4 +14,4 @@ stream = p.open(format = FORMAT,
                 frames_per_buffer = chunk)
 
 data = stream.read(chunk)
-print [ord(i) for i in data]
+print([ord(i) for i in data])

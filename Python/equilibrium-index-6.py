@@ -22,7 +22,7 @@ def equilibriumIndices(xs):
 # main :: IO ()
 def main():
     '''Tabulated test results'''
-    print(
+    print((
         tabulated('Equilibrium indices:\n')(
             equilibriumIndices
         )([
@@ -33,7 +33,7 @@ def main():
             [1],
             []
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------

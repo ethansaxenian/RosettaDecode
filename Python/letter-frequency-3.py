@@ -20,5 +20,5 @@ def countletters(file_handle):
 if __name__ == "__main__":
     sourcedata = open(sys.argv[1])
     lettercounts = countletters(sourcedata)
-    for i in xrange(len(lettercounts)):
-        print "%s=%d" % (chr(i + ord('a')), lettercounts[i]),
+    for i in range(len(lettercounts)):
+        print("%s=%d" % (chr(i + ord('a')), lettercounts[i]), end=' ')

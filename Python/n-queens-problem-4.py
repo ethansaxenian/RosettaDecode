@@ -16,4 +16,4 @@ def solve(n):
 
 answers = solve(BOARD_SIZE)
 first_answer = next(answers)
-print(list(enumerate(first_answer, start=1)))
+print((list(enumerate(first_answer, start=1))))

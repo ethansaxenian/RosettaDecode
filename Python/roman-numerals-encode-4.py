@@ -19,4 +19,4 @@ if __name__ == "__main__":
      2000,2008,2500,3000,4000,4999,5000,6666,10000,50000,100000,500000,1000000);
 
   for val in test:
-    print("%8d %s" %(val, arabic_to_roman(val)))
+    print(("%8d %s" %(val, arabic_to_roman(val))))

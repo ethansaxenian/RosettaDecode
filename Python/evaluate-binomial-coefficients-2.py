@@ -16,8 +16,8 @@ def comb(n,r):
 
     if r > n-r:
         # r = n-r   for smaller intermediate values during computation
-        return ( reduce( mul, range((n - (n-r) + 1), n + 1), 1)
-                 // reduce( mul, range(1, (n-r) + 1), 1) )
+        return ( reduce( mul, list(range((n - (n-r) + 1), n + 1)), 1)
+                 // reduce( mul, list(range(1, (n-r) + 1)), 1) )
     else:
-        return ( reduce( mul, range((n - r + 1), n + 1), 1)
-                 // reduce( mul, range(1, r + 1), 1) )
+        return ( reduce( mul, list(range((n - r + 1), n + 1)), 1)
+                 // reduce( mul, list(range(1, r + 1)), 1) )

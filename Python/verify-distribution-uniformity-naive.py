@@ -9,7 +9,7 @@ def distcheck(fn, repeats, delta):
     target = repeats // len(bin)
     deltacount = int(delta / 100. * target)
     assert all( abs(target - count) < deltacount
-                for count in bin.values() ), "Bin distribution skewed from %i +/- %i: %s" % (
+                for count in list(bin.values()) ), "Bin distribution skewed from %i +/- %i: %s" % (
                     target, deltacount, [ (key, target - count)
                                           for key, count in sorted(bin.items()) ]
                     )

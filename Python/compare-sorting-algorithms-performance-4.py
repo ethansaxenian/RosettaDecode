@@ -5,8 +5,8 @@ def plotdd(dictplotdict):
    symbols = ('o', '^', 'v', '<', '>', 's', '+', 'x', 'D', 'd',
               '1', '2', '3', '4', 'h', 'H', 'p', '|', '_')
    colors = list('bgrcmyk') # split string on distinct characters
-   for npoints, plotdict in dictplotdict.iteritems():
-       for ttle, lst in plotdict.iteritems():
+   for npoints, plotdict in dictplotdict.items():
+       for ttle, lst in plotdict.items():
            pylab.hold(False)
            for i, (label, polynom, x, y) in enumerate(sorted(lst,key=operator.itemgetter(0))):
                pylab.plot(x, y, colors[i % len(colors)] + symbols[i % len(symbols)], label='%s %s' % (polynom, label))
@@ -20,4 +20,4 @@ def plotdd(dictplotdict):
            figname = '_%(npoints)03d%(ttle)s' % vars()
            pylab.savefig(figname+'.png')
            pylab.savefig(figname+'.pdf')
-           print figname
+           print(figname)

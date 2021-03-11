@@ -11,4 +11,4 @@ def roman_value(roman):
 
 if __name__=='__main__':
     for value in "MCMXC", "MMVIII", "MDCLXVI":
-        print('%s = %i' % (value, roman_value(value)))
+        print(('%s = %i' % (value, roman_value(value))))

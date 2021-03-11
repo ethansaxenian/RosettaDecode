@@ -25,13 +25,13 @@ def main():
     def f(x):
         return 1 / (x * x)
 
-    print(
+    print((
         fTable(
             __doc__ + ':\n' + '(1/x^2 over x = 1..1000)'
         )(lambda f: '\tby ' + f.__name__)(str)(
             lambda g: g(f)(enumFromTo(1)(1000))
         )([seriesSumA, seriesSumB])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -55,7 +55,7 @@ def fTable(s):
     '''Heading -> x display function -> fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + (
                 ' -> '

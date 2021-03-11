@@ -23,7 +23,7 @@ def combine( snl, snr ):
 		n = cl.get(snr, 0)
 		cl[snr] = n + 1
 	else:
-		for k,v in snr.items():
+		for k,v in list(snr.items()):
 			n = cl.get(k, 0)
 			cl[k] = n+v
 	return cl
@@ -39,7 +39,7 @@ def constrain(nsum, vn ):
 def makeMatrix( constraints ):
 	vmap = set()
 	for c in constraints:
-		vmap.update( c.keys())
+		vmap.update( list(c.keys()))
 	vmap.remove('1')
 	nvars = len(vmap)
 	vmap = sorted(vmap)		# sort here so output is in sorted order
@@ -52,9 +52,9 @@ def makeMatrix( constraints ):
 		mtx.append(row)
 	
 	if len(constraints) == nvars:
-		print 'System appears solvable'
+		print('System appears solvable')
 	elif len(constraints) < nvars:
-		print 'System is not solvable - needs more constraints.'
+		print('System is not solvable - needs more constraints.')
 	return mtx, vmap
 
 
@@ -74,10 +74,10 @@ def SolvePyramid( vl, cnstr ):
 			else:
 				constraints.append(constrain( sn, vn ))
 
-	print 'Constraint Equations:'
+	print('Constraint Equations:')
 	for cstr in constraints:
-		fset = ('%d*%s'%(v,k) for k,v in cstr.items() )
-		print ' + '.join(fset), ' = 0'
+		fset = ('%d*%s'%(v,k) for k,v in list(cstr.items()) )
+		print(' + '.join(fset), ' = 0')
 
 	mtx,vmap = makeMatrix(constraints)
 
@@ -85,7 +85,7 @@ def SolvePyramid( vl, cnstr ):
 
 	d = len(vmap)
 	for j in range(d):
-		print vmap[j],'=', mtx[j][d]
+		print(vmap[j],'=', mtx[j][d])
 
 
 def MtxSolve(mtx):

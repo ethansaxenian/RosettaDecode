@@ -21,4 +21,4 @@ br['pass'] = "xxxxxxxxx"
 br['persistent'] = ["1"]
 
 response = br.submit()
-print response.read()
+print(response.read())

@@ -1,4 +1,4 @@
 try:
-    print abs(bloop)
+    print(abs(bloop))
 except (NameError, TypeError):
-    print "Something's missing"
+    print("Something's missing")

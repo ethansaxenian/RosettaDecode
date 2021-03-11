@@ -35,7 +35,7 @@ def safe(iRow, iCol, pattern):
         return (iCol == sc) or (
             sc + sr == (iCol + iRow)
         ) or (sc - sr == (iCol - iRow))
-    return not any(map(p, pattern, range(0, iRow)))
+    return not any(map(p, pattern, list(range(0, iRow))))
 
 
 # TEST ----------------------------------------------------
@@ -46,18 +46,18 @@ def main():
     n = 5
     xs = queenPuzzle(n, n)
 
-    print(
+    print((
         str(len(xs)) + ' solutions for a {n} * {n} board:\n'.format(n=n)
-    )
-    print(showBoards(10)(xs))
+    ))
+    print((showBoards(10)(xs)))
 
-    print(
+    print((
         fTable(
             '\n\n' + main.__doc__ + ':\n'
         )(str)(lambda n: str(n).rjust(3, ' '))(
             lambda n: len(queenPuzzle(n, n))
         )(enumFromTo(1)(10))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -76,7 +76,7 @@ def chunksOf(n):
     '''
     return lambda xs: reduce(
         lambda a, i: a + [xs[i:n + i]],
-        range(0, len(xs), n), []
+        list(range(0, len(xs), n)), []
     ) if 0 < n else []
 
 
@@ -101,7 +101,7 @@ def showBoards(nCols):
        of a set of board patterns.
     '''
     def showBlock(b):
-        return '\n'.join(map(intercalate('  '), zip(*b)))
+        return '\n'.join(map(intercalate('  '), list(zip(*b))))
 
     def go(bs):
         return '\n\n'.join(map(
@@ -131,7 +131,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

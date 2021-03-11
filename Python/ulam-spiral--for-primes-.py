@@ -1,5 +1,5 @@
 # coding=UTF-8
-from __future__ import print_function, division
+
 from math import sqrt
 
 def cell(n, x, y, start=1):
@@ -30,7 +30,7 @@ def show_spiral(n, symbol='# ', start=1, space=None):
         print(''.join(cell_str(v) for v in [cell(n, x, y, start) for x in range(n)]))
     print()
 
-show_spiral(10, symbol=u'♞', space=u'♘') # black are the primes
+show_spiral(10, symbol='♞', space='♘') # black are the primes
 show_spiral(9, symbol='', space=' - ')
 # for filling giant terminals
 #show_spiral(1001, symbol='*', start=42)

@@ -5,4 +5,4 @@ def binomialCoeff(n, k):
     return result
 
 if __name__ == "__main__":
-    print(binomialCoeff(5, 3))
+    print((binomialCoeff(5, 3)))

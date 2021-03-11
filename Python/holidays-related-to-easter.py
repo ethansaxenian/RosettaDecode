@@ -21,14 +21,14 @@ def get_holiday_values(year):
     return holidays
 
 def print_holidays(holidays):
-    print '{year:4d} Easter: {easter}, Ascension: {ascension}, Pentecost: {pentecost}, Trinity: {trinity}, Corpus: {corpus}'.format(**holidays)
+    print('{year:4d} Easter: {easter}, Ascension: {ascension}, Pentecost: {pentecost}, Trinity: {trinity}, Corpus: {corpus}'.format(**holidays))
 
 if __name__ == "__main__":
-    print "Christian holidays, related to Easter, for each centennial from 400 to 2100 CE:"
+    print("Christian holidays, related to Easter, for each centennial from 400 to 2100 CE:")
     for year in range(400, 2200, 100):
         print_holidays(get_holiday_values(year))
 
-    print ''
-    print "Christian holidays, related to Easter, for years from 2010 to 2020 CE:"
+    print('')
+    print("Christian holidays, related to Easter, for years from 2010 to 2020 CE:")
     for year in range(2010, 2021):
         print_holidays(get_holiday_values(year))

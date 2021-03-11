@@ -2,6 +2,7 @@
 
 from functools import (reduce)
 from itertools import (islice)
+from functools import reduce
 
 
 # crc32 :: String -> Int
@@ -27,12 +28,12 @@ def crc32(s):
 # main :: IO ()
 def main():
     '''Test'''
-    print(
+    print((
         format(
             crc32('The quick brown fox jumps over the lazy dog'),
             '02x'
         )
-    )
+    ))
 
 
 # GENERIC ABSTRACTION -------------------------------------

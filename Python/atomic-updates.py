@@ -1,4 +1,4 @@
-from __future__ import with_statement  # required for Python 2.5
+  # required for Python 2.5
 
 import random
 import threading
@@ -54,8 +54,8 @@ def equalize(buckets):
 def print_state(buckets):
     snapshot = buckets.snapshot()
     for value in snapshot:
-        print '%2d' % value,
-    print '=', sum(snapshot)
+        print('%2d' % value, end=' ')
+    print('=', sum(snapshot))
 
 
 # create 15 buckets

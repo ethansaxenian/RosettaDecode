@@ -12,7 +12,7 @@ def sierpinski(n):
         return concatMap(lambda x: [s + x + s])(xs) + (
             concatMap(lambda x: [x + ' ' + x])(xs)
         )
-    return '\n'.join(reduce(go, range(n), '*'))
+    return '\n'.join(reduce(go, list(range(n)), '*'))
 
 
 # concatMap :: (a -> [b]) -> [a] -> [b]
@@ -24,8 +24,8 @@ def concatMap(f):
        empty list to represent computational failure).
     '''
     return lambda xs: (
-        reduce(add, map(f, xs), [])
+        reduce(add, list(map(f, xs)), [])
     )
 
 
-print(sierpinski(4))
+print((sierpinski(4)))

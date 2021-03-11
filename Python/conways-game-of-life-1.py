@@ -38,11 +38,11 @@ u[(1,0)], u[(1,1)], u[(1,2)] = 1,1,1
 #                       ) )  # returns 0 for out of bounds
 
 for i in range(maxgenerations):
-    print "\nGeneration %3i:" % ( i, )
+    print("\nGeneration %3i:" % ( i, ))
     for row in range(cellcount[1]):
-        print "  ", ''.join(str(universe[(row,col)])
+        print("  ", ''.join(str(universe[(row,col)])
                             for col in range(cellcount[0])).replace(
-                                '0', printdead).replace('1', printlive)
+                                '0', printdead).replace('1', printlive))
     nextgeneration = defaultdict(int)
     for row in range(cellcount[1]):
         for col in range(cellcount[0]):

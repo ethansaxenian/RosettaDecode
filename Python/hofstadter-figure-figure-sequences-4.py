@@ -18,9 +18,9 @@ def S():
 
 def lst(s, n): return list(islice(s(), n))
 
-print "R:", lst(R, 10)
-print "S:", lst(S, 10)
-print sorted(lst(R, 40) + lst(S, 960)) == list(range(1,1001))
+print("R:", lst(R, 10))
+print("S:", lst(S, 10))
+print(sorted(lst(R, 40) + lst(S, 960)) == list(range(1,1001)))
 
 # perf test case
 # print sum(lst(R, 10000000))

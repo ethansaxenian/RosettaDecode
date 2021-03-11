@@ -24,4 +24,4 @@ def strand_sort(a):
 		out = merge_list(out, strand(a))
 	return out
 
-print strand_sort([1, 6, 3, 2, 1, 7, 5, 3])
+print(strand_sort([1, 6, 3, 2, 1, 7, 5, 3]))

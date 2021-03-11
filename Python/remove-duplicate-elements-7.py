@@ -33,6 +33,6 @@ for eq in [
     lambda a, b: a[0] == b[0],             # unique first char (case-sensitive)
     lambda a, b: a[0].lower() == b[0].lower(),   # unique first char (any case)
 ]:
-    print (
+    print((
         nubByEq(eq, xs)
-    )
+    ))

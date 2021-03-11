@@ -1,6 +1,6 @@
 import random
-from Tkinter import *
-import tkMessageBox
+from tkinter import *
+import tkinter.messagebox
 
 
 class Application(Frame):
@@ -17,7 +17,7 @@ class Application(Frame):
         self.update_entry()
 
     def random(self):
-        if tkMessageBox.askyesno("Confirmation", "Reset to random value ?"):
+        if tkinter.messagebox.askyesno("Confirmation", "Reset to random value ?"):
             self.counter = random.randint(0, 5000)
             self.update_entry()
 
@@ -25,7 +25,7 @@ class Application(Frame):
         if not event.char:
             return 'break'
         if not event.char.isdigit():
-            tkMessageBox.showerror('Error', 'Invalid input !')
+            tkinter.messagebox.showerror('Error', 'Invalid input !')
             return 'break'
         self.counter = int('%s%s' % (self.contents.get(), event.char))
 

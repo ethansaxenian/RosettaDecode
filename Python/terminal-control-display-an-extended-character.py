@@ -1,1 +1,1 @@
-print u'\u00a3'
+print('\u00a3')

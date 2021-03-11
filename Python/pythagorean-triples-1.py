@@ -45,12 +45,12 @@ def pt2(maxperimeter=100):
 
 def printit(maxperimeter=100, pt=pt1):
     trips = pt(maxperimeter)
-    print("  Up to a perimeter of %i there are %i triples, of which %i are primitive"
+    print(("  Up to a perimeter of %i there are %i triples, of which %i are primitive"
           % (maxperimeter,
              len(trips),
-             len([prim for a,b,c,prim in trips if prim])))
+             len([prim for a,b,c,prim in trips if prim]))))
 
 for algo, mn, mx in ((pt1, 250, 2500), (pt2, 500, 20000)):
-    print(algo.__doc__)
+    print((algo.__doc__))
     for maxperimeter in range(mn, mx+1, mn):
         printit(maxperimeter, algo)

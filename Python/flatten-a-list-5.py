@@ -2,6 +2,7 @@
 
 from functools import (reduce)
 from itertools import (chain)
+from functools import reduce
 
 
 def flatten(xs):
@@ -20,11 +21,11 @@ def flatten(xs):
 def main():
     '''From nested list to flattened list'''
 
-    print(main.__doc__ + ':\n\n')
+    print((main.__doc__ + ':\n\n'))
     xs = [[1], 2, [[3, 4], 5], [[[]]], [[[6]]], 7, 8, []]
-    print(
+    print((
         repr(xs) + ' -> ' + repr(flatten(xs))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -37,7 +38,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).
     '''
     return lambda xs: list(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 

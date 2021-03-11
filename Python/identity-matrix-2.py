@@ -9,14 +9,11 @@ def idMatrix(n):
        expressed as a nested map.
     '''
     eq = curry(operator.eq)
-    xs = range(0, n)
-    return list(map(
-        lambda x: list(map(
+    xs = list(range(0, n))
+    return list([list(map(
             compose(int)(eq(x)),
             xs
-        )),
-        xs
-    ))
+        )) for x in xs])
 
 
 # idMatrix3 :: Int -> [[Int]]
@@ -24,7 +21,7 @@ def idMatrix2(n):
     '''Identity matrix of order n,
        expressed as a nested comprehension.
     '''
-    xs = range(0, n)
+    xs = list(range(0, n))
     return ([int(x == y) for x in xs] for y in xs)
 
 
@@ -35,10 +32,10 @@ def main():
         by two different routes.
     '''
     for f in [idMatrix, idMatrix2]:
-        print(
+        print((
             '\n' + f.__name__ + ':',
             '\n\n' + '\n'.join(map(str, f(5))),
-        )
+        ))
 
 
 # GENERIC -------------------------------------------------

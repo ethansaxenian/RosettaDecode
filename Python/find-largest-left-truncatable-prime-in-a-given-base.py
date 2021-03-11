@@ -48,4 +48,4 @@ def largest_left_truncatable_prime(base):
         radix += 1
 
 for b in range(3,24):
-    print("%d:%d\n" % (b,largest_left_truncatable_prime(b)))
+    print(("%d:%d\n" % (b,largest_left_truncatable_prime(b))))

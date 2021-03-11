@@ -1,4 +1,5 @@
 from functools import (reduce)
+from functools import reduce
 
 
 def main():
@@ -37,7 +38,7 @@ def ap(fs):
 def chunksOf(n):
     return lambda xs: reduce(
         lambda a, i: a + [xs[i:n + i]],
-        range(0, len(xs), n), []
+        list(range(0, len(xs), n)), []
     ) if 0 < n else []
 
 
@@ -48,7 +49,7 @@ def compose(g):
 
 # transpose :: [[a]] -> [[a]]
 def transpose(xs):
-    return list(map(list, zip(*xs)))
+    return list(map(list, list(zip(*xs))))
 
 
 if __name__ == '__main__':

@@ -1,2 +1,2 @@
 for i in collection:
-   print i
+   print(i)

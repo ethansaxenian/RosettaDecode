@@ -24,7 +24,7 @@ def try_swaps(deck, f, s, d, n):
 
     deck2 = list(deck)
     k = 1
-    for i2 in xrange(1, s):
+    for i2 in range(1, s):
         k <<= 1
         if deck2[i2] == -1:
             if f & k: continue
@@ -42,5 +42,5 @@ def topswops(n):
     try_swaps(deck0, 1, n, 0, n)
     return best[n]
 
-for i in xrange(1, 13):
-    print "%2d: %d" % (i, topswops(i))
+for i in range(1, 13):
+    print("%2d: %d" % (i, topswops(i)))

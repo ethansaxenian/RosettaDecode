@@ -1,4 +1,4 @@
-_rdecode = dict(zip('MDCLXVI', (1000, 500, 100, 50, 10, 5, 1)))
+_rdecode = dict(list(zip('MDCLXVI', (1000, 500, 100, 50, 10, 5, 1))))
 
 def decode( roman ):
     result = 0
@@ -9,4 +9,4 @@ def decode( roman ):
 
 if __name__ == '__main__':
     for r in 'MCMXC MMVIII MDCLXVI'.split():
-        print( r, decode(r) )
+        print(( r, decode(r) ))

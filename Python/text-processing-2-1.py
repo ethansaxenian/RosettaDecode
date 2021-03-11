@@ -1,6 +1,6 @@
 import re
 import zipfile
-import StringIO
+import io
 
 def munge2(readings):
 
@@ -19,21 +19,21 @@ def munge2(readings):
          all( valuPat.match(p[0]) for p in pairs ) and \
          all( statPat.match(p[1]) for p in pairs )
       if not lineFormatOk:
-         print 'Bad formatting', line
+         print('Bad formatting', line)
          continue
 		
       if len(pairs)!=24 or any( int(p[1]) < 1 for p in pairs ):
-         print 'Missing values', line
+         print('Missing values', line)
          continue
 
       if date in datestamps:
-         print 'Duplicate datestamp', line
+         print('Duplicate datestamp', line)
          continue
       datestamps.add(date)
       allOk += 1
 
-   print 'Lines with all readings: ', allOk
-   print 'Total records: ', totalLines
+   print('Lines with all readings: ', allOk)
+   print('Total records: ', totalLines)
 
 #zfs = zipfile.ZipFile('readings.zip','r')
 #readings = StringIO.StringIO(zfs.read('readings.txt'))

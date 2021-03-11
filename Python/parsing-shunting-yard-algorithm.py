@@ -21,7 +21,7 @@ def get_input(inp = None):
     'Inputs an expression and returns list of (TOKENTYPE, tokenvalue)'
 
     if inp is None:
-        inp = input('expression: ')
+        inp = eval(input('expression: '))
     tokens = inp.strip().split()
     tokenvals = []
     for token in tokens:
@@ -92,12 +92,12 @@ def shunting(tokenvals):
 
 if __name__ == '__main__':
     infix = '3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3'
-    print( 'For infix expression: %r\n' % infix )
+    print(( 'For infix expression: %r\n' % infix ))
     rp = shunting(get_input(infix))
     maxcolwidths = [len(max(x, key=len)) for x in zip(*rp)]
     row = rp[0]
-    print( ' '.join('{cell:^{width}}'.format(width=width, cell=cell) for (width, cell) in zip(maxcolwidths, row)))
+    print(( ' '.join('{cell:^{width}}'.format(width=width, cell=cell) for (width, cell) in zip(maxcolwidths, row))))
     for row in rp[1:]:
-        print( ' '.join('{cell:<{width}}'.format(width=width, cell=cell) for (width, cell) in zip(maxcolwidths, row)))
+        print(( ' '.join('{cell:<{width}}'.format(width=width, cell=cell) for (width, cell) in zip(maxcolwidths, row))))
 
-    print('\n The final output RPN is: %r' % rp[-1][2])
+    print(('\n The final output RPN is: %r' % rp[-1][2]))

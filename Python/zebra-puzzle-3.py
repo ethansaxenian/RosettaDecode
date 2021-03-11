@@ -9,16 +9,16 @@ class Nation:elems= "British Swedish Danish Norvegian German".split()
 
 for c in (Number, Color, Drink, Smoke, Pet, Nation):
   for i, e in enumerate(c.elems):
-    exec "%s.%s = %d" % (c.__name__, e, i)
+    exec("%s.%s = %d" % (c.__name__, e, i))
 
 def show_row(t, data):
-  print "%6s: %12s%12s%12s%12s%12s" % (
+  print("%6s: %12s%12s%12s%12s%12s" % (
     t.__name__, t.elems[data[0]],
     t.elems[data[1]], t.elems[data[2]],
-    t.elems[data[3]], t.elems[data[4]])
+    t.elems[data[3]], t.elems[data[4]]))
 
 def main():
-  perms = list(permutations(range(5)))
+  perms = list(permutations(list(range(5))))
   for number in perms:
     if number[Nation.Norvegian] == Number.One: # Constraint 10
       for color in perms:
@@ -39,13 +39,13 @@ def main():
                                     if pet[smoke.index(Smoke.PallMall)] == Pet.Bird: # Constraint 7
                                       if number[pet.index(Pet.Horse)] - number[smoke.index(Smoke.Dunhill)] in (1, -1): # Constraint 12
                                         if number[smoke.index(Smoke.Blend)] - number[pet.index(Pet.Cat)] in (1, -1): # Constraint 11
-                                          print "Found a solution:"
-                                          show_row(Nation, range(5))
+                                          print("Found a solution:")
+                                          show_row(Nation, list(range(5)))
                                           show_row(Number, number)
                                           show_row(Color, color)
                                           show_row(Drink, drink)
                                           show_row(Smoke, smoke)
                                           show_row(Pet, pet)
-                                          print
+                                          print()
 
 main()

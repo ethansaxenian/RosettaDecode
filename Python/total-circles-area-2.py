@@ -1,7 +1,8 @@
 from math import floor, ceil, sqrt
 
 def area_scan(prec, circs):
-    def sect((cx, cy, r), y):
+    def sect(xxx_todo_changeme, y):
+        (cx, cy, r) = xxx_todo_changeme
         dr = sqrt(r ** 2 - (y - cy) ** 2)
         return (cx - dr, cx + dr)
 
@@ -10,7 +11,7 @@ def area_scan(prec, circs):
     maxs = int(ceil(max(ys) / prec))
 
     total = 0
-    for y in (prec * x for x in xrange(mins, maxs + 1)):
+    for y in (prec * x for x in range(mins, maxs + 1)):
         right = -float("inf")
 
         for (x0, x1) in sorted(sect((cx, cy, r), y)
@@ -52,6 +53,6 @@ def main():
         ( 0.0152957411,  0.0638919221, 0.9771215985)]
 
     p = 1e-3
-    print "@stepsize", p, "area = %.4f" % area_scan(p, circles)
+    print("@stepsize", p, "area = %.4f" % area_scan(p, circles))
 
 main()

@@ -5,6 +5,6 @@ if __name__ == '__main__':
     data = list('123456789')
     while data == sorted(data):
         random.shuffle(data)
-    print('Original List: %r' % ' '.join(data))
+    print(('Original List: %r' % ' '.join(data)))
     pancakesort(data)
-    print('Pancake Sorted List: %r' % ' '.join(data))
+    print(('Pancake Sorted List: %r' % ' '.join(data)))

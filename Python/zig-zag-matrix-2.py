@@ -16,7 +16,7 @@ def zigzag(rows, columns):
     "ZigZag iterator, yields indices."
     x, y = 0, 0
     size = rows * columns
-    for _ in xrange(size):
+    for _ in range(size):
         yield y, x
         if (x + y) & 1:
             x, y = move(x, y, columns, rows)

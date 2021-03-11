@@ -16,7 +16,7 @@ def fibs(n):
     return [xy[1] for xy in accumulate(
         chain(
             [(0, 1)],
-            range(1, n)
+            list(range(1, n))
         ),
         go
     )]
@@ -24,8 +24,8 @@ def fibs(n):
 
 # MAIN ---
 if __name__ == '__main__':
-    print(
+    print((
         'First twenty: ' + repr(
             fibs(20)
         )
-    )
+    ))

@@ -16,7 +16,7 @@ table = [
     ]
 
 if __name__ == '__main__':
-    t = raw_input("Enter the text to convert :\n")
+    t = input("Enter the text to convert :\n")
     if not t :
         t = "PYTHON"
 
@@ -33,4 +33,4 @@ if __name__ == '__main__':
             begin = val*l
             end = val*l + l
             txt += table[i][begin:end]
-        print txt
+        print(txt)

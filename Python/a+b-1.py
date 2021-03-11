@@ -3,4 +3,4 @@ try:
 except:
     raw_input = input
 
-print(sum(map(int, raw_input().split())))
+print((sum(map(int, input().split()))))

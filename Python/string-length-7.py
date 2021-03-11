@@ -1,2 +1,2 @@
-print(len(b'Hello, World!'))
+print((len(b'Hello, World!')))
 # 13

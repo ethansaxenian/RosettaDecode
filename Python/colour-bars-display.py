@@ -10,7 +10,7 @@ stepik=horiz/len(NameColors)
 
 for index,each in enumerate(NameColors):
 	ExcStrng="set_colour(Colour."+each+")"
-	exec ExcStrng
+	exec(ExcStrng)
 	box(index*stepik,0,(index+1)*stepik,vert,filled=1)
 
 while keys_pressed() != ['x']: # press x key to terminate program

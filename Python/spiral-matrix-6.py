@@ -18,9 +18,9 @@ def spiral(n):
 def main():
     '''Spiral matrix of order 5, in wiki table markup'''
 
-    print(wikiTable(
+    print((wikiTable(
         spiral(5)
-    ))
+    )))
 
 
 # FORMATTING ----------------------------------------------

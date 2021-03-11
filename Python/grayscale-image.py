@@ -19,12 +19,12 @@ bitmap.set(3, 3, Colour(0, 127, 31))
 print('Colour:')
 # Write to the open 'file' handle
 bitmap.writeppmp3(ppmfileout)
-print(ppmfileout.getvalue())
+print((ppmfileout.getvalue()))
 print('Grey:')
 bitmap.togreyscale()
 ppmfileout = io.StringIO('')
 bitmap.writeppmp3(ppmfileout)
-print(ppmfileout.getvalue())
+print((ppmfileout.getvalue()))
 
 
 '''

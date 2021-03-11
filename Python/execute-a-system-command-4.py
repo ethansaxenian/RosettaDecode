@@ -1,4 +1,4 @@
-import commands
-stat, out = commands.getstatusoutput('ls')
+import subprocess
+stat, out = subprocess.getstatusoutput('ls')
 if not stat:
-    print out
+    print(out)

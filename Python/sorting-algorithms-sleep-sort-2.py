@@ -7,4 +7,4 @@ async def f(n):
     print(n)
 
 if __name__ == '__main__':
-    run(wait(list(map(f, map(int, argv[1:])))))
+    run(wait(list(map(f, list(map(int, argv[1:]))))))

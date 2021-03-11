@@ -64,20 +64,20 @@ def test1(comment, unranker, ranker):
         perms.append((r, perm))
     for r, pi in perms:
         pi1 = init_pi1(n, pi)
-        print('  From rank %2i to %r back to %2i' % (r, pi, ranker(n, pi[:], pi1)))
-    print('\n  %i random individual samples of %i items:' % (samplesize, n2))
+        print(('  From rank %2i to %r back to %2i' % (r, pi, ranker(n, pi[:], pi1))))
+    print(('\n  %i random individual samples of %i items:' % (samplesize, n2)))
     for r in get_random_ranks(n2, samplesize):
         pi = identity_perm(n2)
-        print('    ' + ' '.join('%2i' % i for i in unranker(n2, r, pi)))
+        print(('    ' + ' '.join('%2i' % i for i in unranker(n2, r, pi))))
     print('')
 
 def test2(comment, unranker):
     samplesize, n2 = 4, 144
     print(comment)
-    print('  %i random individual samples of %i items:' % (samplesize, n2))
+    print(('  %i random individual samples of %i items:' % (samplesize, n2)))
     for r in get_random_ranks(n2, samplesize):
         pi = identity_perm(n2)
-        print('    ' + '\n      '.join(wrap(repr(unranker(n2, r, pi)))))
+        print(('    ' + '\n      '.join(wrap(repr(unranker(n2, r, pi))))))
     print('')
 
 if __name__ == '__main__':

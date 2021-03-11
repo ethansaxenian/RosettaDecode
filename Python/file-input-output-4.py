@@ -5,5 +5,5 @@ try:
             for line in infile:
                 outfile.write(line)
 except IOError:
-    print >> sys.stderr, "Some I/O Error occurred"
+    print("Some I/O Error occurred", file=sys.stderr)
     sys.exit(1)

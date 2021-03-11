@@ -143,17 +143,17 @@ class App:
     def set_n(self,event):
         global n
         n = int(self.n.get())
-        print("n set to", n)
+        print(("n set to", n))
 
     def set_e(self, event):
         global e
         e = int(self.e.get())
-        print("e set to",e)
+        print(("e set to",e))
 
     def set_d(self,event):
         global d
         d = int(self.d.get())
-        print("d set to", d)
+        print(("d set to", d))
 
     def Decrypt(self):
         #decrypts an encoded message

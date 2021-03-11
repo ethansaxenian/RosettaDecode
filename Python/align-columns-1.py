@@ -15,5 +15,5 @@ for justify in "<_Left ^_Center >_Right".split():
     j, jtext = justify.split('_')
     print(f"{jtext} column-aligned output:\n")
     for line in parts:
-        print(' '.join(f"{wrd:{j}{wdth}}" for wdth, wrd in zip(widths, line)))
-    print("- " * 52)
+        print((' '.join(f"{wrd:{j}{wdth}}" for wdth, wrd in zip(widths, line))))
+    print(("- " * 52))

@@ -460,7 +460,7 @@ class Matrix2:
         if self.rows == 1:
             raise RuntimeError('Cannot find the minors of a 1 by 1 matrix')
         minors = Matrix2.Empty(self.rows,self.cols)
-        lines = range(self.rows)
+        lines = list(range(self.rows))
         x = 0
         while x < self.cols:
             y = 0

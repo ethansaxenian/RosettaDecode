@@ -83,15 +83,15 @@ def func(x):
 order=5
 [Ws,xs,err]=GaussLegendreWeights(order)
 if err==0:
-	print "Order    : ", order
-	print "Roots    : ", xs
-	print "Weights  : ", Ws
+	print("Order    : ", order)
+	print("Roots    : ", xs)
+	print("Weights  : ", Ws)
 else:
-	print "Roots/Weights evaluation failed"
+	print("Roots/Weights evaluation failed")
 
 # Integrating the function
 [ans,err]=GaussLegendreQuadrature(func , order, -3,3)
 if err==0:
-	print "Integral : ", ans
+	print("Integral : ", ans)
 else:
-	print "Integral evaluation failed"
+	print("Integral evaluation failed")

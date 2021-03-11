@@ -37,12 +37,9 @@ def main():
         25, 27, 28, 29, 30, 31, 32, 33, 35, 36,
         37, 38, 39
     ]
-    print(
-        __doc__ + ':\n[' + '\n'.join(map(
-            lambda x: ' ' + repr(x)[1:-1],
-            chunksOf(11)(xs)
-        )) + " ]\n\n        -> '" + rangeFormat(xs) + "'\n"
-    )
+    print((
+        __doc__ + ':\n[' + '\n'.join([' ' + repr(x)[1:-1] for x in chunksOf(11)(xs)]) + " ]\n\n        -> '" + rangeFormat(xs) + "'\n"
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -55,7 +52,7 @@ def chunksOf(n):
        the final list will be shorter than n.'''
     return lambda xs: reduce(
         lambda a, i: a + [xs[i:n + i]],
-        range(0, len(xs), n), []
+        list(range(0, len(xs), n)), []
     ) if 0 < n else []
 
 

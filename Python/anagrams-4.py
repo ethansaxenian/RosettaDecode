@@ -9,11 +9,11 @@ from os.path import expanduser
 def main():
     '''Largest anagram groups in local unixdict.txt'''
 
-    print(unlines(
+    print((unlines(
         largestAnagramGroups(
             lines(readFile('unixdict.txt'))
         )
-    ))
+    )))
 
 
 # largestAnagramGroups :: [String] -> [[String]]
@@ -41,10 +41,10 @@ def largestAnagramGroups(ws):
         )
     ))
 
-    intMax = max(map(len, groups))
+    intMax = max(list(map(len, groups)))
     return list(map(
         compose(unwords)(curry(map)(snd)),
-        filter(compose(curry(eq)(intMax))(len), groups)
+        list(filter(compose(curry(eq)(intMax))(len), groups))
     ))
 
 

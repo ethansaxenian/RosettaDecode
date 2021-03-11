@@ -22,7 +22,7 @@ class Poly:
             s.getsource()
             s.gen, self.gen = tee(s.gen, 2)
 
-    def next(self):
+    def __next__(self):
         self.getsource()
         return next(self.gen)
 
@@ -110,4 +110,4 @@ a678 = Poly(chain([0], S4(x1, x2, x3, x4)))
 a599 = S2(x1 - 1, x2 - 1)
 a602 = a678 - a599 + x2
 
-for n,x in zip(count(0), islice(a602, 500)): print(n,x)
+for n,x in zip(count(0), islice(a602, 500)): print((n,x))

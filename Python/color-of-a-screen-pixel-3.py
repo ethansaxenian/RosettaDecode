@@ -8,4 +8,4 @@ def get_pixel_colour(i_x, i_y):
 	lf_colour = PIL.ImageStat.Stat(o_pil_image_rgb).mean
 	return tuple(map(int, lf_colour))
 
-print get_pixel_colour(0, 0)
+print(get_pixel_colour(0, 0))

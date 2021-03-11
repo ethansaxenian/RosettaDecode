@@ -24,15 +24,15 @@ def sternBrocot():
 def main():
     '''Various tests'''
 
-    [eq, ne, gcd] = map(
+    [eq, ne, gcd] = list(map(
         curry,
         [operator.eq, operator.ne, math.gcd]
-    )
+    ))
 
     sbs = take(1200)(sternBrocot())
-    ixSB = zip(sbs, enumFrom(1))
+    ixSB = list(zip(sbs, enumFrom(1)))
 
-    print(unlines(map(str, [
+    print((unlines(list(map(str, [
 
         # First 15 members of the sequence.
         take(15)(sbs),
@@ -56,9 +56,9 @@ def main():
         # Is the gcd of any two consecutive members,
         # up to the 1000th member, always one ?
         every(compose(eq(1)(gcd)))(
-            take(1000)(zip(sbs, tail(sbs)))
+            take(1000)(list(zip(sbs, tail(sbs))))
         )
-    ])))
+    ])))))
 
 
 # GENERIC ABSTRACTIONS ------------------------------------
@@ -82,7 +82,7 @@ def enumFrom(x):
     '''A non-finite stream of enumerable values,
        starting from the given value.'''
     return count(x) if isinstance(x, int) else (
-        map(chr, count(ord(x)))
+        list(map(chr, count(ord(x))))
     )
 
 
@@ -140,10 +140,7 @@ def nubBy(p):
             return []
         x = xs[0]
         return [x] + go(
-            list(filter(
-                lambda y: not p(x)(y),
-                xs[1:]
-            ))
+            list([y for y in xs[1:] if not p(x)(y)])
         )
     return lambda xs: go(xs)
 

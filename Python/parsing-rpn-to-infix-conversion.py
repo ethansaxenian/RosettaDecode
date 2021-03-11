@@ -100,18 +100,18 @@ def rpn_to_infix(s, VERBOSE=False):
             stack.append(token)
 
         # can't use \t in order to make global docstring pass doctest
-        if VERBOSE : print(token+' '*(7-len(token))+repr(stack))
+        if VERBOSE : print((token+' '*(7-len(token))+repr(stack)))
 
     return str(stack[0])
 
 strTest = "3 4 2 * 1 5 - 2 3 ^ ^ / +"
 strResult = rpn_to_infix(strTest, VERBOSE=False)
-print ("Input: ",strTest)
-print ("Output:",strResult)
+print(("Input: ",strTest))
+print(("Output:",strResult))
 
 print()
 
 strTest = "1 2 + 3 4 + ^ 5 6 + ^"
 strResult = rpn_to_infix(strTest, VERBOSE=False)
-print ("Input: ",strTest)
-print ("Output:",strResult)
+print(("Input: ",strTest))
+print(("Output:",strResult))

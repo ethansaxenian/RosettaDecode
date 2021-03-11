@@ -1,2 +1,2 @@
-print len('ascii')
+print(len('ascii'))
 # 5

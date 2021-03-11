@@ -39,7 +39,7 @@ def count_only(x, y):
     if h & 1:
         w, h = h, w
 
-    vis = [[0] * (w + 1) for _ in xrange(h + 1)]
+    vis = [[0] * (w + 1) for _ in range(h + 1)]
     vis[h // 2][w // 2] = 1
 
     if w & 1:
@@ -62,9 +62,9 @@ def count_only(x, y):
     return res
 
 def main():
-    for y in xrange(1, 10):
-        for x in xrange(1, y + 1):
+    for y in range(1, 10):
+        for x in range(1, y + 1):
             if not (x & 1) or not (y & 1):
-                print "%d x %d: %d" % (y, x, count_only(x, y))
+                print("%d x %d: %d" % (y, x, count_only(x, y)))
 
 main()

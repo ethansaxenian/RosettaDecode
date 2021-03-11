@@ -9,4 +9,4 @@ def chain_insert(lst, at, item):
 
 chain = ['A', ['B', None]]
 chain_insert(chain, 'A', 'C')
-print chain
+print(chain)

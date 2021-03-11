@@ -5,7 +5,7 @@ height = [1.47, 1.50, 1.52, 1.55, 1.57, 1.60, 1.63,
 weight = [52.21, 53.12, 54.48, 55.84, 57.20, 58.57, 59.93,
     61.29, 63.11, 64.47, 66.28, 68.10, 69.92, 72.19, 74.46]
 
-X = np.array(height)[:, None]**range(3)
+X = np.array(height)[:, None]**list(range(3))
 y = weight
 
-print(np.linalg.lstsq(X, y)[0])
+print((np.linalg.lstsq(X, y)[0]))

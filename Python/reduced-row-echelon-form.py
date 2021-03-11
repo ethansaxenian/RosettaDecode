@@ -32,4 +32,4 @@ mtx = [
 ToReducedRowEchelonForm( mtx )
 
 for rw in mtx:
-  print ', '.join( (str(rv) for rv in rw) )
+  print(', '.join( (str(rv) for rv in rw) ))

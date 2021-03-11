@@ -15,6 +15,6 @@ def sleepsort(values):
 if __name__ == '__main__':
     x = [3,2,4,7,3,6,9,1]
     if sleepsort(x) == sorted(x):
-        print('sleep sort worked for:',x)
+        print(('sleep sort worked for:',x))
     else:
-        print('sleep sort FAILED for:',x)
+        print(('sleep sort FAILED for:',x))

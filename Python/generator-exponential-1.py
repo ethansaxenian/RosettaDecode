@@ -16,4 +16,4 @@ def filtered(s1, s2):
 
 squares, cubes = powers(2), powers(3)
 f = filtered(squares, cubes)
-print(list(islice(f, 20, 30)))
+print((list(islice(f, 20, 30))))

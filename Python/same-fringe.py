@@ -1,7 +1,7 @@
 try:
     from itertools import zip_longest as izip_longest # Python 3.x
 except:
-    from itertools import izip_longest                # Python 2.6+
+    from itertools import zip_longest                # Python 2.6+
 
 def fringe(tree):
     """Yield tree members L-to-R depth first,
@@ -15,7 +15,7 @@ def fringe(tree):
 
 def same_fringe(tree1, tree2):
     return all(node1 == node2 for node1, node2 in
-               izip_longest(fringe(tree1), fringe(tree2)))
+               zip_longest(fringe(tree1), fringe(tree2)))
 
 if __name__ == '__main__':
     a = 1, 2, 3, 4, 5, 6, 7, 8

@@ -7,11 +7,11 @@ from functools import reduce
 # main :: IO ()
 def main():
     '''Narcissistic numbers of digit lengths 1 to 7'''
-    print(
+    print((
         fTable(main.__doc__ + ':\n')(str)(str)(
             narcissiOfLength
         )(enumFromTo(1)(7))
-    )
+    ))
 
 
 # narcissiOfLength :: Int -> [Int]
@@ -36,18 +36,12 @@ def digitPowerSums(e):
     def go(n, parents):
         return go(
             n - 1,
-            chain.from_iterable(map(
-                lambda pDigitSum: (
-                    map(
-                        lambda lDigitSum: (
+            chain.from_iterable([(
+                    [(
                             lDigitSum[0],
                             lDigitSum[1] + pDigitSum[1]
-                        ),
-                        powers[0: 1 + pDigitSum[0]]
-                    )
-                ),
-                parents
-            )) if parents else powers
+                        ) for lDigitSum in powers[0: 1 + pDigitSum[0]]]
+                ) for pDigitSum in parents]) if parents else powers
         ) if 0 < n else parents
 
     return [xs for (_, xs) in go(e, [])]
@@ -85,7 +79,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

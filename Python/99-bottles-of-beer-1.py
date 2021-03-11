@@ -7,4 +7,4 @@ strofas = ("\n".join((
     catchphrase % (n - 1)
 )) for n in range(99, 0, -1))
 
-print("\n\n".join(strofas))
+print(("\n\n".join(strofas)))

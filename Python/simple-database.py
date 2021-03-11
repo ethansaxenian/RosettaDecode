@@ -39,22 +39,22 @@ def do_add(args, dbname):
     if args.tag is None:
         args.tag = ''
     del args.command
-    print('Writing record to %s' % dbname)
+    print(('Writing record to %s' % dbname))
     with open(dbname, 'a') as db:
         db.write('%r\n' % args)
 
 def do_pl(args, dbname):
     'Print the latest entry'
-    print('Getting last record from %s' % dbname)
+    print(('Getting last record from %s' % dbname))
     with open(dbname, 'r') as db:
         for line in db: pass
     record = eval(line)
     del record._date
-    print(str(record))
+    print((str(record)))
 
 def do_plc(args, dbname):
     'Print the latest entry for each category/tag'
-    print('Getting latest record for each tag from %s' % dbname)
+    print(('Getting latest record for each tag from %s' % dbname))
     with open(dbname, 'r') as db:
         records = [eval(line) for line in db]
     tags = set(record.tag for record in records)
@@ -62,18 +62,18 @@ def do_plc(args, dbname):
     for record in records:
         if record.tag in tags:
             del record._date
-            print(str(record))
+            print((str(record)))
             tags.discard(record.tag)
             if not tags: break
 
 def do_pa(args, dbname):
     'Print all entries sorted by a date'
-    print('Getting all records by date from %s' % dbname)
+    print(('Getting all records by date from %s' % dbname))
     with open(dbname, 'r') as db:
         records = [eval(line) for line in db]
     for record in records:
         del record._date
-        print(str(record))
+        print((str(record)))
 
 def test():
     import time

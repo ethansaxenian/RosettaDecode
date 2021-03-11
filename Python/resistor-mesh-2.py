@@ -61,7 +61,7 @@ def resistor_grid(p, q, ai, aj, bi, bj):
 def main(arg):
     r = resistor_grid(int(arg[0]), int(arg[1]), int(arg[2]), int(arg[3]), int(arg[4]), int(arg[5]))
     print(r)
-    print(float(r))
+    print((float(r)))
 
 main(sys.argv[1:])
 

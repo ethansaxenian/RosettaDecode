@@ -5,7 +5,7 @@ class empty(object):
 
 def patch_empty(obj):
     def fn(self=obj):
-        print self.foo
+        print(self.foo)
 
     obj.print_output = fn
 

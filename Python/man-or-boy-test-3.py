@@ -9,4 +9,4 @@ def A(k, x1, x2, x3, x4, x5):
         return A(k, B, x1, x2, x3, x4)
     return x4() + x5() if k <= 0 else B()
 
-print(A(10, lambda: 1, lambda: -1, lambda: -1, lambda: 1, lambda: 0))
+print((A(10, lambda: 1, lambda: -1, lambda: -1, lambda: 1, lambda: 0)))

@@ -16,7 +16,7 @@ def test():
     */
     function something() {
     }'''
-    print(commentstripper(sample))
+    print((commentstripper(sample)))
 
     print('\nNESTED BLOCK COMMENT EXAMPLE:')
     sample = '''  /**
@@ -35,7 +35,7 @@ def test():
     */
     function something() {
     }'''
-    print(commentstripper(sample))
+    print((commentstripper(sample)))
 
 if __name__ == '__main__':
     test()

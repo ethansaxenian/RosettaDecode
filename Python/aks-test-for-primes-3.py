@@ -14,8 +14,8 @@ def aks_test(p):
 
 print('# p: (x-1)^p for small p')
 for p in range(12):
-    print('%3i: %s' % (p, ' '.join('%+i%s' % (e, ('x^%i' % n) if n else '')
-                                   for n, e in enumerate(expand_x_1(p)))))
+    print(('%3i: %s' % (p, ' '.join('%+i%s' % (e, ('x^%i' % n) if n else '')
+                                   for n, e in enumerate(expand_x_1(p))))))
 
 print('\n# small primes using the aks test')
 print([p for p in range(101) if aks_test(p)])

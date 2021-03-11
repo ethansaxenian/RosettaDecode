@@ -11,7 +11,7 @@ class Node(object):
          c = self
          while c != None:
              yield c
-             c = c.next
+             c = c.__next__
      def iter_backward(self):
          c = self
          while c != None:

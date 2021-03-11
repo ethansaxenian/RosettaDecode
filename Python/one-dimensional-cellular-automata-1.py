@@ -19,7 +19,7 @@ neighbours2newstate = {
  }
 
 for i in range(maxgenerations):
-    print "Generation %3i:  %s" % ( i,
-          universe.replace('0', printdead).replace('1', printlive) )
+    print("Generation %3i:  %s" % ( i,
+          universe.replace('0', printdead).replace('1', printlive) ))
     universe = offendvalue + universe + offendvalue
     universe = ''.join(neighbours2newstate[universe[i:i+3]] for i in range(cellcount))

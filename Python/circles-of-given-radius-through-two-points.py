@@ -37,9 +37,9 @@ if __name__ == '__main__':
                       (Pt(0.1234, 0.9876), Pt(0.1234, 0.9876), 2.0),
                       (Pt(0.1234, 0.9876), Pt(0.8765, 0.2345), 0.5),
                       (Pt(0.1234, 0.9876), Pt(0.1234, 0.9876), 0.0)]:
-        print('Through points:\n  %r,\n  %r\n  and radius %f\nYou can construct the following circles:'
-              % (p1, p2, r))
+        print(('Through points:\n  %r,\n  %r\n  and radius %f\nYou can construct the following circles:'
+              % (p1, p2, r)))
         try:
-            print('  %r\n  %r\n' % circles_from_p1p2r(p1, p2, r))
+            print(('  %r\n  %r\n' % circles_from_p1p2r(p1, p2, r)))
         except ValueError as v:
-            print('  ERROR: %s\n' % (v.args[0],))
+            print(('  ERROR: %s\n' % (v.args[0],)))

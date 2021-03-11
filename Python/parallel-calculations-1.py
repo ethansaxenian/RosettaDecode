@@ -36,10 +36,10 @@ def prime_factors_of_number_with_lowest_prime_factor(NUMBERS):
 
 def main():
     print('For these numbers:')
-    print('\n  '.join(str(p) for p in NUMBERS))
+    print(('\n  '.join(str(p) for p in NUMBERS)))
     number, all_factors = prime_factors_of_number_with_lowest_prime_factor(NUMBERS)
-    print('    The one with the largest minimum prime factor is {}:'.format(number))
-    print('      All its prime factors in order are: {}'.format(all_factors))
+    print(('    The one with the largest minimum prime factor is {}:'.format(number)))
+    print(('      All its prime factors in order are: {}'.format(all_factors)))
 
 if __name__ == '__main__':
     main()

@@ -14,7 +14,7 @@ def A036058_length(numberstring='0', printit=False):
 
     while True:
         if printit:
-            print("  %2i %s" % (iterations, numberstring))
+            print(("  %2i %s" % (iterations, numberstring)))
         numberstring = ''.join(sorted(numberstring, reverse=True))
         if numberstring in last_three:
             break
@@ -25,7 +25,7 @@ def A036058_length(numberstring='0', printit=False):
         queue_index %=3
     return iterations
 
-def max_A036058_length( start_range=range(11) ):
+def max_A036058_length( start_range=list(range(11)) ):
     already_done = set()
     max_len = (-1, [])
     for n in start_range:
@@ -40,7 +40,7 @@ def max_A036058_length( start_range=range(11) ):
                 max_len[1].append(n)
     return max_len
 
-lenmax, starts = max_A036058_length( range(1000000) )
+lenmax, starts = max_A036058_length( list(range(1000000)) )
 
 # Expand
 allstarts = []
@@ -51,10 +51,10 @@ for n in starts:
                                if k[0] != '0')]
 allstarts = [x for x in sorted(allstarts) if x < 1000000]
 
-print ( '''\
+print(( '''\
 The longest length, followed by the number(s) with the longest sequence length
 for starting sequence numbers below 1000000 are:
-  Iterations = %i and sequence-starts = %s.''' % (lenmax, allstarts)   )
+  Iterations = %i and sequence-starts = %s.''' % (lenmax, allstarts)   ))
 
 print ( '''
 Note that only the first of any sequences with the same digits is printed below.

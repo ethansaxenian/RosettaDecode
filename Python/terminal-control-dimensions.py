@@ -23,4 +23,4 @@ def get_linux_terminal():
 
     return int(width), int(height)
 
-print get_linux_terminal() if os.name == 'posix' else get_windows_terminal()
+print(get_linux_terminal() if os.name == 'posix' else get_windows_terminal())

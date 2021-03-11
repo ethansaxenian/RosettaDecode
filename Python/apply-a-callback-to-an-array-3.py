@@ -1,1 +1,1 @@
-print " ".join(map(str, map(square, range(10))))
+print(" ".join(map(str, list(map(square, list(range(10)))))))

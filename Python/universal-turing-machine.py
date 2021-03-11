@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 def run_utm(
         state = None,
@@ -42,10 +42,10 @@ run_utm(
 	state = 'q0',
 	tape = list("111"),
 	blank = 'B',
-	rules = map(tuple,
+	rules = list(map(tuple,
                ["q0 1 1 right q0".split(),
 		        "q0 B 1 stay  qf".split()]
-        )
+        ))
     )
 
 print("\nbusy beaver\n")
@@ -53,14 +53,14 @@ run_utm(
     halt = 'halt',
 	state = 'a',
 	blank = '0',
-	rules = map(tuple,
+	rules = list(map(tuple,
         ["a 0 1 right b".split(),
          "a 1 1 left  c".split(),
          "b 0 1 left  a".split(),
          "b 1 1 right b".split(),
          "c 0 1 left  b".split(),
          "c 1 1 stay  halt".split()]
-        )
+        ))
     )
 
 print("\nsorting test\n")
@@ -68,7 +68,7 @@ run_utm(halt = 'STOP',
 	state = 'A',
 	blank = '0',
 	tape = "2 2 2 1 2 2 1 2 1 2 1 2 1 2".split(),
-	rules = map(tuple,
+	rules = list(map(tuple,
        ["A 1 1 right A".split(),
 		"A 2 3 right B".split(),
 		"A 0 0 left  E".split(),
@@ -83,5 +83,5 @@ run_utm(halt = 'STOP',
 		"D 3 1 right A".split(),
 		"E 1 1 left  E".split(),
 		"E 0 0 right STOP".split()]
-        )
+        ))
     )

@@ -18,17 +18,17 @@ def binomialCoefficient(n):
 def main():
     '''Tests'''
 
-    print(
+    print((
         binomialCoefficient(5)(3)
-    )
+    ))
 
     # k=0 to k=5, where n=5
-    print(
+    print((
         list(map(
             binomialCoefficient(5),
             enumFromTo(0)(5)
         ))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------

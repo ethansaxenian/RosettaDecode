@@ -10,4 +10,4 @@ def permutations(xs):
         ac=ac_new
     return ac
 
-print(permutations([1,2,3,4]))
+print((permutations([1,2,3,4])))

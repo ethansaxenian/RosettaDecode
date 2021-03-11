@@ -68,4 +68,4 @@ if __name__ == '__main__':
     #pp(machins, width=160)
     for machin, eqn in zip(machins, equationtext.split('\n')):
         ans = tans(machin)
-        print('%5s: %s' % ( ('OK' if ans == 1 else 'ERROR'), eqn))
+        print(('%5s: %s' % ( ('OK' if ans == 1 else 'ERROR'), eqn)))

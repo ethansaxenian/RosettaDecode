@@ -19,12 +19,12 @@ Further,$allow$for$each$word$in$a$column$to$be$either$left$
 justified,$right$justified,$or$center$justified$within$its$column.'''
 
     rows = [x.split('$') for x in txt.splitlines()]
-    table = paddedRows(max(map(len, rows)))('')(rows)
+    table = paddedRows(max(list(map(len, rows))))('')(rows)
 
-    print('\n\n'.join(map(
+    print(('\n\n'.join(map(
         alignedTable(table)('  '),
         [-1, 0, 1]  # Left, Center, Right
-    )))
+    ))))
 
 
 # alignedTable :: [[String]] -> Alignment -> String -> String
@@ -50,7 +50,7 @@ def alignedTable(rows):
 
         return '\n'.join([
             sep.join(cells) for cells in
-            zip(*reduce(nextAlignedCol, zip(*rows), []))
+            zip(*reduce(nextAlignedCol, list(zip(*rows)), []))
         ])
 
     return lambda sep: lambda eAlign: go(sep, eAlign)

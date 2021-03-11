@@ -31,11 +31,11 @@ print('\nWords')
 pp(sorted(words))
 
 invindex = {word:set(txt
-                        for txt, wrds in texts.items() if word in wrds)
+                        for txt, wrds in list(texts.items()) if word in wrds)
             for word in words}
 print('\nInverted Index')
-pp({k:sorted(v) for k,v in invindex.items()})
+pp({k:sorted(v) for k,v in list(invindex.items())})
 
 terms = ["what", "is", "it"]
-print('\nTerm Search for: ' + repr(terms))
+print(('\nTerm Search for: ' + repr(terms)))
 pp(sorted(termsearch(terms)))

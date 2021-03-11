@@ -1,4 +1,4 @@
-import Tkinter as tki
+import tkinter as tki
 
 
 def scroll_text(s, how_many):

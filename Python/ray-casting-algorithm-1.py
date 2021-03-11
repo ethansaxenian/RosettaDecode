@@ -47,8 +47,8 @@ def ispointinside(p, poly):
                     for edge in poly.edges ))
 
 def polypp(poly):
-    print ("\n  Polygon(name='%s', edges=(" % poly.name)
-    print ('   ', ',\n    '.join(str(e) for e in poly.edges) + '\n    ))')
+    print(("\n  Polygon(name='%s', edges=(" % poly.name))
+    print(('   ', ',\n    '.join(str(e) for e in poly.edges) + '\n    ))'))
 
 if __name__ == '__main__':
     polys = [
@@ -94,9 +94,9 @@ if __name__ == '__main__':
     print ("\n TESTING WHETHER POINTS ARE WITHIN POLYGONS")
     for poly in polys:
         polypp(poly)
-        print ('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
-                               for p in testpoints[:3]))
-        print ('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
-                               for p in testpoints[3:6]))
-        print ('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
-                               for p in testpoints[6:]))
+        print(('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
+                               for p in testpoints[:3])))
+        print(('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
+                               for p in testpoints[3:6])))
+        print(('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))
+                               for p in testpoints[6:])))

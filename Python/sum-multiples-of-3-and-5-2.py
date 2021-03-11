@@ -25,13 +25,13 @@ def sumMults(n):
 def main():
     '''Tests for [10^1 .. 10^5], and [10^8 .. 10^25]
     '''
-    print(
+    print((
         fTable(__doc__ + ':\n')(lambda x: '10E' + str(x))(
             str
         )(compose(sum35)(lambda x: 10**x))(
             enumFromTo(1)(5) + enumFromTo(18)(25)
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -55,7 +55,7 @@ def fTable(s):
     '''Heading -> x display function -> fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         ])

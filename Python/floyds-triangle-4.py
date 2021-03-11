@@ -30,9 +30,9 @@ def showFloyd(xs):
 # main :: IO ()
 def main():
     '''Test'''
-    print(showFloyd(
+    print((showFloyd(
         floyd(5)
-    ))
+    )))
 
 
 # GENERIC ABSTRACTIONS ------------------------------------

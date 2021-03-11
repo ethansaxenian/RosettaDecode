@@ -127,7 +127,7 @@ $j $items2 $where"""
         with ProcPool() as proc_pool:
             strofa = self.strofa
             initial_number = self.initial_number
-            args = range(initial_number, -1, -1)
+            args = list(range(initial_number, -1, -1))
             return "\n\n".join(proc_pool.map(strofa, args))
 
     def __copy__(self, *args, **kwargs):
@@ -232,12 +232,12 @@ def balladOfProgrammer(num):
 def main(num):
     print(f"### {num} Bottles of Beers on the Wall ###")
     print()
-    print(muchBeersOnTheWall(num))
+    print((muchBeersOnTheWall(num)))
     print()
     print()
     print('### "The Ballad of Programmer", by Marco Sulla')
     print()
-    print(balladOfProgrammer(num))
+    print((balladOfProgrammer(num)))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 from visual import *
 import itertools
 
@@ -243,7 +243,7 @@ def cmd(key):
 def stop() :
     global autoDemo, rotAn
     autoDemo = -1
-    while rotAn <> 0 :
+    while rotAn != 0 :
       rotAngle()
     print("**Stop**")
 

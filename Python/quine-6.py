@@ -1,1 +1,1 @@
-print(__file__[:-3])
+print((__file__[:-3]))

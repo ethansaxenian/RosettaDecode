@@ -7,7 +7,7 @@ from math import floor, sqrt
 # A000037 :: [Int]
 def A000037():
     '''A non-finite series of integers.'''
-    return map(nonSquare, count(1))
+    return list(map(nonSquare, count(1)))
 
 
 # nonSquare :: Int -> Int
@@ -32,13 +32,13 @@ def main():
             take(10 ** 6)(A000037())
         ))
 
-    print(
+    print((
         fTable(main.__doc__)(
             lambda f: '\n' + f.__doc__
         )(lambda x: '    ' + showList(x))(
             lambda f: f()
         )([first22, squareInFirstMillion])
-    )
+    ))
 
 
 # -------------------------DISPLAY-------------------------

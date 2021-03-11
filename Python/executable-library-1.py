@@ -8,5 +8,5 @@ def hailstone(n):
 if __name__ == '__main__':
     h = hailstone(27)
     assert len(h)==112 and h[:4]==[27, 82, 41, 124] and h[-4:]==[8, 4, 2, 1]
-    print("Maximum length %i was found for hailstone(%i) for numbers <100,000" %
-          max((len(hailstone(i)), i) for i in range(1,100000)))
+    print(("Maximum length %i was found for hailstone(%i) for numbers <100,000" %
+          max((len(hailstone(i)), i) for i in range(1,100000))))

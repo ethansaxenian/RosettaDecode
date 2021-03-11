@@ -28,18 +28,18 @@ def main():
     binary = compose(stringFromBools)(boolsFromInt)
 
     print('Mapping a composed function:')
-    print(unlines(map(
+    print((unlines(list(map(
         binary,
         [5, 50, 9000]
-    )))
+    )))))
 
-    print(
+    print((
         tabulated(
             '\n\nTabulating a string display from binary data:'
         )(str)(stringFromBools)(
             boolsFromInt
         )([5, 50, 9000])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -75,7 +75,7 @@ def tabulated(s):
     '''Heading -> x display function -> fx display function ->
                 f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join(
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         )

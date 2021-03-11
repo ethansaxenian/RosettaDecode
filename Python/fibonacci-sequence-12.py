@@ -7,4 +7,4 @@ def fib():
         yield next(lhs)+next(rhs)
 
 f=fib()
-print [next(f) for _ in range(9)]
+print([next(f) for _ in range(9)])

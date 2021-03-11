@@ -14,7 +14,7 @@
 
 '''
 
-from __future__ import division, print_function
+
 
 import ast
 import random
@@ -55,7 +55,7 @@ def main():
     chk = ans = False
     while not (chk and ans == 24):
         trial += 1
-        answer = input("Expression %i: " % trial)
+        answer = eval(input("Expression %i: " % trial))
         chk = check(answer, digits)
         if answer.lower() == 'q':
             break

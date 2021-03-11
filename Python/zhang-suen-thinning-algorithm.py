@@ -113,6 +113,6 @@ def zhangSuen(image):
 if __name__ == '__main__':
     for picture in (beforeTxt, smallrc01, rc01):
         image = intarray(picture)
-        print('\nFrom:\n%s' % toTxt(image))
+        print(('\nFrom:\n%s' % toTxt(image)))
         after = zhangSuen(image)
-        print('\nTo thinned:\n%s' % toTxt(after))
+        print(('\nTo thinned:\n%s' % toTxt(after)))

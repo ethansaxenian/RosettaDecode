@@ -8,7 +8,7 @@ def ld(a, b, mx=-1):
     if lb == 0: return result(la)
     if lb > la: a, b, la, lb = b, a, lb, la
 
-    cost = array('i', range(lb + 1))
+    cost = array('i', list(range(lb + 1)))
     for i in range(1, la + 1):
         cost[0] = i; ls = i-1; mn = ls
         for j in range(1, lb + 1):
@@ -19,7 +19,7 @@ def ld(a, b, mx=-1):
     if mx >= 0 and cost[lb] > mx: return result(mx+1)
     return result(cost[lb])
 
-print(
+print((
     ld('kitten','kitten'), # 0
     ld('kitten','sitten'), # 1
     ld('kitten','sittes'), # 2
@@ -28,9 +28,9 @@ print(
     ld('rosettacode','raisethysword'), # 8
     ld('kitten','kittenaaaaaaaaaaaaaaaaa'), # 17
     ld('kittenaaaaaaaaaaaaaaaaa','kitten') # 17
-)
+))
 
-print(
+print((
     ld('kitten','kitten',3), # True
     ld('kitten','sitten',3), # True
     ld('kitten','sittes',3), # True
@@ -39,4 +39,4 @@ print(
     ld('rosettacode','raisethysword',3), # False
     ld('kitten','kittenaaaaaaaaaaaaaaaaa',3), # False
     ld('kittenaaaaaaaaaaaaaaaaa','kitten',3) # False
-)
+))

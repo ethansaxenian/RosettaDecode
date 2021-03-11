@@ -23,8 +23,8 @@ for rec in data[1:]:
 N = 3
 format = " %-15s " * len(data[0])
 for department, recs in sorted(departments.items()):
-    print ("Department %s" % department)
-    print (format % data[0])
+    print(("Department %s" % department))
+    print((format % data[0]))
     for rec in nlargest(N, recs, key=lambda rec: rec[-2]):
-        print (format % rec)
+        print((format % rec))
     print('')

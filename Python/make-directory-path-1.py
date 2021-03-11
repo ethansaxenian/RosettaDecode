@@ -2,7 +2,7 @@ from errno import EEXIST
 from os import mkdir, curdir
 from os.path import split, exists
 
-def mkdirp(path, mode=0777):
+def mkdirp(path, mode=0o777):
     head, tail = split(path)
     if not tail:
         head, tail = split(head)

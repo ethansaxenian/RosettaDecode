@@ -97,5 +97,5 @@ root = Particle((0,0),
 root.stop()
 
 while True:
-    input(pygame.event.get())
+    eval(input(pygame.event.get()))
     pygame.display.flip()

@@ -19,12 +19,12 @@ def offset(cells, delta):
 
 def display(world, g):
     "Display the world as a grid of characters."
-    print '          GENERATION {}:'.format(g)
-    Xs, Ys = zip(*world)
-    Xrange = range(min(Xs), max(Xs)+1)
+    print('          GENERATION {}:'.format(g))
+    Xs, Ys = list(zip(*world))
+    Xrange = list(range(min(Xs), max(Xs)+1))
     for y in range(min(Ys), max(Ys)+1):
-        print ''.join('#' if (x, y) in world else '.'
-                      for x in Xrange)
+        print(''.join('#' if (x, y) in world else '.'
+                      for x in Xrange))
 
 blinker = {(1, 0), (1, 1), (1, 2)}
 block   = {(0, 0), (1, 1), (0, 1), (1, 0)}

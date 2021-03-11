@@ -1,4 +1,4 @@
-from __future__ import division
+
 from itertools import islice, count
 from collections import Counter
 from math import log10
@@ -24,9 +24,9 @@ def show_dist(title, s):
     size = sum(c.values())
     res = [c[d]/size for d in range(1,10)]
 
-    print("\n%s Benfords deviation" % title)
+    print(("\n%s Benfords deviation" % title))
     for r, e in zip(res, expected):
-        print("%5.1f%% %5.1f%%  %5.1f%%" % (r*100., e*100., abs(r - e)*100.))
+        print(("%5.1f%% %5.1f%%  %5.1f%%" % (r*100., e*100., abs(r - e)*100.)))
 
 def rand1000():
     while True: yield randint(1,9999)

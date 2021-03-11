@@ -43,11 +43,11 @@ def cycled(rows):
 # main :: IO ()
 def main():
     '''Magic squares of order 3, 5, 7'''
-    print(
+    print((
         fTable(__doc__ + ':')(lambda x: '\n' + repr(x))(
             showSquare
         )(magicSquare)([3, 5, 7])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -72,7 +72,7 @@ def chunksOf(n):
        the final list will be shorter than n.'''
     return lambda xs: reduce(
         lambda a, i: a + [xs[i:n + i]],
-        range(0, len(xs), n), []
+        list(range(0, len(xs), n)), []
     ) if 0 < n else []
 
 
@@ -103,7 +103,7 @@ def enumFromThenTo(m):
     '''
     def go(nxt, n):
         d = nxt - m
-        return range(m, n - 1 if d < 0 else 1 + n, d)
+        return list(range(m, n - 1 if d < 0 else 1 + n, d))
     return lambda nxt: lambda n: list(go(nxt, n))
 
 
@@ -133,9 +133,9 @@ def transposed(m):
     '''
     if m:
         inner = type(m[0])
-        z = zip(*m)
+        z = list(zip(*m))
         return (type(m))(
-            map(inner, z) if tuple != inner else z
+            list(map(inner, z)) if tuple != inner else z
         )
     else:
         return m
@@ -151,7 +151,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys
@@ -172,14 +172,11 @@ def indented(n):
 # showSquare :: [[Int]] -> String
 def showSquare(rows):
     '''Lines representing rows of lists.'''
-    w = 1 + len(str(reduce(max, map(max, rows), 0)))
+    w = 1 + len(str(reduce(max, list(map(max, rows)), 0)))
     return '\n' + '\n'.join(
-        map(
-            lambda row: indented(1)(''.join(
-                map(lambda x: str(x).rjust(w, ' '), row)
-            )),
-            rows
-        )
+        [indented(1)(''.join(
+                [str(x).rjust(w, ' ') for x in row]
+            )) for row in rows]
     )
 
 

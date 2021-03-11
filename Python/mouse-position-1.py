@@ -1,4 +1,4 @@
-import Tkinter as tk
+import tkinter as tk
 
 def showxy(event):
     xm, ym = event.x, event.y

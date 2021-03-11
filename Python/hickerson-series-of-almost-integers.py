@@ -15,4 +15,4 @@ for n in range(18):
     almostinteger = (' Nearly integer'
                      if 'E' not in norm and ('.0' in norm or '.9' in norm)
                      else ' NOT nearly integer!')
-    print('n:%2i h:%s%s' % (n, norm, almostinteger))
+    print(('n:%2i h:%s%s' % (n, norm, almostinteger)))

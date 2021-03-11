@@ -8,7 +8,7 @@ import enum
 def main():
     '''Testing particular instances of a general pattern:
     '''
-    print(
+    print((
         fTable(__doc__ + ':\n')(repr)(showList)(
             uncurry(enumFromTo)
         )([
@@ -19,7 +19,7 @@ def main():
             (round((5**(1 / 2) - 1) / 2, 5), 5),
             ('🌱', '🍂')
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -31,10 +31,7 @@ def enumFromTo(m):
         t = type(m)
         i = fromEnum(x)
         d = 0 if t != float else (x - i)
-        return list(map(
-            lambda x: toEnum(t)(d + x),
-            range(i, 1 + fromEnum(y))
-        ) if int != t else range(x, 1 + y))
+        return list([toEnum(t)(d + x) for x in range(i, 1 + fromEnum(y))] if int != t else list(range(x, 1 + y)))
     return lambda n: go(m, n)
 
 
@@ -80,7 +77,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

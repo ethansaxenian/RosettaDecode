@@ -26,10 +26,10 @@ def main():
     '''Test'''
 
     v = [9, 8, 7, 6, 5, 0, 1, 2, 3, 4]
-    print(list(map(
+    print((list(map(
         flip(quickSelect)(v),
-        range(0, len(v))
-    )))
+        list(range(0, len(v)))
+    ))))
 
 
 # GENERIC -------------------------------------------------

@@ -1,3 +1,3 @@
 import sys
 
-print >> sys.stderr, "Goodbye, World!"
+print("Goodbye, World!", file=sys.stderr)

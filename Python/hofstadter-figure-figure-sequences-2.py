@@ -4,7 +4,7 @@ cS = [2]
 def extend_RS():
 	x = cR[len(cR) - 1] + cS[len(cR) - 1]
 	cR.append(x)
-	cS += range(cS[-1] + 1, x)
+	cS += list(range(cS[-1] + 1, x))
 	cS.append(x + 1)
 
 def ff_R(n):

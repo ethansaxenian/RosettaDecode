@@ -20,10 +20,10 @@ def stripComments(cs):
 
 
 if __name__ == '__main__':
-    print(
+    print((
         stripComments(';#')(
             '''apples, pears # and bananas
                apples, pears ; and bananas
             '''
         )
-    )
+    ))

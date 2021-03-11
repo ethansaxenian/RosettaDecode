@@ -4,6 +4,7 @@ from functools import (reduce)
 from itertools import (chain)
 import inspect
 import re
+from functools import reduce
 
 
 def f1(xs):
@@ -30,19 +31,19 @@ def f3(xs):
 
 def f4(xs):
     '''Built-in filter function'''
-    return filter(even, xs)
+    return list(filter(even, xs))
 
 
 def main():
     '''Tests'''
     xs = enumFromTo(0)(10)
-    print(
+    print((
         tabulated(showReturn)(
             'By descending generality and increasing brevity:\n'
         )(
             lambda f: list(f(xs))
         )([f1, f2, f3, f4])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -56,7 +57,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).'''
     return lambda xs: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 

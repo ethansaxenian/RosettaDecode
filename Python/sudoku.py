@@ -9,9 +9,9 @@ def initiate():
     box.append([57, 58, 59, 66, 67, 68, 75, 76, 77])
     box.append([60, 61, 62, 69, 70, 71, 78, 79, 80])
     for i in range(0, 81, 9):
-        row.append(range(i, i+9))
+        row.append(list(range(i, i+9)))
     for i in range(9):
-        column.append(range(i, 80+i, 9))
+        column.append(list(range(i, 80+i, 9)))
 
 def valid(n, pos):
     current_row = pos/9
@@ -60,14 +60,14 @@ def inputs():
     number = 0
     pos = 0
     while(not(nextt == 'N' or nextt == 'n')):
-        print "Enter the position:",
-        pos = int(raw_input())
+        print("Enter the position:", end=' ')
+        pos = int(input())
         given[pos - 1] = True
-        print "Enter the numerical:",
-        number = int(raw_input())
+        print("Enter the numerical:", end=' ')
+        number = int(input())
         grid[pos - 1] = number
-        print "Do you want to enter another given?(Y, for yes: N, for no)"
-        nextt = raw_input()
+        print("Do you want to enter another given?(Y, for yes: N, for no)")
+        nextt = input()
 
 
 grid = [0]*81
@@ -79,5 +79,5 @@ initiate()
 inputs()
 solve()
 for i in range(9):
-    print grid[i*9:i*9+9]
-raw_input()
+    print(grid[i*9:i*9+9])
+input()

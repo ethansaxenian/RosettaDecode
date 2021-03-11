@@ -1,14 +1,14 @@
-from __future__ import print_function
+
 
 from pprint import pprint
 from math import sqrt
 
 
 def cholesky(A):
-    L = [[0.0] * len(A) for _ in xrange(len(A))]
-    for i in xrange(len(A)):
-        for j in xrange(i+1):
-            s = sum(L[i][k] * L[j][k] for k in xrange(j))
+    L = [[0.0] * len(A) for _ in range(len(A))]
+    for i in range(len(A)):
+        for j in range(i+1):
+            s = sum(L[i][k] * L[j][k] for k in range(j))
             L[i][j] = sqrt(A[i][i] - s) if (i == j) else \
                       (1.0 / L[j][j] * (A[i][j] - s))
     return L

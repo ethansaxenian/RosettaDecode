@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import BaseHTTPServer
+import http.server
 
 HOST = "localhost"
 PORT = 8000
 
 # we just want to write own class, we replace do_GET method. This could be extended, I just added basics
 # see; http://docs.python.org/lib/module-BaseHTTPServer.html
-class MyHTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class MyHTTPHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         # send 200 (OK) message
         self.send_response(200)
@@ -22,9 +22,9 @@ class MyHTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write("</html>")
 
 if __name__ == '__main__':
-    server = BaseHTTPServer.HTTPServer((HOST, PORT), MyHTTPHandler)
+    server = http.server.HTTPServer((HOST, PORT), MyHTTPHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print 'Exiting...'
+        print('Exiting...')
         server.server_close()

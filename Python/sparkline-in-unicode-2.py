@@ -9,14 +9,11 @@ def sparkLine(xs):
         n = len(xs)
         mid = n // 2
         w = (mx - mn) / 8
-        lbounds = list(map(lambda i: mn + (w * i), range(1, 8)))
+        lbounds = list([mn + (w * i) for i in range(1, 8)])
         return [
-            ''.join(map(
-                lambda x: maybe('█')(
+            ''.join([maybe('█')(
                     lambda i: '▁▂▃▄▅▆▇'[i]
-                )(findIndex(lambda b: b > x)(lbounds)),
-                xs
-            )),
+                )(findIndex(lambda b: b > x)(lbounds)) for x in xs]),
             ' '.join(map(str, xs)),
             '\t'.join([
                 'Min ' + str(mn),
@@ -35,8 +32,8 @@ def sparkLine(xs):
 
 # main :: IO ()
 def main():
-    print(
-        unlines(map(
+    print((
+        unlines(list(map(
             compose(compose(unlines)(sparkLine))(readFloats),
             [
                 "0, 1, 19, 20",
@@ -44,8 +41,8 @@ def main():
                 "1 2 3 4 5 6 7 8 7 6 5 4 3 2 1",
                 "1.5, 0.5 3.5, 2.5 5.5, 4.5 7.5, 6.5"
             ]
-        ))
-    )
+        )))
+    ))
 
 
 # GENERIC -------------------------------------------------

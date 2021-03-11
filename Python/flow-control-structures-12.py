@@ -6,4 +6,4 @@ with open("some_file") as myfile:
         exit_counter += 1
         if exit_counter > max:
             raise Quitting
-        print line,
+        print(line, end=' ')

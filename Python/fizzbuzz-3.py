@@ -6,4 +6,4 @@ for n in range(1,101):
     if not n%5:
         response += 'Buzz'
 
-    print(response or n)
+    print((response or n))

@@ -10,6 +10,6 @@ item1 = doc.xpath("//section[1]/item[1]")
 
 # Print each price
 for p in doc.xpath("//price"):
-    print "{0:0.2f}".format(float(p.text))  # could raise exception on missing text or invalid float() conversion
+    print("{0:0.2f}".format(float(p.text)))  # could raise exception on missing text or invalid float() conversion
 
 names = doc.xpath("//name")  # list of names

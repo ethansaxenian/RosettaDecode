@@ -15,4 +15,4 @@ def agm(a0, g0, tolerance=1e-10):
     return an
 
 
-print agm(1, 1 / sqrt(2))
+print(agm(1, 1 / sqrt(2)))

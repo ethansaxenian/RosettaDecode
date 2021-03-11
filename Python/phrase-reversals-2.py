@@ -10,7 +10,7 @@ def reversedCharacters(s):
 # wordsWithReversedCharacters :: String -> String
 def wordsWithReversedCharacters(s):
     '''Characters within each word in reversed sequence.'''
-    return unwords(map(reverse, words(s)))
+    return unwords(list(map(reverse, words(s))))
 
 
 # reversedWordOrder :: String -> String
@@ -25,7 +25,7 @@ def main():
     '''Tests'''
 
     s = 'rosetta code phrase reversal'
-    print(
+    print((
         tabulated(s + ':\n')(
             lambda f: f.__name__
         )(lambda s: "'" + s + "'")(
@@ -35,7 +35,7 @@ def main():
             wordsWithReversedCharacters,
             reversedWordOrder
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -63,7 +63,7 @@ def tabulated(s):
     '''Heading -> x display function -> fx display function ->
                 f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join(
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         )

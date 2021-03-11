@@ -1,2 +1,2 @@
 import requests
-print(requests.get("http://rosettacode.org").text)
+print((requests.get("http://rosettacode.org").text))

@@ -1,5 +1,5 @@
 import sys
-from Queue import Queue
+from queue import Queue
 from threading import Thread
 
 lines = Queue(1)
@@ -11,7 +11,7 @@ def read(file):
             lines.put(line)
     finally:
         lines.put(None)
-    print count.get()
+    print(count.get())
 
 def write(file):
     n = 0

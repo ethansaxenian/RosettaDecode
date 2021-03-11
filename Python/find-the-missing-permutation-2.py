@@ -27,4 +27,4 @@ def missing_permutation(arr):
 given = '''ABCD CABD ACDB DACB BCDA ACBD ADCB CDAB DABC BCAD CADB CDBA
            CBAD ABDC ADBC BDCA DCBA BACD BADC BDAC CBDA DBCA DCAB'''.split()
 
-print missing_permutation(given)
+print(missing_permutation(given))

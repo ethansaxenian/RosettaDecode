@@ -20,7 +20,7 @@ class Poly:
             s.gen = a
             self.gen = b
 
-    def next(self):
+    def __next__(self):
         self.getsource()
         return next(self.gen)
 
@@ -107,4 +107,4 @@ tanx << sinx / cosx        # "=" would also work here
 expx << 1 + inte(expx)
 
 for n,x in zip(("sin", "cos", "tan", "exp"), (sinx, cosx, tanx, expx)):
-    print(n, ', '.join(map(str, list(islice(x, 10)))))
+    print((n, ', '.join(map(str, list(islice(x, 10))))))

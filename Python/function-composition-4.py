@@ -12,9 +12,9 @@ def main():
         math.sqrt
     ])
 
-    print(
+    print((
         f(5)
-    )
+    ))
 
 
 # GENERIC FUNCTIONS ---------------------------------------

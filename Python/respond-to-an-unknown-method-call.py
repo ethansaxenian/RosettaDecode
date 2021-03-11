@@ -5,9 +5,9 @@ class Example(object):
         print("this is bar")
     def __getattr__(self, name):
         def method(*args):
-            print("tried to handle unknown method " + name)
+            print(("tried to handle unknown method " + name))
             if args:
-                print("it had arguments: " + str(args))
+                print(("it had arguments: " + str(args)))
         return method
 
 example = Example()

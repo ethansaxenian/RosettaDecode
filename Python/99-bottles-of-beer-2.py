@@ -22,5 +22,5 @@ Go to the store and buy some more, 99 bottles of beer on the wall.
 '''
 
 for n in range(99, 2, -1):
-    print(REGULAR_VERSE.format(n=n, n_minus_1=n - 1))
+    print((REGULAR_VERSE.format(n=n, n_minus_1=n - 1)))
 print(ENDING_VERSES)

@@ -52,7 +52,7 @@ class Yaccer(object):
 
     def syntaxErr(self, char):
         # Open Parenthesis
-        print 'parse error - near operator "%s"' % char
+        print('parse error - near operator "%s"' % char)
 
     def pc2(self, operchar):
         # Close Parenthesis
@@ -61,7 +61,7 @@ class Yaccer(object):
         if len(self.operstak) > 0:
             self.operstak.pop()  # pop off open parenthesis
         else:
-            print 'Error - no open parenthesis matches close parens.'
+            print('Error - no open parenthesis matches close parens.')
         self.__dict__.update(self.state2)
 
     def end(self):
@@ -106,7 +106,7 @@ def Lex(exprssn, p):
             if bgn is None:
                 bgn = cp
         else:
-            print 'Invalid character in expression'
+            print('Invalid character in expression')
             if bgn is not None:
                 p.v(p, exprssn[bgn:cp])
                 bgn = None
@@ -117,6 +117,6 @@ def Lex(exprssn, p):
     return p.end()
 
 
-expr = raw_input("Expression:")
+expr = input("Expression:")
 astTree = Lex(expr, Yaccer())
-print expr, '=', astTree.eval()
+print(expr, '=', astTree.eval())

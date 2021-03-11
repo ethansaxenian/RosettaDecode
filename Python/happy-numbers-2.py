@@ -6,11 +6,11 @@ from itertools import islice
 # main :: IO ()
 def main():
     '''Test'''
-    print(
+    print((
         take(8)(
             happyNumbers()
         )
-    )
+    ))
 
 
 # happyNumbers :: Gen [Int]

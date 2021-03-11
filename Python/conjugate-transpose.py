@@ -6,7 +6,7 @@ def mmul( ma, mb):
 
 def mi(size):
     'Complex Identity matrix'
-    sz = range(size)
+    sz = list(range(size))
     m = [[0 + 0j for i in sz] for j in sz]
     for i in range(size):
         m[i][i] = 1 + 0j
@@ -50,7 +50,7 @@ def printm(comment, m):
     fields = [['%g%+gj' % (f.real, f.imag) for f in row] for row in m]
     width = max(max(len(f) for f in row) for row in fields)
     lines = (', '.join('%*s' % (width, f) for f in row) for row in fields)
-    print('\n'.join(lines))
+    print(('\n'.join(lines)))
 
 if __name__ == '__main__':
     for matrix in [
@@ -67,6 +67,6 @@ if __name__ == '__main__':
         printm('\nMatrix:', matrix)
         ct = conjugate_transpose(matrix)
         printm('Its conjugate transpose:', ct)
-        print('Hermitian? %s.' % ishermitian(matrix, ct))
-        print('Normal?    %s.' % isnormal(matrix, ct))
-        print('Unitary?   %s.' % isunitary(matrix, ct))
+        print(('Hermitian? %s.' % ishermitian(matrix, ct)))
+        print(('Normal?    %s.' % isnormal(matrix, ct)))
+        print(('Unitary?   %s.' % isunitary(matrix, ct)))

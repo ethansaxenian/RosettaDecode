@@ -45,11 +45,11 @@ def main():
         p, n, x = tpl
         return nthRoot(p)(n)(x)
 
-    print(
+    print((
         fTable(main.__doc__ + ':\n')(xShow)(str)(f)(
             [(10, 5, 34), (20, 10, 42), (30, 2, 5)]
         )
-    )
+    ))
 
 
 # -------------------------DISPLAY-------------------------
@@ -62,7 +62,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

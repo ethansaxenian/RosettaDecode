@@ -24,7 +24,7 @@ def finitePascalRows(n):
     def go(a, _):
         return nextPascal(a)
     return scanl(go)([1])(
-        range(1, n)
+        list(range(1, n))
     )
 
 
@@ -34,7 +34,7 @@ def main():
     '''Test of two different approaches:
         - taking from a non-finite stream of rows,
         - or constructing a finite list of rows.'''
-    print(unlines(map(
+    print((unlines(list(map(
         showPascal,
         [
             take(7)(
@@ -42,7 +42,7 @@ def main():
             ),
             finitePascalRows(7)         # finite.
         ]
-    )))
+    )))))
 
 
 # showPascal :: [[Int]] -> String
@@ -55,7 +55,7 @@ def showPascal(xs):
         return lambda ns: center(w)(
             ' '
         )('   '.join(map(str, ns)))
-    w = len('   '.join((map(str, ys[-1]))))
+    w = len('   '.join((list(map(str, ys[-1])))))
     return '\n'.join(map(align(w), ys))
 
 

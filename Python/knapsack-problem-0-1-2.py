@@ -22,11 +22,11 @@ items = (
     )
 
 def knapsack01_dp(items, limit):
-    table = [[0 for w in range(limit + 1)] for j in xrange(len(items) + 1)]
+    table = [[0 for w in range(limit + 1)] for j in range(len(items) + 1)]
 
-    for j in xrange(1, len(items) + 1):
+    for j in range(1, len(items) + 1):
         item, wt, val = items[j-1]
-        for w in xrange(1, limit + 1):
+        for w in range(1, limit + 1):
             if wt > w:
                 table[j][w] = table[j-1][w]
             else:
@@ -47,7 +47,7 @@ def knapsack01_dp(items, limit):
 
 
 bagged = knapsack01_dp(items, 400)
-print("Bagged the following items\n  " +
-      '\n  '.join(sorted(item for item,_,_ in bagged)))
+print(("Bagged the following items\n  " +
+      '\n  '.join(sorted(item for item,_,_ in bagged))))
 val, wt = totalvalue(bagged)
-print("for a total value of %i and a total weight of %i" % (val, -wt))
+print(("for a total value of %i and a total weight of %i" % (val, -wt)))

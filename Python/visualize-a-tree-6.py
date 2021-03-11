@@ -17,12 +17,12 @@ def draw(node):
     def shift(first, other, xs):
         return list(starmap(
             add,
-            zip(
+            list(zip(
                 [first] + list(
                     repeat(other, len(xs) - 1)
                 ),
                 xs
-            )
+            ))
         ))
 
     def drawSubTrees(xs):
@@ -62,7 +62,7 @@ def main():
         ])
     ])
 
-    print(drawTree(tree))
+    print((drawTree(tree)))
 
 
 # GENERIC -------------------------------------------------

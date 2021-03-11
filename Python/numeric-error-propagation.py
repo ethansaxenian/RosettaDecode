@@ -89,5 +89,5 @@ y1 = I( 50, 1.2)
 y2 = I(100, 2.3)
 
 p1, p2 = (x1, y1), (x2, y2)
-print("Distance between points\n  p1: %s\n  and p2: %s\n  = %r" % (
-      p1, p2, distance(p1, p2)))
+print(("Distance between points\n  p1: %s\n  and p2: %s\n  = %r" % (
+      p1, p2, distance(p1, p2))))

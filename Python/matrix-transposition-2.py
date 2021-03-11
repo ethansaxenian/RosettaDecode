@@ -2,9 +2,9 @@
 def transpose(m):
     if m:
         inner = type(m[0])
-        z = zip(*m)
+        z = list(zip(*m))
         return (type(m))(
-            map(inner, z) if tuple != inner else z
+            list(map(inner, z)) if tuple != inner else z
         )
     else:
         return m
@@ -34,8 +34,8 @@ if __name__ == '__main__':
     print('transpose function :: (Transposition without type change):\n')
     for m in [emptyTuple, tts, tls, emptyList, lls, lts]:
         tm = transpose(m)
-        print (
+        print((
             type(tm).__name__ + (
                 (' of ' + type(tm[0]).__name__) if m else ''
             ) + ' :: ' + str(m) + ' -> ' + str(tm)
-        )
+        ))

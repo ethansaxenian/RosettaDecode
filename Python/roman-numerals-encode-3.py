@@ -15,4 +15,4 @@ if __name__ == "__main__":
             3000,3999)
 
     for val in test:
-        print '%d - %s'%(val, to_roman(val))
+        print('%d - %s'%(val, to_roman(val)))

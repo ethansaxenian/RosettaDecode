@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, unicode_literals, print_function
+
 
 import tty, termios
 import sys
 if sys.version_info.major < 3:
-    import thread as _thread
+    import _thread as _thread
 else:
     import _thread
 import time

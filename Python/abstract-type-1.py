@@ -14,4 +14,4 @@ class BaseQueue(object):
 
     def Print_Contents(self):
         for i in self.contents:
-            print i,
+            print(i, end=' ')

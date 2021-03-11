@@ -4,7 +4,7 @@ import win32com.client
 from win32com.server.util import wrap, unwrap
 from win32com.server.dispatcher import DefaultDebugDispatcher
 from ctypes import *
-import commands
+import subprocess
 import pythoncom
 import winerror
 from win32com.server.exception import Exception
@@ -37,15 +37,15 @@ class VeryPermissive:
             return
         raise Exception(scode=winerror.E_INVALIDARG, desc="invalid wFlags")
     def write(self, x):
-        print x
+        print(x)
         return 0
 import win32com.server.util, win32com.server.policy
 child = VeryPermissive()
 ob = win32com.server.util.wrap(child, usePolicy=win32com.server.policy.DynamicPolicy)
 try:
     handle = pythoncom.RegisterActiveObject(ob, iid, 0)
-except pythoncom.com_error, details:
-    print "Warning - could not register the object in the ROT:", details
+except pythoncom.com_error as details:
+    print("Warning - could not register the object in the ROT:", details)
     handle = None
 child.handle = handle
 

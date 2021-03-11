@@ -51,7 +51,7 @@ v, lst = choose_item(400, len(items) - 1, {})
 w = 0
 for i, cnt in enumerate(lst):
     if cnt > 0:
-        print cnt, items[i][0]
+        print(cnt, items[i][0])
         w = w + items[i][1] * cnt
 
-print "Total weight:", w, "Value:", v
+print("Total weight:", w, "Value:", v)

@@ -3,7 +3,7 @@ import sys
 HIST = {}
 
 def trace(frame, event, arg):
-    for name,val in frame.f_locals.items():
+    for name,val in list(frame.f_locals.items()):
         if name not in HIST:
             HIST[name] = []
         else:
@@ -23,12 +23,12 @@ def main():
     for i in range(5):
         c = i
 
-    print "c:", c, "-> undo x3 ->",
+    print("c:", c, "-> undo x3 ->", end=' ')
     c = undo('c')
     c = undo('c')
     c = undo('c')
-    print c
-    print 'HIST:', HIST
+    print(c)
+    print('HIST:', HIST)
 
 sys.settrace(trace)
 main()

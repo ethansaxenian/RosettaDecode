@@ -8,4 +8,4 @@ for word in urllib.request.urlopen(url).read().decode("utf-8").split():
         if lenword > mx:
             words, mx = [], lenword
         words.append(word)
-print(' '.join(words))
+print((' '.join(words)))

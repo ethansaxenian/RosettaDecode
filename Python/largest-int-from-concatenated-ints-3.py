@@ -6,4 +6,4 @@ def maxnum(x):
                           key=lambda i: Fraction(i, 10**(int(log10(i))+1)-1)))
 
 for numbers in [(1, 34, 3, 98, 9, 76, 45, 4), (54, 546, 548, 60)]:
-    print('Numbers: %r\n  Largest integer: %15s' % (numbers, maxnum(numbers)))
+    print(('Numbers: %r\n  Largest integer: %15s' % (numbers, maxnum(numbers))))

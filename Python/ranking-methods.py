@@ -67,8 +67,8 @@ if __name__ == '__main__':
 
     print('\nScores to be ranked (best first):')
     for s in scores:
-        print('        %2i %s' % (s ))
+        print(('        %2i %s' % (s )))
     for ranker in [sc_rank, mc_rank, d_rank, o_rank, f_rank]:
-        print('\n%s:' % ranker.__doc__)
+        print(('\n%s:' % ranker.__doc__))
         for rank, score in ranker(scores):
-            print('  %3g, %r' % (rank, score))
+            print(('  %3g, %r' % (rank, score)))

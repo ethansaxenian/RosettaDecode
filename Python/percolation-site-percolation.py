@@ -14,11 +14,11 @@ def newgrid(p):
 
 def pgrid(cell, percolated=None):
     for n in range(N):
-        print( '%i)  ' % (n % 10)
-               + ' '.join(cell2char[cell[n][m]] for m in range(M)))
+        print(( '%i)  ' % (n % 10)
+               + ' '.join(cell2char[cell[n][m]] for m in range(M))))
     if percolated:
         where = percolated.args[0][0]
-        print('!)  ' + '  ' * where + cell2char[cell[n][where]])
+        print(('!)  ' + '  ' * where + cell2char[cell[n][where]]))
 
 def check_from_top(cell):
     n, walk_index = 0, 1
@@ -63,9 +63,9 @@ if __name__ == '__main__':
             if percolated:
                 pcount[p] += 1
                 if not sample_printed:
-                    print('\nSample percolating %i x %i, p = %5.2f grid\n' % (M, N, p))
+                    print(('\nSample percolating %i x %i, p = %5.2f grid\n' % (M, N, p)))
                     pgrid(cell, percolated)
                     sample_printed = True
-    print('\n p: Fraction of %i tries that percolate through\n' % t )
+    print(('\n p: Fraction of %i tries that percolate through\n' % t ))
 
-    pp({p:c/float(t) for p, c in pcount.items()})
+    pp({p:c/float(t) for p, c in list(pcount.items())})

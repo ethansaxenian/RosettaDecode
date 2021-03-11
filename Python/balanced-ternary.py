@@ -1,3 +1,4 @@
+from functools import reduce
 class BalancedTernary:
     # Represented as a list of 0, 1 or -1s, with least significant digit first.
 
@@ -81,15 +82,15 @@ class BalancedTernary:
 
 def main():
     a = BalancedTernary("+-0++0+")
-    print "a:", a.to_int(), a
+    print("a:", a.to_int(), a)
 
     b = BalancedTernary(-436)
-    print "b:", b.to_int(), b
+    print("b:", b.to_int(), b)
 
     c = BalancedTernary("+-++-")
-    print "c:", c.to_int(), c
+    print("c:", c.to_int(), c)
 
     r = a * (b - c)
-    print "a * (b - c):", r.to_int(), r
+    print("a * (b - c):", r.to_int(), r)
 
 main()

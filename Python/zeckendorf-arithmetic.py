@@ -112,33 +112,33 @@ class Zeckendorf:
         return sb
 
 # main
-print "Addition:"
+print("Addition:")
 g = Zeckendorf("10")
 g = g + Zeckendorf("10")
-print g
+print(g)
 g = g + Zeckendorf("10")
-print g
+print(g)
 g = g + Zeckendorf("1001")
-print g
+print(g)
 g = g + Zeckendorf("1000")
-print g
+print(g)
 g = g + Zeckendorf("10101")
-print g
-print
+print(g)
+print()
 
-print "Subtraction:"
+print("Subtraction:")
 g = Zeckendorf("1000")
 g = g - Zeckendorf("101")
-print g
+print(g)
 g = Zeckendorf("10101010")
 g = g - Zeckendorf("1010101")
-print g
-print
+print(g)
+print()
 
-print "Multiplication:"
+print("Multiplication:")
 g = Zeckendorf("1001")
 g = g * Zeckendorf("101")
-print g
+print(g)
 g = Zeckendorf("101010")
 g = g + Zeckendorf("101")
-print g
+print(g)

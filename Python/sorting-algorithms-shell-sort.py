@@ -10,4 +10,4 @@ def shell(seq):
 
 data = [22, 7, 2, -5, 8, 4]
 shell(data)
-print data # [-5, 2, 4, 7, 8, 22]
+print(data) # [-5, 2, 4, 7, 8, 22]

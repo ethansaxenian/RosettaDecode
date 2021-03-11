@@ -119,11 +119,11 @@ values = ('FALSE', 'TRUE ', 'MAYBE')
 print("\nTrit logical inverse, '~'")
 for a in values:
     expr = '~%s' % a
-    print('  %s = %s' % (expr, eval(expr)))
+    print(('  %s = %s' % (expr, eval(expr))))
 
 for op, ophelp in (('&', 'and'), ('|', 'or'), ('^', 'exclusive-or')):
-    print("\nTrit logical %s, '%s'" % (ophelp, op))
+    print(("\nTrit logical %s, '%s'" % (ophelp, op)))
     for a in values:
         for b in values:
             expr = '%s %s %s' % (a, op, b)
-            print('  %s = %s' % (expr, eval(expr)))
+            print(('  %s = %s' % (expr, eval(expr))))

@@ -1,4 +1,4 @@
-from __future__ import division
+
 from random import random
 import string
 from math import fsum
@@ -14,8 +14,8 @@ def newgrid(n, p):
 
 def pgrid(cell):
     for n in range(N):
-        print( '%i)  ' % (n % 10)
-               + ' '.join(cell2char[cell[n][m]] for m in range(M)))
+        print(( '%i)  ' % (n % 10)
+               + ' '.join(cell2char[cell[n][m]] for m in range(M))))
 
 
 def cluster_density(n, p):
@@ -51,13 +51,13 @@ def walk_maze(m, n, cell, indx):
 
 if __name__ == '__main__':
     cell = newgrid(n=N, p=0.5)
-    print('Found %i clusters in this %i by %i grid\n'
-          % (clustercount(cell), N, N))
+    print(('Found %i clusters in this %i by %i grid\n'
+          % (clustercount(cell), N, N)))
     pgrid(cell)
     print('')
 
     for n in n_range:
         N = M = n
         sim = fsum(cluster_density(n, p) for i in range(t)) / t
-        print('t=%3i p=%4.2f n=%5i sim=%7.5f'
-              % (t, p, n, sim))
+        print(('t=%3i p=%4.2f n=%5i sim=%7.5f'
+              % (t, p, n, sim)))

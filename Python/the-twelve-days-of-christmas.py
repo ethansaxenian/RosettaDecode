@@ -18,6 +18,6 @@ days = '''first second third fourth fifth
 
 for n, day in enumerate(days, 1):
     g = gifts[:n][::-1]
-    print(('\nOn the %s day of Christmas\nMy true love gave to me:\n' % day) +
+    print((('\nOn the %s day of Christmas\nMy true love gave to me:\n' % day) +
           '\n'.join(g[:-1]) +
-          (' and\n' + g[-1] if n > 1 else g[-1].capitalize()))
+          (' and\n' + g[-1] if n > 1 else g[-1].capitalize())))

@@ -7,8 +7,8 @@ while True:
     for x in range(4):
         ints.append(str(random.randrange(1, 10)))
     charsandints = chars + ints
-    print "Numbers are:", ints
-    guess = raw_input("Enter your guess:")
+    print(("Numbers are:", ints))
+    guess = eval(input("Enter your guess:"))
     if guess.lower() == "q":
         break
     elif guess.lower() == "|":
@@ -19,17 +19,17 @@ while True:
             if a not in charsandints or guess.count(a) > charsandints.count(a):
                 flag = False
         if re.search("\d\d", guess):
-            print "You cannot combine digits."
+            print("You cannot combine digits.")
             break
         if flag:
-            print "Your result is: ", eval(guess)
+            print(("Your result is: ", eval(guess)))
             if eval(guess) == 24:
-                print "You won"
+                print("You won")
                 break
             else:
-                print "You lost"
+                print("You lost")
                 break
         else:
-            print "You cannot use anthing other than", charsandints
+            print(("You cannot use anthing other than", charsandints))
             break
-print "Thanks for playing"
+print("Thanks for playing")

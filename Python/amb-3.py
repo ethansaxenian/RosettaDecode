@@ -1,5 +1,5 @@
 def main():
-    print (
+    print((
         unlines([
             unwords([w1, w2, w3, w4])
 
@@ -15,7 +15,7 @@ def main():
             for w4 in ['slowly', 'quickly']
             if joins(w3, w4)
         ])
-    )
+    ))
 
 
 # joins :: String -> String -> Bool

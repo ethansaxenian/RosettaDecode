@@ -51,5 +51,5 @@ for x in range(1,x_size-3,8):
 				
 		
 #Save the picture under a name as a jpg file.
-print "Your picture is saved"		
+print("Your picture is saved")		
 im.save('PictureResult.jpg')

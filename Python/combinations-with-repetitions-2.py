@@ -2,6 +2,7 @@
 
 from itertools import (accumulate, chain, islice, repeat)
 from functools import (reduce)
+from functools import reduce
 
 
 # combsWithRep :: Int -> [a] -> [kTuple a]
@@ -34,12 +35,12 @@ def main():
     '''Test the generation of sets of cardinality
        k with elements drawn from xs.
     '''
-    print(
+    print((
         combsWithRep(2)(['iced', 'jam', 'plain'])
-    )
-    print(
+    ))
+    print((
         len(combsWithRep(3)(enumFromTo(0)(9)))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -54,9 +55,9 @@ def enumFromTo(m):
 def showLog(*s):
     '''Arguments printed with
        intercalated arrows.'''
-    print(
+    print((
         ' -> '.join(map(str, s))
-    )
+    ))
 
 
 # MAIN ---

@@ -20,7 +20,7 @@ def digitSum(base):
 def main():
     '''Digit sums of numbers in bases 10 and 16:'''
 
-    print(
+    print((
         fTable(main.__doc__)(
             lambda nb: showIntAtBase(nb[0])(
                 digitChar
@@ -28,7 +28,7 @@ def main():
         )(repr)(
             uncurry(digitSum)
         )([(10, 1), (10, 10), (16, 0xfe), (16, 0xf0e)])
-    )
+    ))
 
 
 # -------------------------DISPLAY-------------------------
@@ -41,7 +41,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

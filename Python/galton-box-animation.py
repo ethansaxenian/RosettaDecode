@@ -62,7 +62,7 @@ class Board():
         print_there(y, x, "*")
 
     def print_all(self):
-        print(chr(27) + "[2J")
+        print((chr(27) + "[2J"))
         self.print_board();
         for ball in self.balls:
             self.print_ball(ball)

@@ -1,3 +1,4 @@
+from functools import reduce
 def gcd(a, b):
     while b != 0:
         a, b = b, a % b
@@ -33,7 +34,8 @@ def factored( a):
         yield (a,1)
 
 
-def multOrdr1(a,(p,e) ):
+def multOrdr1(a, xxx_todo_changeme ):
+    (p,e) = xxx_todo_changeme
     m = p**e
     t = (p-1)*(p**(e-1)) #  = Phi(p**e) where p prime
     qs = [1,]
@@ -53,14 +55,14 @@ def multOrder(a,m):
 
 
 if __name__ == "__main__":
-    print multOrder(37, 1000)        # 100
+    print(multOrder(37, 1000))        # 100
     b = 10**20-1
-    print multOrder(2, b) # 3748806900
-    print multOrder(17,b) # 1499522760
+    print(multOrder(2, b)) # 3748806900
+    print(multOrder(17,b)) # 1499522760
     b = 100001
-    print multOrder(54,b)
-    print pow( 54, multOrder(54,b),b)
+    print(multOrder(54,b))
+    print(pow( 54, multOrder(54,b),b))
     if any( (1==pow(54,r, b)) for r in range(1,multOrder(54,b))):
-        print 'Exists a power r < 9090 where pow(54,r,b)==1'
+        print('Exists a power r < 9090 where pow(54,r,b)==1')
     else:
-        print 'Everything checks.'
+        print('Everything checks.')

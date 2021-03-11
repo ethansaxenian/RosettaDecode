@@ -1,4 +1,5 @@
 from sys import setrecursionlimit
+from functools import reduce
 setrecursionlimit(2000) # 2000 ought to be big enough for everybody
 
 def triples(lim, a = 3, b = 4, c = 5):
@@ -11,4 +12,4 @@ def triples(lim, a = 3, b = 4, c = 5):
         triples(lim, -a + 2*b + 2*c, -2*a + b + 2*c, -2*a + 2*b + 3*c) ])
 
 for peri in [10 ** e for e in range(1, 8)]:
-    print peri, triples(peri)
+    print(peri, triples(peri))

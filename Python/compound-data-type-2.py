@@ -4,4 +4,4 @@ class Point:
         self.y = y
 
 p = Point()
-print p.x
+print(p.x)

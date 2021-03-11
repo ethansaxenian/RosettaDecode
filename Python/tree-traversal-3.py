@@ -3,6 +3,7 @@
 from itertools import (chain, takewhile)
 from functools import (reduce)
 from operator import (mul)
+from functools import reduce
 
 
 # foldTree :: (a -> [b] -> b) -> Tree a -> b
@@ -119,7 +120,7 @@ def main():
         ])
     ])
 
-    print(
+    print((
         fTable(main.__doc__ + ':\n')(fName)(str)(
             lambda f: (
                 foldTree(f) if 'levelorder' != fName(f) else f
@@ -129,7 +130,7 @@ def main():
             treeSum, treeProduct, treeMin, treeMax,
             nodeCount, treeWidth, treeDepth
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -173,7 +174,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).'''
     return lambda xs: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 
@@ -218,7 +219,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

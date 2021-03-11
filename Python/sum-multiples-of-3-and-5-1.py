@@ -21,12 +21,12 @@ for n in range(1001):
     sa, sb, sc = sum35a(n), sum35b(n), sum35c(n)
     assert sa == sb == sc  # python tests aren't like those of c.
 
-print('For n = %7i -> %i\n' % (n, sc))
+print(('For n = %7i -> %i\n' % (n, sc)))
 
 # Pretty patterns
 for p in range(7):
-    print('For n = %7i -> %i' % (10**p, sum35c(10**p)))
+    print(('For n = %7i -> %i' % (10**p, sum35c(10**p))))
 
 # Scalability
 p = 20
-print('\nFor n = %20i -> %i' % (10**p, sum35c(10**p)))
+print(('\nFor n = %20i -> %i' % (10**p, sum35c(10**p))))

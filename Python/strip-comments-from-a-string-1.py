@@ -6,5 +6,5 @@ def remove_comments(line, sep):
     return line.strip()
 
 # test
-print remove_comments('apples ; pears # and bananas', ';#')
-print remove_comments('apples ; pears # and bananas', '!')
+print(remove_comments('apples ; pears # and bananas', ';#'))
+print(remove_comments('apples ; pears # and bananas', '!'))

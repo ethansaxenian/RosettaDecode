@@ -43,14 +43,14 @@ def main():
 
     count = 0
 
-    for r in xrange(box_side):
+    for r in range(box_side):
         y = y_min + r * dy
-        for c in xrange(box_side):
+        for c in range(box_side):
             x = x_min + c * dx
             if any((x-circle.x)**2 + (y-circle.y)**2 <= (circle.r ** 2)
                    for circle in circles):
                 count += 1
 
-    print "Approximated area:", count * dx * dy
+    print("Approximated area:", count * dx * dy)
 
 main()

@@ -7,11 +7,11 @@ def plot_timings():
    # populate plot dictionaries
    for filename in glob.glob('*.xy'):
        m = re.match(r'([^-]+)-([^-]+)-(\d+)-(\d+)\.xy', filename)
-       print filename
+       print(filename)
        assert m, filename
        funcname, seqname, npoints, maxN = m.groups()
        npoints, maxN = int(npoints), int(maxN)
-       a = numpy.fromiter(itertools.imap(float, open(filename).read().split()), dtype='f')
+       a = numpy.fromiter(map(float, open(filename).read().split()), dtype='f')
        Ns = a[::2]  # sequences lengths
        Ts = a[1::2] # corresponding times
        assert len(Ns) == len(Ts) == npoints

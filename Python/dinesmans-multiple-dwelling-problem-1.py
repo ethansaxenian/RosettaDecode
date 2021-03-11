@@ -110,7 +110,7 @@ else:
         for a2n in zip(a, names):
             output += ['  Floor %i is occupied by %s' % a2n]
         output.sort(reverse=True)
-        print('\n'.join(output))
+        print(('\n'.join(output)))
     else:
         print('No solution found.')
     print()
@@ -127,6 +127,6 @@ handler = {
 def parse_and_solve(problem):
     p = re.sub(r'\s+', ' ', problem).strip()
     for x in problem_re.finditer(p):
-        groupname, txt = [(k,v) for k,v in x.groupdict().items() if v][0]
+        groupname, txt = [(k,v) for k,v in list(x.groupdict().items()) if v][0]
         #print ("%r, %r" % (groupname, txt))
         handler[groupname](txt)

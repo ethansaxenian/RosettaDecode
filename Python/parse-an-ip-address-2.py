@@ -30,7 +30,7 @@ fff:ffff:0:ffff:ffff:ffff:ffff:ffff     Good address
 """
 
 def print_args(args):
-  print "print_args:", args
+  print("print_args:", args)
 
 def join(args):
   args[0]="".join(args)
@@ -52,9 +52,9 @@ def assert_in_range(lwb, upb):
   def range_check(args):
     return # turn range checking off
     if args[0] < lwb:
-      raise ValueError,"value %d < %d"%(args[0], lwb)
+      raise ValueError("value %d < %d"%(args[0], lwb))
     if args[0] > upb:
-      raise ValueError,"value %d > %d"%(args[0], upb)
+      raise ValueError("value %d > %d"%(args[0], upb))
   return range_check
 
 dot = Literal(".").suppress()("dot"); colon = Literal(":").suppress()("colon")
@@ -104,10 +104,10 @@ ip_fmt = (
 
 class IPAddr(object):
   def __init__(self, string):
-    self.service = dict(zip(("address","port"), ip_fmt.parseString(string)[:]))
+    self.service = dict(list(zip(("address","port"), ip_fmt.parseString(string)[:])))
   def __getitem__(self, key): return self.service[key]
   def __contains__(self, key): return key in self.service
-  def __repr__(self): return `self.service` # "".join(self.service)
+  def __repr__(self): return repr(self.service) # "".join(self.service)
   address=property(lambda self: self.service["address"])
   port=property(lambda self: self.service["port"])
   is_service=property(lambda self: "port" in self.service)
@@ -116,9 +116,9 @@ class IPAddr(object):
 for test in tests.splitlines():
   if not test.startswith("#"):
     ip_str, desc = test.split(None,1)
-    print ip_str,"=>",
+    print(ip_str,"=>", end=' ')
     try:
       ip=IPAddr(ip_str)
-      print ip, "IP Version:",ip.version,"- Address is OK!",
-    except (ParseException,ValueError), details: print "Bad! IP address syntax error detected:",details,
-    print "- Actually:",desc
+      print(ip, "IP Version:",ip.version,"- Address is OK!", end=' ')
+    except (ParseException,ValueError) as details: print("Bad! IP address syntax error detected:",details, end=' ')
+    print("- Actually:",desc)

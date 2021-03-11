@@ -20,8 +20,8 @@ def calc_difference(m, d):
     w = len(m[0])
     total = 0.0
 
-    for i in xrange(h):
-        for j in xrange(w):
+    for i in range(h):
+        for j in range(w):
             v = 0.0
             n = 0
             if i != 0:  v += m[i-1][j].voltage; n += 1
@@ -38,7 +38,7 @@ def calc_difference(m, d):
 def iter(m):
     h = len(m)
     w = len(m[0])
-    difference = [[Node() for j in xrange(w)] for i in xrange(h)]
+    difference = [[Node() for j in range(w)] for i in range(h)]
 
     while True:
         set_boundary(m) # Enforce boundary conditions.
@@ -58,7 +58,7 @@ def iter(m):
 
 def main():
     w = h = 10
-    mesh = [[Node() for j in xrange(w)] for i in xrange(h)]
-    print "R = %.16f" % (2 / iter(mesh))
+    mesh = [[Node() for j in range(w)] for i in range(h)]
+    print("R = %.16f" % (2 / iter(mesh)))
 
 main()

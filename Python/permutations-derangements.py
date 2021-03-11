@@ -4,7 +4,7 @@ import math
 
 def derangements(n):
     'All deranged permutations of the integers 0..n-1 inclusive'
-    return ( perm for perm in permutations(range(n))
+    return ( perm for perm in permutations(list(range(n)))
              if all(indx != p for indx, p in enumerate(perm)) )
 
 def subfact(n):
@@ -28,14 +28,14 @@ def _iterlen(iter):
 
 if __name__ == '__main__':
     n = 4
-    print("Derangements of %s" % (tuple(range(n)),))
+    print(("Derangements of %s" % (tuple(range(n)),)))
     for d in derangements(n):
-        print("  %s" % (d,))
+        print(("  %s" % (d,)))
 
     print("\nTable of n vs counted vs calculated derangements")
     for n in range(10):
-        print("%2i %-5i %-5i" %
-              (n, _iterlen(derangements(n)), subfact(n)))
+        print(("%2i %-5i %-5i" %
+              (n, _iterlen(derangements(n)), subfact(n))))
 
     n = 20
-    print("\n!%i = %i" % (n, subfact(n)))
+    print(("\n!%i = %i" % (n, subfact(n))))

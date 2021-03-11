@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 def maxandmallows(nmaxpower2):
     nmax = 2**nmaxpower2
@@ -17,8 +17,8 @@ def maxandmallows(nmaxpower2):
         if ratio >= 0.55:
             mallows = n
         if ratio == 0.5:
-            print("In the region %7i < n <= %7i: max a(n)/n = %6.4f at  n = %i" %
-		  (n//2, n, mx[0], mx[1]))
+            print(("In the region %7i < n <= %7i: max a(n)/n = %6.4f at  n = %i" %
+		  (n//2, n, mx[0], mx[1])))
             mxpow2.append(mx[0])
             mx = (ratio, n)
         hc.append(hc[hc[n]] + hc[-hc[n]])
@@ -28,4 +28,4 @@ def maxandmallows(nmaxpower2):
 if __name__ == '__main__':
     hc, mallows = maxandmallows(20)
     if mallows:
-        print("\nYou too might have won $1000 with the mallows number of %i" % mallows)
+        print(("\nYou too might have won $1000 with the mallows number of %i" % mallows))

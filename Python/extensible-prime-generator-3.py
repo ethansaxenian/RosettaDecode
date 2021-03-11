@@ -6,7 +6,7 @@ def wsieve():       # ideone.com/mqO25A
     ps = wsieve()      #     codereview.stackexchange.com/q/92365/9064
     p = next(ps)       # 11         stackoverflow.com/q/30553925/849891
     psq = p*p          # 121
-    D = dict( zip( accumulate( chain( [0], wh11)), count(0)))   # start from
+    D = dict( list(zip( accumulate( chain( [0], wh11)), count(0))))   # start from
     mults = {}
     for c in cs:
         if c in mults:
@@ -27,9 +27,9 @@ def primes():
 	yield from (2, 3, 5, 7)
 	yield from wsieve()
 
-print( list( islice( primes(), 0, 20)))
-print( list( takewhile( lambda x: x<150,
-                   dropwhile( lambda x: x<100, primes()))))
-print( len( list( takewhile( lambda x: x<8000,
-                   dropwhile( lambda x: x<7700, primes())))))
-print( list( islice( primes(), 10000-1, 10000))[0])
+print(( list( islice( primes(), 0, 20))))
+print(( list( takewhile( lambda x: x<150,
+                   dropwhile( lambda x: x<100, primes())))))
+print(( len( list( takewhile( lambda x: x<8000,
+                   dropwhile( lambda x: x<7700, primes()))))))
+print(( list( islice( primes(), 10000-1, 10000))[0]))

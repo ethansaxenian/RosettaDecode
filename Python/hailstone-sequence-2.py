@@ -25,11 +25,11 @@ def main():
 
     n = 27
     xs = hailstone(n)
-    print(unlines([
+    print((unlines([
         f'The hailstone sequence for {n} has {len(xs)} elements,',
         f'starting with {take(4)(xs)},',
         f'and ending with {drop(len(xs) - 4)(xs)}.\n'
-    ]))
+    ])))
 
     (a, b) = (1, 99999)
     (i, x) = max(
@@ -38,11 +38,11 @@ def main():
         ),
         key=snd
     )
-    print(unlines([
+    print((unlines([
         f'The number in the range {a}..{b} '
         f'which produces the longest sequence is {1 + i},',
         f'generating a hailstone sequence of {x} integers.'
-    ]))
+    ])))
 
 
 # GENERIC ------------------------------------------------

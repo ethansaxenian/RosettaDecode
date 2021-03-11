@@ -5,14 +5,14 @@ costs  = {'W': {'A': 16, 'B': 16, 'C': 13, 'D': 22, 'E': 17},
           'Y': {'A': 19, 'B': 19, 'C': 20, 'D': 23, 'E': 50},
           'Z': {'A': 50, 'B': 12, 'C': 50, 'D': 15, 'E': 11}}
 demand = {'A': 30, 'B': 20, 'C': 70, 'D': 30, 'E': 60}
-cols = sorted(demand.iterkeys())
+cols = sorted(demand.keys())
 supply = {'W': 50, 'X': 60, 'Y': 50, 'Z': 50}
 res = dict((k, defaultdict(int)) for k in costs)
 g = {}
 for x in supply:
-    g[x] = sorted(costs[x].iterkeys(), key=lambda g: costs[x][g])
+    g[x] = sorted(iter(costs[x].keys()), key=lambda g: costs[x][g])
 for x in demand:
-    g[x] = sorted(costs.iterkeys(), key=lambda g: costs[g][x])
+    g[x] = sorted(iter(costs.keys()), key=lambda g: costs[g][x])
 
 while g:
     d = {}
@@ -28,30 +28,30 @@ while g:
     res[f][t] += v
     demand[t] -= v
     if demand[t] == 0:
-        for k, n in supply.iteritems():
+        for k, n in supply.items():
             if n != 0:
                 g[k].remove(t)
         del g[t]
         del demand[t]
     supply[f] -= v
     if supply[f] == 0:
-        for k, n in demand.iteritems():
+        for k, n in demand.items():
             if n != 0:
                 g[k].remove(f)
         del g[f]
         del supply[f]
 
 for n in cols:
-    print "\t", n,
-print
+    print("\t", n, end=' ')
+print()
 cost = 0
 for g in sorted(costs):
-    print g, "\t",
+    print(g, "\t", end=' ')
     for n in cols:
         y = res[g][n]
         if y != 0:
-            print y,
+            print(y, end=' ')
         cost += y * costs[g][n]
-        print "\t",
-    print
-print "\n\nTotal Cost = ", cost
+        print("\t", end=' ')
+    print()
+print("\n\nTotal Cost = ", cost)

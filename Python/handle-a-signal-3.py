@@ -5,7 +5,7 @@ n = 0
 def counter():
    global n, timer
    n += 1
-   print n
+   print(n)
    timer = threading.Timer(0.5, counter)
    timer.start()
 
@@ -26,4 +26,4 @@ def intrptUNIX():
 t1 = time.time()
 intrptUNIX()
 tdelt = time.time() - t1
-print 'Program has run for %5.3f seconds.' % tdelt
+print('Program has run for %5.3f seconds.' % tdelt)

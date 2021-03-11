@@ -6,7 +6,7 @@ def lefto(q, p, list):
 	# give me q such that q is left of p in list
 	# zip(list, list[1:]) gives a list of 2-tuples of neighboring combinations
 	# which can then be pattern-matched against the query
-	return membero((q,p), zip(list, list[1:]))
+	return membero((q,p), list(zip(list, list[1:])))
 
 def nexto(q, p, list):
 	# give me q such that q is next to p in list
@@ -66,8 +66,8 @@ dur = t1-t0
 count = len(solutions)
 zebraOwner = [house for house in solutions[0] if 'zebra' in house][0][0]
 
-print "%i solutions in %.2f seconds" % (count, dur)
-print "The %s is the owner of the zebra" % zebraOwner
-print "Here are all the houses:"
+print("%i solutions in %.2f seconds" % (count, dur))
+print("The %s is the owner of the zebra" % zebraOwner)
+print("Here are all the houses:")
 for line in solutions[0]:
-	print str(line)
+	print(str(line))

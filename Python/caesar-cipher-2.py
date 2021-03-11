@@ -9,7 +9,7 @@ def caesar(s, k, decode = False):
            )
        )
 msg = "The quick brown fox jumped over the lazy dogs"
-print msg
+print(msg)
 enc = caesar(msg, 11)
-print enc
-print caesar(enc, 11, decode = True)
+print(enc)
+print(caesar(enc, 11, decode = True))

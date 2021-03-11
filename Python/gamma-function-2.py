@@ -42,11 +42,11 @@ def main():
     '''Gamma function over a range of values.'''
 
     gamma = gamma_(TBL)
-    print(
+    print((
         fTable(' i -> gamma(i/3):\n')(repr)(lambda x: "%0.7e" % x)(
             lambda x: gamma(x / 3.0)
         )(enumFromTo(1)(10))
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -67,7 +67,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

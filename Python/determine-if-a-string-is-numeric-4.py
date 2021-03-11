@@ -19,5 +19,5 @@ tests = [
     'NaN', 'inf', '-Infinity']
 
 for s in tests:
-    print("%14s -> %-14s %-20s is_numeric: %-5s  str.isnumeric: %s" % (
-        '"'+s+'"', numeric(s), type(numeric(s)), is_numeric(s), s.isnumeric() ))
+    print(("%14s -> %-14s %-20s is_numeric: %-5s  str.isnumeric: %s" % (
+        '"'+s+'"', numeric(s), type(numeric(s)), is_numeric(s), s.isnumeric() )))

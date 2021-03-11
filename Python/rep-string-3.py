@@ -20,7 +20,7 @@ def repCycles(s):
 # main :: IO ()
 def main():
     '''Tests - longest cycle (if any) in each string.'''
-    print(
+    print((
         fTable('Longest cycles:\n')(repr)(
             lambda xs: ''.join(xs[-1]) if xs else '(none)'
         )(repCycles)([
@@ -36,7 +36,7 @@ def main():
             '00',
             '1',
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -82,7 +82,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

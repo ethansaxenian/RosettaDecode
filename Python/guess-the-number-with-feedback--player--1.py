@@ -1,10 +1,10 @@
 inclusive_range = mn, mx = (1, 10)
 
-print('''\
+print(('''\
 Think of a number between %i and %i and wait for me to guess it.
 On every guess of mine you should state whether the guess was
 too high, too low, or equal to your number by typing h, l, or =
-''' % inclusive_range)
+''' % inclusive_range))
 
 i = 0
 while True:
@@ -13,7 +13,7 @@ while True:
     txt = input("Guess %2i is: %2i. The score for which is (h,l,=): "
                 % (i, guess)).strip().lower()[0]
     if txt not in 'hl=':
-        print("  I don't understand your input of '%s' ?" % txt)
+        print(("  I don't understand your input of '%s' ?" % txt))
         continue
     if txt == 'h':
         mx = guess-1

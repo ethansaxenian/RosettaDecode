@@ -14,7 +14,7 @@ Y = arange(-1,  1, .002)
 Z = zeros((len(Y), len(X)))
 
 for iy, y in enumerate(Y):
-	print (iy, "of", len(Y))
+	print((iy, "of", len(Y)))
 	for ix, x in enumerate(X):
 		Z[iy,ix] = m(x + 1j * y)
 

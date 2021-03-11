@@ -20,4 +20,4 @@ if __name__ == "__main__":
     # Syntax 2
     g = Compose(lambda x: x)
 
-    print((f * g)(2))
+    print(((f * g)(2)))

@@ -9,7 +9,7 @@ class Entity:
 	def __init__(self):
 		self.name = "Entity"
 	def printName(self):
-		print self.name
+		print(self.name)
 
 class Person(Entity): #OldMan inherits from Entity
 	def __init__(self): #override constructor
@@ -26,12 +26,12 @@ target = file("objects.dat", "w") # open file
 #  Serialize
 pickle.dump((instance1, instance2), target) # serialize `instance1` and `instance2`to `target`
 target.close() # flush file stream
-print "Serialized..."
+print("Serialized...")
 
 # Unserialize
 target = file("objects.dat") # load again
 i1, i2 = pickle.load(target)
-print "Unserialized..."
+print("Unserialized...")
 
 i1.printName()
 i2.printName()

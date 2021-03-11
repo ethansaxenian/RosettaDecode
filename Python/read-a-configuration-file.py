@@ -31,4 +31,4 @@ if __name__ == '__main__':
     import sys
     conf = readconf(sys.argv[1])
     for k, v in sorted(conf.items()):
-        print k, '=', v
+        print(k, '=', v)

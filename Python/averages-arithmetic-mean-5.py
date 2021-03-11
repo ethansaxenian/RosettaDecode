@@ -5,4 +5,4 @@ def avg(data):
         return sum(data) / float(len(data))
 
 
-print avg([0, 0, 3, 1, 4, 1, 5, 9, 0, 0])
+print(avg([0, 0, 3, 1, 4, 1, 5, 9, 0, 0]))

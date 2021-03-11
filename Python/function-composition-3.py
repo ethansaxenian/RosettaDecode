@@ -11,12 +11,9 @@ def compose(g, f):
 def main():
     '''Test'''
 
-    print(list(map(
-        lambda f: f(0.5),
-        zipWith(compose)(
+    print((list([f(0.5) for f in zipWith(compose)(
             [sin, cos, lambda x: x ** 3.0]
-        )([asin, acos, lambda x: x ** (1 / 3.0)])
-    )))
+        )([asin, acos, lambda x: x ** (1 / 3.0)])])))
 
 
 # GENERIC FUNCTIONS ---------------------------------------
@@ -28,7 +25,7 @@ def zipWith(f):
        custom function, rather than with the
        default tuple constructor.'''
     return lambda xs: lambda ys: (
-        map(f, xs, ys)
+        list(map(f, xs, ys))
     )
 
 

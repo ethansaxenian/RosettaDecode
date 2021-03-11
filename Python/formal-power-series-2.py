@@ -1,7 +1,7 @@
 from itertools import islice, tee
 from fractions import Fraction
 try:
-    from itertools import izip as zip # for 2.6
+     # for 2.6
 except:
     pass
 
@@ -53,6 +53,6 @@ def sine_cosine_series():
 sinx, cosx = sine_cosine_series()
 
 print("cosine")
-print(list(islice(sinx, 10)))
+print((list(islice(sinx, 10))))
 print("sine")
-print(list(islice(cosx, 10)))
+print((list(islice(cosx, 10))))

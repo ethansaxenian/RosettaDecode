@@ -30,14 +30,14 @@ L1 = label(pos=(0,-1.5,0), text='Drag with right mousebutton to rotate view',   
 L2 = label(pos=(0,-1.9,0), text='Drag up+down with middle mousebutton to zoom', box=0)
 L3 = label(pos=(0,-2.3,0), text='Left-click to change', color=color.orange,     box=0)
 
-print "Hello World"     # Console
+print("Hello World")     # Console
 
 
 cCount = 0
 def change():
     global rot, cCount
     cCount=cCount+1
-    print "change:", cCount
+    print("change:", cCount)
     rot=-rot
     if T1.visible:
         T1.visible=False

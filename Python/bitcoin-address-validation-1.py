@@ -14,5 +14,5 @@ def check_bc(bc):
     except Exception:
         return False
 
-print(check_bc('1AGNa15ZQXAZUgFiqJ3i7Z2DPU2J6hW62i'))
-print(check_bc("17NdbrSGoUotzeGCcMMCqnFkEvLymoou9j"))
+print((check_bc('1AGNa15ZQXAZUgFiqJ3i7Z2DPU2J6hW62i')))
+print((check_bc("17NdbrSGoUotzeGCcMMCqnFkEvLymoou9j")))

@@ -27,8 +27,8 @@ def vigenere_decrypt(target_freqs, input):
 
     # Assume that if there are less than 20 characters
     # per column, the key's too long to guess
-    for i in xrange(2, len(cleaned) // 20):
-        pieces = [[] for _ in xrange(i)]
+    for i in range(2, len(cleaned) // 20):
+        pieces = [[] for _ in range(i)]
         for j, c in enumerate(cleaned):
             pieces[j % i].append(c)
 
@@ -43,7 +43,7 @@ def vigenere_decrypt(target_freqs, input):
     if best_len == 0:
         return ("Text is too short to analyze", "")
 
-    pieces = [[] for _ in xrange(best_len)]
+    pieces = [[] for _ in range(best_len)]
     for i, c in enumerate(cleaned):
         pieces[i % best_len].append(c)
 
@@ -55,7 +55,7 @@ def vigenere_decrypt(target_freqs, input):
 
         m = 0
         max_corr = 0.0
-        for j in xrange(nchars):
+        for j in range(nchars):
             corr = 0.0
             c = ordA + j
             for frc in fr:
@@ -100,7 +100,7 @@ def main():
         0.00978, 0.02360, 0.00150, 0.01974, 0.00074]
 
     (key, decoded) = vigenere_decrypt(english_frequences, encoded)
-    print "Key:", key
-    print "\nText:", decoded
+    print("Key:", key)
+    print("\nText:", decoded)
 
 main()

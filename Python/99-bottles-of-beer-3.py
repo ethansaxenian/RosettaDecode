@@ -14,10 +14,10 @@ def main():
         'Better go to the store to buy some more'
     )
 
-    print(unlines(map(
+    print((unlines(list(map(
         incantation(localisation),
         enumFromThenTo(99)(98)(0)
-    )))
+    )))))
 
 
 # incantation :: (String, String, String) -> Int -> String

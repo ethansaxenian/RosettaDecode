@@ -1,7 +1,7 @@
 from itertools import permutations
 
 class Names:
-    Baker, Cooper, Fletcher, Miller, Smith = range(5)
+    Baker, Cooper, Fletcher, Miller, Smith = list(range(5))
     seq = [Baker, Cooper, Fletcher, Miller, Smith]
     strings = "Baker Cooper Fletcher Miller Smith".split()
 
@@ -15,4 +15,4 @@ predicates = [
 
 for sol in permutations(Names.seq):
     if all(p(sol) for p in predicates):
-        print(" ".join(x for x, y in sorted(zip(Names.strings, sol), key=lambda x: x[1])))
+        print((" ".join(x for x, y in sorted(zip(Names.strings, sol), key=lambda x: x[1]))))

@@ -24,4 +24,4 @@ def make_maze(w = 16, h = 8):
     return s
 
 if __name__ == '__main__':
-    print(make_maze())
+    print((make_maze()))

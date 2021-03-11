@@ -1,5 +1,5 @@
 def cocktailSort(A):
-    up = range(len(A)-1)
+    up = list(range(len(A)-1))
     while True:
         for indices in (up, reversed(up)):
             swapped = False

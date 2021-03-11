@@ -7,7 +7,7 @@ async def print_(string: str) -> None:
 
 async def main():
     strings = ['Enjoy', 'Rosetta', 'Code']
-    coroutines = map(print_, strings)
+    coroutines = list(map(print_, strings))
     await asyncio.gather(*coroutines)
 
 

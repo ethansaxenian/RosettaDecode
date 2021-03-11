@@ -1,13 +1,14 @@
 from functools import (reduce)
+from functools import reduce
 
 
 # main :: IO ()
 def main():
-    print (
+    print((
         tabulated(digitalRoot)(
             'Integer -> (additive persistence, digital root):'
         )([627615, 39390, 588225, 393900588225, 55])
-    )
+    ))
 
 
 # digitalRoot :: Int -> (Int, Int)
@@ -44,9 +45,7 @@ def tabulated(f):
     def go(s, xs):
         fw = compose(len)(str)
         w = fw(max(xs, key=fw))
-        return s + '\n' + '\n'.join(list(map(
-            lambda x: str(x).rjust(w, ' ') + ' -> ' + str(f(x)), xs
-        )))
+        return s + '\n' + '\n'.join(list([str(x).rjust(w, ' ') + ' -> ' + str(f(x)) for x in xs]))
     return lambda s: lambda xs: go(s, xs)
 
 

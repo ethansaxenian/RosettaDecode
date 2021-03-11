@@ -1,7 +1,7 @@
 try:
    foo()
-except SillyError, se:
-   print se.args
+except SillyError as se:
+   print(se.args)
    bar()
 else:
    # no exception occurred

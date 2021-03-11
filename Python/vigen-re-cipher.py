@@ -8,14 +8,14 @@ def encrypt(message, key):
 
     # Converted to uppercase.
     # Non-alpha characters stripped out.
-    message = filter(str.isalpha, message.upper())
+    message = list(filter(str.isalpha, message.upper()))
 
     def enc(c, k):
         '''Single letter encryption.'''
 
         return chr(((ord(k) + ord(c) - 2 * ord('A')) % 26) + ord('A'))
 
-    return ''.join(starmap(enc, zip(message, cycle(key))))
+    return ''.join(starmap(enc, list(zip(message, cycle(key)))))
 
 
 def decrypt(message, key):
@@ -26,7 +26,7 @@ def decrypt(message, key):
 
         return chr(((ord(c) - ord(k) - 2 * ord('A')) % 26) + ord('A'))
 
-    return ''.join(starmap(dec, zip(message, cycle(key))))
+    return ''.join(starmap(dec, list(zip(message, cycle(key)))))
 
 
 def main():

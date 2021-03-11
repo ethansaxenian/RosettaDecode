@@ -8,4 +8,4 @@ weight = [52.21, 53.12, 54.48, 55.84, 57.20, 58.57, 59.93,
 X = np.mat(height**np.arange(3)[:, None])
 y = np.mat(weight)
 
-print(y * X.T * (X*X.T).I)
+print((y * X.T * (X*X.T).I))

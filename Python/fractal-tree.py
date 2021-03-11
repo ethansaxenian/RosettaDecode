@@ -20,4 +20,4 @@ def input(event):
 drawTree(300, 550, -90, 9)
 pygame.display.flip()
 while True:
-    input(pygame.event.wait())
+    eval(input(pygame.event.wait()))

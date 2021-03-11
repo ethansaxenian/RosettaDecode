@@ -28,22 +28,22 @@ def gcd_(x):
 def main():
     '''Tests'''
 
-    print(
+    print((
         fTable(
             __doc__ + 's of 60 and [12..20]:'
         )(repr)(repr)(
             lcm(60)
         )(enumFromTo(12)(20))
-    )
+    ))
 
     pairs = [(0, 2), (2, 0), (-6, 14), (12, 18)]
-    print(
+    print((
         fTable(
             '\n\n' + __doc__ + 's of ' + repr(pairs) + ':'
         )(repr)(repr)(
             uncurry(lcm)
         )(pairs)
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -83,7 +83,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

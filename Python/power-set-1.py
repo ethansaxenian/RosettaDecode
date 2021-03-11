@@ -1,3 +1,4 @@
+from functools import reduce
 def list_powerset(lst):
     # the power set of the empty set has one element, the empty set
     result = [[]]
@@ -17,4 +18,4 @@ def list_powerset2(lst):
                   lst, [[]])
 
 def powerset(s):
-    return frozenset(map(frozenset, list_powerset(list(s))))
+    return frozenset(list(map(frozenset, list_powerset(list(s)))))

@@ -1,27 +1,27 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import SocketServer
+import socketserver
 import pickle
 
 HOST = "localhost"
 PORT = 8000
 
-class RPCServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class RPCServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     # The object_to_proxy member should be set to the object we want
     # methods called on. Unfortunately, we can't do this in the constructor
     # because the constructor should not be overridden in TCPServer...
 
     daemon_threads = True
 
-class RPCHandler(SocketServer.StreamRequestHandler):
+class RPCHandler(socketserver.StreamRequestHandler):
     def handle(self):
         in_channel = pickle.Unpickler(self.rfile)
         out_channel = pickle.Pickler(self.wfile, protocol=2)
         while True:
             try:
                 name, args, kwargs = in_channel.load()
-                print 'got %s %s %s' % (name, args, kwargs)
+                print('got %s %s %s' % (name, args, kwargs))
             except EOFError:
                 # EOF means we're done with this request.
                 # Catching this exception to detect EOF is a bit hackish,
@@ -30,7 +30,7 @@ class RPCHandler(SocketServer.StreamRequestHandler):
             try:
                 method = getattr(self.server.object_to_proxy, name)
                 result = method(*args, **kwargs)
-            except Exception, e:
+            except Exception as e:
                 out_channel.dump(('Error',e))
             else:
                 out_channel.dump(('OK',result))
@@ -53,5 +53,5 @@ if __name__ == '__main__':
     try:
         rpcserver.serve_forever()
     except KeyboardInterrupt:
-        print 'Exiting...'
+        print('Exiting...')
         rpcserver.server_close()

@@ -1,6 +1,7 @@
 '''Range expansion'''
 
 from functools import (reduce)
+from functools import reduce
 
 
 # rangeExpansion :: String -> [Int]
@@ -25,7 +26,7 @@ def rangeExpansion(s):
 def main():
     '''Expansion test'''
 
-    print(
+    print((
         fTable(__doc__ + ':')(
             lambda x: "\n'" + str(x) + "'"
         )(lambda x: '\n\n\t' + showList(x))(
@@ -33,7 +34,7 @@ def main():
         )([
             '-6,-3--1,3-5,7-11,14,15,17-20'
         ])
-    )
+    ))
 
 
 # GENERIC FUNCTIONS ---------------------------------------
@@ -68,7 +69,7 @@ def fTable(s):
     '''Heading -> x display function -> fx display function ->
           f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(lambda x: len(xShow(x)), xs))
+        w = max([len(xShow(x)) for x in xs])
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + (
                 ' -> '

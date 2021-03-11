@@ -26,5 +26,5 @@ for unit_value, amount, name in sorted_items:
         break
 
 print("    ITEM   PORTION VALUE")
-print("\n".join("%10s %6.2f %6.2f" % item for item in bagged))
-print("\nTOTAL WEIGHT: %5.2f\nTOTAL VALUE: %5.2f" % (wt, val))
+print(("\n".join("%10s %6.2f %6.2f" % item for item in bagged)))
+print(("\nTOTAL WEIGHT: %5.2f\nTOTAL VALUE: %5.2f" % (wt, val)))

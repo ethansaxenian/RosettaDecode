@@ -17,4 +17,4 @@ def permutationTest(a, b):
 treatmentGroup = [85, 88, 75, 66, 25, 29, 83, 39, 97]
 controlGroup   = [68, 41, 10, 49, 16, 65, 32, 92, 28, 98]
 under = permutationTest(treatmentGroup, controlGroup)
-print("under=%.2f%%, over=%.2f%%" % (under, 100. - under))
+print(("under=%.2f%%, over=%.2f%%" % (under, 100. - under)))

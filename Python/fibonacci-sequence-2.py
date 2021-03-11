@@ -7,4 +7,4 @@ def analytic_fibonacci(n):
   return int( (p**n + q**n) / sqrt_5 + 0.5 )
 
 for i in range(1,31):
-  print analytic_fibonacci(i),
+  print(analytic_fibonacci(i), end=' ')

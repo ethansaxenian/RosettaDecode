@@ -30,4 +30,4 @@ def longest_increasing_subsequence(X):
 
 if __name__ == '__main__':
     for d in [[3,2,6,4,5,1], [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15]]:
-        print('a L.I.S. of %s is %s' % (d, longest_increasing_subsequence(d)))
+        print(('a L.I.S. of %s is %s' % (d, longest_increasing_subsequence(d))))

@@ -9,11 +9,11 @@ def Entropy(text):
         except:
             exr[each]=1
     textlen=len(text)
-    for k,v in exr.items():
+    for k,v in list(exr.items()):
         freq  =  1.0*v/textlen
         infoc+=freq*log2(freq)
     infoc*=-1
     return infoc
 
 while True:
-    print Entropy(raw_input('>>>'))
+    print(Entropy(input('>>>')))

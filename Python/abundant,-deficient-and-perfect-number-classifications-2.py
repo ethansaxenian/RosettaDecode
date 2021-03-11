@@ -23,7 +23,7 @@ def deficientPerfectAbundantCountsUpTo(n):
             deficient, succ(perfect), abundant
         )
 
-    return reduce(go, range(1, 1 + n), (0, 0, 0))
+    return reduce(go, list(range(1, 1 + n)), (0, 0, 0))
 
 
 # --------------------------TEST--------------------------
@@ -31,14 +31,14 @@ def deficientPerfectAbundantCountsUpTo(n):
 def main():
     '''Size of each sub-class of integers drawn from [1..20000]:'''
 
-    print(main.__doc__)
-    print(
+    print((main.__doc__))
+    print((
         '\n'.join(map(
             lambda a, b: a.rjust(10) + ' -> ' + str(b),
             ['Deficient', 'Perfect', 'Abundant'],
             deficientPerfectAbundantCountsUpTo(20000)
         ))
-    )
+    ))
 
 
 # ------------------------GENERIC-------------------------

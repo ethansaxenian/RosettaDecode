@@ -23,7 +23,7 @@ def levenshtein(sa):
                 succ(x) if c != c1 else x
             )
         return scanl(gap)(succ(n))(
-            zip(s1, ns, ns1)
+            list(zip(s1, ns, ns1))
         )
     return lambda sb: reduce(
         go, list(sb), enumFromTo(0)(len(s1))
@@ -41,16 +41,16 @@ def main():
         ('saturday', 'sunday')
     ]
 
-    print(
+    print((
         tabulated(
             'Levenshtein minimum edit distances:\n'
         )(str)(str)(
             uncurry(levenshtein)
-        )(concat(map(
+        )(concat(list(map(
             list,
-            zip(pairs, map(swap, pairs))
-        )))
-    )
+            list(zip(pairs, list(map(swap, pairs))))
+        ))))
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -108,7 +108,7 @@ def tabulated(s):
                  fx display function ->
                  f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join([
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x))
             for x in xs

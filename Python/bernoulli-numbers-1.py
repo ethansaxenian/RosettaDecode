@@ -12,4 +12,4 @@ bn = [(i, bernoulli(i)) for i in range(61)]
 bn = [(i, b) for i,b in bn if b]
 width = max(len(str(b.numerator)) for i,b in bn)
 for i,b in bn:
-    print('B(%2i) = %*i/%i' % (i, width, b.numerator, b.denominator))
+    print(('B(%2i) = %*i/%i' % (i, width, b.numerator, b.denominator)))

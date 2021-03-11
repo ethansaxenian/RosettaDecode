@@ -5,7 +5,7 @@ from itertools import chain
 def amb(xs):
     return lambda f: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 
@@ -14,7 +14,7 @@ def amb(xs):
 def main():
     xs = enumFromTo(1)(10)
     print ('Pythagorean triples from integers 1-10:')
-    print (
+    print((
         amb(xs)(
             lambda x: amb(xs)
             (lambda y: amb(xs)
@@ -25,14 +25,14 @@ def main():
             )
              ))
         )
-    )
+    ))
 
     # joins :: String -> String -> Bool
     def joins(a, b):
         return a[-1] == b[0]
 
     print ('\nRC problem given above:')
-    print (
+    print((
         amb(['the', 'that', 'a'])(
             lambda w1: amb(
                 ['frog', 'elephant', 'thing']
@@ -46,9 +46,9 @@ def main():
                 (w1, w2, w3, w4)
             ))))
         )
-    )
+    ))
     print('\nAdditional problem reference in procedural version above:')
-    print(
+    print((
         amb([1, 2, 3])
             (
             lambda x: amb([4, 5, 6])
@@ -59,7 +59,7 @@ def main():
                 )
             )
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------

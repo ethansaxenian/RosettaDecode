@@ -28,4 +28,4 @@ def croots(n):
 
 
 for nr in range(2, 11):
-    print(nr, list(croots(nr)))
+    print((nr, list(croots(nr))))

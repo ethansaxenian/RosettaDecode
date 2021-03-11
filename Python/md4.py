@@ -1,2 +1,2 @@
 import hashlib
-print hashlib.new("md4",raw_input().encode('utf-16le')).hexdigest().upper()
+print(hashlib.new("md4",input().encode('utf-16le')).hexdigest().upper())

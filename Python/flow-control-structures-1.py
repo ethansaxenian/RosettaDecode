@@ -7,4 +7,4 @@ for i in range(n):
         break
 else:
     result = None
-    print "No odd factors found"
+    print("No odd factors found")

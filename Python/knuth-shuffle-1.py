@@ -7,4 +7,4 @@ def knuth_shuffle(x):
 
 x = list(range(10))
 knuth_shuffle(x)
-print("shuffled:", x)
+print(("shuffled:", x))

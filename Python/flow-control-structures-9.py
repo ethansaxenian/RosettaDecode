@@ -6,10 +6,10 @@ while 1: # infinite loop
 
        break # 'break' will break out of the while loop
     except ValueError: #
-        print "Imaginary Number! Breaking out of loop"
+        print("Imaginary Number! Breaking out of loop")
         break # 'break' out of while loop
     except ZeroDivisionError:
-        print "You've divided by zero. Decrementing i and continuing..."
+        print("You've divided by zero. Decrementing i and continuing...")
         i-=1 # we decrement i.
         # we 'continue', everything within the try - except block will be executed again,
         # this time however, ZeroDivisionError would not be raised again.

@@ -16,16 +16,16 @@ def main():
     '''Test'''
 
     print('Mapping showBinary over integer list:')
-    print(unlines(map(
+    print((unlines(list(map(
         showBinary,
         [5, 50, 9000]
-    )))
+    )))))
 
-    print(tabulated(
+    print((tabulated(
         '\nUsing showBinary as a display function:'
     )(str)(showBinary)(
         lambda x: x
-    )([5, 50, 9000]))
+    )([5, 50, 9000])))
 
 
 # GENERIC -------------------------------------------------
@@ -70,7 +70,7 @@ def tabulated(s):
     '''Heading -> x display function -> fx display function ->
                 f -> value list -> tabular string.'''
     def go(xShow, fxShow, f, xs):
-        w = max(map(compose(len)(xShow), xs))
+        w = max(list(map(compose(len)(xShow), xs)))
         return s + '\n' + '\n'.join(
             xShow(x).rjust(w, ' ') + ' -> ' + fxShow(f(x)) for x in xs
         )

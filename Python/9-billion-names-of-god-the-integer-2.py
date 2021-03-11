@@ -16,4 +16,4 @@ def partitions(N):
 
 
 p = partitions(12345)
-for x in [23, 123, 1234, 12345]: print x, p[x]
+for x in [23, 123, 1234, 12345]: print(x, p[x])

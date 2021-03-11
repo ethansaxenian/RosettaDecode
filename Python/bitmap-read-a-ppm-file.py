@@ -40,7 +40,7 @@ print('Grey PPM:')
 bitmap.togreyscale()
 ppmfileout = io.StringIO('')
 bitmap.writeppmp3(ppmfileout)
-print(ppmfileout.getvalue())
+print((ppmfileout.getvalue()))
 
 
 '''

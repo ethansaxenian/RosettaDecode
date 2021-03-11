@@ -18,9 +18,9 @@ def floyd(n):
 # main :: IO ()
 def main():
     '''Test'''
-    print(unlines(
-        map(str, floyd(5))
-    ))
+    print((unlines(
+        list(map(str, floyd(5)))
+    )))
 
 
 # GENERIC FUNCTIONS ---------------------------------------
@@ -40,7 +40,7 @@ def concatMap(f):
        (using an empty list to represent computational failure).'''
     return lambda xs: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 

@@ -40,7 +40,7 @@ bitmap.set(3, 3, Colour(127, 0, 63))
 # Write to the open 'file' handle
 bitmap.writeppmp3(ppmfileout)
 # Whats in the generated PPM file
-print(ppmfileout.getvalue())
+print((ppmfileout.getvalue()))
 
 '''
 The print statement above produces the following output :

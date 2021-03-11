@@ -28,10 +28,10 @@ def intFromRoman(s):
 
     dct = defaultdict(
         lambda: None,
-        zip(
+        list(zip(
             'IVXLCDM',
             accumulate(chain([1], cycle([5, 2])), mul)
-        )
+        ))
     )
     return bindMay(
         reduce(
@@ -46,7 +46,7 @@ def intFromRoman(s):
 def main():
     '''Testing a sample of dates.'''
 
-    print(
+    print((
         fTable(__doc__ + ':\n')(str)(
             maybe('(Contains unknown character)')(str)
         )(
@@ -55,7 +55,7 @@ def main():
             "MDCLXVI", "MCMXC", "MMVIII",
             "MMXVI", "MMXVIII", "MMZZIII"
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -116,7 +116,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

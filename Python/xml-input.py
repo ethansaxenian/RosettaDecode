@@ -13,4 +13,4 @@ doc = """<Students>
 doc = xml.dom.minidom.parseString(doc)
 
 for i in doc.getElementsByTagName("Student"):
-    print i.getAttribute("Name")
+    print(i.getAttribute("Name"))

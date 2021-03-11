@@ -9,7 +9,7 @@ begin_graphics(width=horiz,height=vert,title="Gray stripes",background=Colour.bl
 def ty_pruhy(each):
 	hiy=each[0]*pruh; loy=hiy-pruh
 	krok=horiz/each[1]; piecol=255.0/(each[1]-1)
-	for x in xrange(0,each[1]):
+	for x in range(0,each[1]):
 		barva=Colour(piecol*x/dpp,piecol*x/dpp,piecol*x/dpp ); set_colour(barva)
 		if each[2]:
 			box(x*krok,hiy,x*krok+krok,loy,filled=1)

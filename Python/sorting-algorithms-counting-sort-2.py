@@ -4,4 +4,4 @@ def countingSort(a, min, max):
         cnt[x - min] += 1
 
     return [x for x, n in enumerate(cnt, start=min)
-              for i in xrange(n)]
+              for i in range(n)]

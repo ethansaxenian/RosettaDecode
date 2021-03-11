@@ -25,7 +25,7 @@ def hanoiState(tpl, ab):
     a, b = ab
     xs, ys = tpl[a], tpl[b]
 
-    w = 3 * (2 + (2 * max(map(max, filter(len, tpl[:-1])))))
+    w = 3 * (2 + (2 * max(list(map(max, list(filter(len, tpl[:-1])))))))
 
     def delta(i):
         return tpl[i] if i not in ab else xs[1:] if (
@@ -51,12 +51,12 @@ def showHanoi(tpl):
     rods = fmap(fmap(mul('__')))(
         list(tpl[0:3])
     )
-    h = max(map(len, rods))
+    h = max(list(map(len, rods)))
     w = 2 + max(
-        map(
+        list(map(
             compose(max)(fmap(len)),
-            filter(compose(lt(0))(len), rods)
-        )
+            list(filter(compose(lt(0))(len), rods))
+        ))
     )
     xs = fmap(concat)(
         transpose(fmap(
@@ -84,14 +84,14 @@ def main():
     '''Visualisation of a Hanoi tower sequence for N discs.
     '''
     n = 3
-    print('Hanoi sequence for ' + str(n) + ' disks:\n')
-    print(unlines(
+    print(('Hanoi sequence for ' + str(n) + ' disks:\n'))
+    print((unlines(
         fmap(showHanoi)(
             scanl(hanoiState)(
                 (enumFromTo(1)(n), [], [], '')
             )(hanoi(n))
         )
-    ))
+    )))
 
 
 # GENERIC -------------------------------------------------
@@ -164,9 +164,9 @@ def scanl(f):
 def showLog(*s):
     '''Arguments printed with
        intercalated arrows.'''
-    print(
+    print((
         ' -> '.join(map(str, s))
-    )
+    ))
 
 
 # transpose :: Matrix a -> Matrix a
@@ -176,9 +176,9 @@ def transpose(m):
     '''
     if m:
         inner = type(m[0])
-        z = zip(*m)
+        z = list(zip(*m))
         return (type(m))(
-            map(inner, z) if tuple != inner else z
+            list(map(inner, z)) if tuple != inner else z
         )
     else:
         return m

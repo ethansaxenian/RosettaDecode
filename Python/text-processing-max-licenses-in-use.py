@@ -6,5 +6,5 @@ for job in open('mlijobs.txt'):
     if out == max_out:
         max_times.append(job.split()[3])
 
-print("Maximum simultaneous license use is %i at the following times:" % max_out)
-print('  ' + '\n  '.join(max_times))
+print(("Maximum simultaneous license use is %i at the following times:" % max_out))
+print(('  ' + '\n  '.join(max_times)))

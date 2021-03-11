@@ -21,21 +21,21 @@ def charCounts(s):
 def main():
     '''Listing in descending order of frequency.'''
 
-    print(
+    print((
         tabulated(
             'Descending order of frequency:\n'
         )(compose(repr)(fst))(compose(str)(snd))(
             5
         )(stet)(
             sorted(
-                charCounts(
+                list(charCounts(
                     readFile('~/Code/charCount/readme.txt')
-                ).items(),
+                ).items()),
                 key=swap,
                 reverse=True
             )
         )
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -48,7 +48,7 @@ def chunksOf(n):
        the final list will be shorter than n.'''
     return lambda xs: reduce(
         lambda a, i: a + [xs[i:n + i]],
-        range(0, len(xs), n), []
+        list(range(0, len(xs), n)), []
     ) if 0 < n else []
 
 
@@ -110,9 +110,9 @@ def showColumns(n):
         q, r = divmod(len(xs), n)
         return '\n'.join(map(
             fit,
-            zip(*paddedMatrix('')(
+            list(zip(*paddedMatrix('')(
                 chunksOf(q + int(bool(r)))(xs)
-            ))
+            )))
         ))
     return lambda xs: go(xs)
 
@@ -145,7 +145,7 @@ def tabulated(s):
           number of columns -> f -> value list -> tabular string.'''
     def go(xShow, fxShow, intCols, f, xs):
         def mxw(fshow, g):
-            return max(map(compose(len)(fshow), map(g, xs)))
+            return max(list(map(compose(len)(fshow), list(map(g, xs)))))
         w = mxw(xShow, lambda x: x)
         fw = mxw(fxShow, f)
         return s + '\n' + showColumns(intCols)([

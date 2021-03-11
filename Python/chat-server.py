@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import socket
-import thread
+import _thread
 import time
 
 HOST = ""
@@ -28,14 +28,14 @@ def accept(conn):
                 users[name] = conn
                 broadcast(name, "+++ %s arrived +++" % name)
                 break
-    thread.start_new_thread(threaded, ())
+    _thread.start_new_thread(threaded, ())
 
 def broadcast(name, message):
     """
     Send a message to all users from the given name.
     """
-    print message
-    for to_name, conn in users.items():
+    print(message)
+    for to_name, conn in list(users.items()):
         if to_name != name:
             try:
                 conn.send(message + "\n")
@@ -48,7 +48,7 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.setblocking(False)
 server.bind((HOST, PORT))
 server.listen(1)
-print "Listening on %s" % ("%s:%s" % server.getsockname())
+print("Listening on %s" % ("%s:%s" % server.getsockname()))
 
 # Main event loop.
 users = {}
@@ -62,7 +62,7 @@ while True:
                 break
             accept(conn)
         # Read from connections.
-        for name, conn in users.items():
+        for name, conn in list(users.items()):
             try:
                 message = conn.recv(1024)
             except socket.error:

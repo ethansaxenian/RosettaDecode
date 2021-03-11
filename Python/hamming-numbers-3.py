@@ -11,6 +11,6 @@ def h():
             heappush(heap, m*h)
         yield h
 
-print list(islice(h(), 20))
-print list(islice(h(), 1690, 1691))
-print list(islice(h(), 999999, 1000000)) # runtime 9.5 sec on i5-3570S
+print(list(islice(h(), 20)))
+print(list(islice(h(), 1690, 1691)))
+print(list(islice(h(), 999999, 1000000))) # runtime 9.5 sec on i5-3570S

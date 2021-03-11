@@ -8,8 +8,8 @@ def color(colour):
 
 for count in range (0, 16):
     color(count)
-    print "This Colour Is #" + str(count)
+    print("This Colour Is #" + str(count))
 
-print ""
+print("")
 color(7)
-raw_input("holding cmd")
+input("holding cmd")

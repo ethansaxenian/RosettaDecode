@@ -1,4 +1,4 @@
-from __future__ import division
+
 from random import random
 from math import fsum
 
@@ -20,5 +20,5 @@ for p10 in range(1, 10, 2):
     for n2 in range(10, 16, 2):
         n = 2**n2
         sim = fsum(mean_run_density(n, p) for i in range(t)) / t
-        print('t=%3i p=%4.2f n=%5i p(1-p)=%5.3f sim=%5.3f delta=%3.1f%%'
-              % (t, p, n, limit, sim, abs(sim - limit) / limit * 100 if limit else sim * 100))
+        print(('t=%3i p=%4.2f n=%5i p(1-p)=%5.3f sim=%5.3f delta=%3.1f%%'
+              % (t, p, n, limit, sim, abs(sim - limit) / limit * 100 if limit else sim * 100)))

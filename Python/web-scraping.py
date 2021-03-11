@@ -1,7 +1,7 @@
-import urllib
-page = urllib.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl')
+import urllib.request, urllib.parse, urllib.error
+page = urllib.request.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl')
 for line in page:
     if ' UTC' in line:
-        print line.strip()[4:]
+        print(line.strip()[4:])
         break
 page.close()

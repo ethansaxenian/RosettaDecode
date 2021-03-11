@@ -20,7 +20,7 @@ class Point:
 
 
 def generate_points(npoints, radius):
-    points = [Point() for _ in xrange(npoints)]
+    points = [Point() for _ in range(npoints)]
 
     # note: this is not a uniform 2-d distribution
     for p in points:
@@ -51,9 +51,9 @@ def nearest_cluster_center(point, cluster_centers):
 
 def kpp(points, cluster_centers):
     cluster_centers[0] = copy(choice(points))
-    d = [0.0 for _ in xrange(len(points))]
+    d = [0.0 for _ in range(len(points))]
 
-    for i in xrange(1, len(cluster_centers)):
+    for i in range(1, len(cluster_centers)):
         sum = 0
         for j, p in enumerate(points):
             d[j] = nearest_cluster_center(p, cluster_centers[:i])[1]
@@ -73,7 +73,7 @@ def kpp(points, cluster_centers):
 
 
 def lloyd(points, nclusters):
-    cluster_centers = [Point() for _ in xrange(nclusters)]
+    cluster_centers = [Point() for _ in range(nclusters)]
 
     # call k++ init
     kpp(points, cluster_centers)
@@ -119,7 +119,7 @@ def print_eps(points, cluster_centers, W=400, H=400):
     Color = namedtuple("Color", "r g b");
 
     colors = []
-    for i in xrange(len(cluster_centers)):
+    for i in range(len(cluster_centers)):
         colors.append(Color((3 * (i + 1) % 11) / 11.0,
                             (7 * i % 11) / 11.0,
                             (9 * i % 11) / 11.0))
@@ -138,28 +138,28 @@ def print_eps(points, cluster_centers, W=400, H=400):
     cx = (max_x + min_x) / 2
     cy = (max_y + min_y) / 2
 
-    print "%%!PS-Adobe-3.0\n%%%%BoundingBox: -5 -5 %d %d" % (W + 10, H + 10)
+    print("%%!PS-Adobe-3.0\n%%%%BoundingBox: -5 -5 %d %d" % (W + 10, H + 10))
 
-    print ("/l {rlineto} def /m {rmoveto} def\n" +
+    print(("/l {rlineto} def /m {rmoveto} def\n" +
            "/c { .25 sub exch .25 sub exch .5 0 360 arc fill } def\n" +
            "/s { moveto -2 0 m 2 2 l 2 -2 l -2 -2 l closepath " +
            "   gsave 1 setgray fill grestore gsave 3 setlinewidth" +
-           " 1 setgray stroke grestore 0 setgray stroke }def")
+           " 1 setgray stroke grestore 0 setgray stroke }def"))
 
     for i, cc in enumerate(cluster_centers):
-        print ("%g %g %g setrgbcolor" %
-               (colors[i].r, colors[i].g, colors[i].b))
+        print(("%g %g %g setrgbcolor" %
+               (colors[i].r, colors[i].g, colors[i].b)))
 
         for p in points:
             if p.group != i:
                 continue
-            print ("%.3f %.3f c" % ((p.x - cx) * scale + W / 2,
-                                    (p.y - cy) * scale + H / 2))
+            print(("%.3f %.3f c" % ((p.x - cx) * scale + W / 2,
+                                    (p.y - cy) * scale + H / 2)))
 
-        print ("\n0 setgray %g %g s" % ((cc.x - cx) * scale + W / 2,
-                                        (cc.y - cy) * scale + H / 2))
+        print(("\n0 setgray %g %g s" % ((cc.x - cx) * scale + W / 2,
+                                        (cc.y - cy) * scale + H / 2)))
 
-    print "\n%%%%EOF"
+    print("\n%%%%EOF")
 
 
 def main():

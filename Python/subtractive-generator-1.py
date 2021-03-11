@@ -11,14 +11,14 @@ s.append(1)
 
 #    Compute s2,s3,...,s54 using the subtractive formula
 #    sn = s(n - 2) - s(n - 1)(mod 10**9).
-for n in xrange(2, 55):
+for n in range(2, 55):
     s.append((s[n-2] - s[n-1]) % 10**9)
 
 #    Reorder these 55 values so r0 = s34, r1 = s13, r2 = s47, ...,
 #                               rn = s(34 * (n + 1)(mod 55)).
 
 r = collections.deque(maxlen=55)
-for n in xrange(55):
+for n in range(55):
     i = (34 * (n+1)) % 55
     r.append(s[i])
 #        This is the same order as s0 = r54, s1 = r33, s2 = r12, ...,
@@ -33,10 +33,10 @@ def getnextr():
     return r[54]
 
 # rn = r(n - 55) - r(n - 24)(mod 10**9) for n >= 55
-for n in xrange(219 - 54):
+for n in range(219 - 54):
     getnextr()
 
 # now fully initilised
 # print first five numbers
-for i in xrange(5):
-    print "result = ", getnextr()
+for i in range(5):
+    print("result = ", getnextr())

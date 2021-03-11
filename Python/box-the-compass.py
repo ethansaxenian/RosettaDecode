@@ -22,4 +22,4 @@ if __name__ == '__main__':
         if   m == 1: d += 5.62
         elif m == 2: d -= 5.62
         n = i % 32 + 1
-        print( '%2i %-18s %7.2f°' % (n, degrees2compasspoint(d), d) )
+        print(( '%2i %-18s %7.2f°' % (n, degrees2compasspoint(d), d) ))

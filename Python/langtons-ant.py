@@ -57,8 +57,8 @@ def next_position(x, y, direction):
 
 def print_grid(grid):
     """Display grid."""
-    print(80 * "#")
-    print("\n".join("".join(v.value for v in row) for row in grid))
+    print((80 * "#"))
+    print(("\n".join("".join(v.value for v in row) for row in grid)))
 
 
 def ant(width, height, max_nb_steps):

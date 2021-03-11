@@ -25,7 +25,7 @@ def ToReducedRowEchelonForm( M ):
     return M
 
 def pmtx(mtx):
-    print ('\n'.join(''.join(' %4s' % col for col in row) for row in mtx))
+    print(('\n'.join(''.join(' %4s' % col for col in row) for row in mtx)))
 
 def convolve(f, h):
     g = [0] * (len(f) + len(h) - 1)

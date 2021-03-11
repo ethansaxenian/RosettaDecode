@@ -25,10 +25,10 @@ records = [DBRecord(*row.split(',')) for row in rows[1:]]
 
 records.sort(key=lambda record: (record.Department, -float(record.Salary)))
 
-print('\n\n'.join(
+print(('\n\n'.join(
     '\n  '.join([dpt] + [str(g) for g in grp][:N])
     for dpt, grp in groupby(
         records,
         lambda record: record.Department
     )
-))
+)))

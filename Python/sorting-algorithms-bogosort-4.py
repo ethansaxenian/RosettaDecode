@@ -1,6 +1,6 @@
 import operator
 import random
-from itertools import dropwhile, imap, islice, izip, repeat, starmap
+from itertools import dropwhile, islice, repeat, starmap
 
 def shuffled(x):
     x = x[:]
@@ -8,5 +8,5 @@ def shuffled(x):
     return x
 
 bogosort = lambda l: next(dropwhile(
-    lambda l: not all(starmap(operator.le, izip(l, islice(l, 1, None)))),
-    imap(shuffled, repeat(l))))
+    lambda l: not all(starmap(operator.le, zip(l, islice(l, 1, None)))),
+    map(shuffled, repeat(l))))

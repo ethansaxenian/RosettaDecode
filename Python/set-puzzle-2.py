@@ -15,7 +15,7 @@ while len(sets) != N_GOAL:
     sets = [cs for cs in combinations(draw, 3)
             if all(len(set(t)) in [1, 3] for t in zip(*cs))]
 
-print "Dealt %d cards:" % len(draw)
+print("Dealt %d cards:" % len(draw))
 pprint.pprint(draw)
-print "\nContaining %d sets:" % len(sets)
+print("\nContaining %d sets:" % len(sets))
 pprint.pprint(sets)

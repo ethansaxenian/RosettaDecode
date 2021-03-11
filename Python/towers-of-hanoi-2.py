@@ -23,6 +23,6 @@ if __name__ == '__main__':
         x, y = xy
         return x.rjust(5, ' ') + ' -> ' + y
 
-    print(__doc__ + ':\n\n' + '\n'.join(
+    print((__doc__ + ':\n\n' + '\n'.join(
         map(fromTo, hanoi(4)('left')('right')('mid'))
-    ))
+    )))

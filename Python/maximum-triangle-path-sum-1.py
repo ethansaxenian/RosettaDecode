@@ -25,4 +25,4 @@ data = """                55
   06 71 28 75 94 48 37 10 23 51 06 48 53 18 74 98 15
 27 02 92 23 08 71 76 84 15 52 92 63 81 10 44 10 69 93"""
 
-print solve([map(int, row.split()) for row in data.splitlines()])
+print(solve([list(map(int, row.split())) for row in data.splitlines()]))

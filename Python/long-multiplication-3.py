@@ -18,13 +18,13 @@ def digitSum(a, x):
 
 def polymul(xs, ys):
     '''List of specific products.'''
-    return map(
-        lambda *vs: sum(filter(None, vs)),
+    return list(map(
+        lambda *vs: sum([_f for _f in vs if _f]),
         *[
             [0] * i + zs for i, zs in
             enumerate(mult_table(xs, ys))
         ]
-    )
+    ))
 
 
 def mult_table(xs, ys):
@@ -38,6 +38,6 @@ def digits(x):
 
 
 if __name__ == '__main__':
-    print(
+    print((
         longmult(2 ** 64, 2 ** 64)
-    )
+    ))

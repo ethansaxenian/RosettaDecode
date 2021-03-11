@@ -12,4 +12,4 @@ def z(n):
     return dig if dig[0] else dig[1:]
 
 for i in range(n + 1):
-    print('%3i: %8s' % (i, ''.join(str(d) for d in z(i))))
+    print(('%3i: %8s' % (i, ''.join(str(d) for d in z(i)))))

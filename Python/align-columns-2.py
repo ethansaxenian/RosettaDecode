@@ -1,4 +1,4 @@
-from StringIO import StringIO
+from io import StringIO
 
 textinfile = '''Given$a$text$file$of$many$lines,$where$fields$within$a$line$
 are$delineated$by$a$single$'dollar'$character,$write$a$program
@@ -27,7 +27,7 @@ def aligner(infile, justification='L'):
     fieldsbyrow = [fields + [''] * (maxfields - len(fields))
                    for fields in fieldsbyrow]
     # rotate
-    fieldsbycolumn = zip(*fieldsbyrow)
+    fieldsbycolumn = list(zip(*fieldsbyrow))
     # calculate max fieldwidth per column
     colwidths = [max(len(field) for field in column)
                  for column in fieldsbycolumn]
@@ -35,12 +35,12 @@ def aligner(infile, justification='L'):
     fieldsbycolumn = [[justifier(field, width) for field in column]
                       for width, column in zip(colwidths, fieldsbycolumn)]
     # rotate again
-    fieldsbyrow = zip(*fieldsbycolumn)
+    fieldsbyrow = list(zip(*fieldsbycolumn))
 
     return "\n".join(" ".join(row) for row in fieldsbyrow)
 
 
 for align in 'Left Right Center'.split():
     infile = StringIO(textinfile)
-    print "\n# %s Column-aligned output:" % align
-    print aligner(infile, align[0])
+    print("\n# %s Column-aligned output:" % align)
+    print(aligner(infile, align[0]))

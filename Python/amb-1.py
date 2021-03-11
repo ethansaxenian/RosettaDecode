@@ -13,7 +13,7 @@ class Amb(object):
             ##
             ## Called with a constraint function.
             ##
-            globls = arg.__globals__ if hasattr(arg, '__globals__') else arg.func_globals
+            globls = arg.__globals__ if hasattr(arg, '__globals__') else arg.__globals__
             # Names used in constraint
             argv = arg.__code__.co_varnames[:arg.__code__.co_argcount]
             for name in argv:
@@ -68,12 +68,12 @@ if __name__ == '__main__':
         amb = Amb()
 
         print("\nSmall Pythagorean triples problem:")
-        x = amb(range(1, 11))
-        y = amb(range(1, 11))
-        z = amb(range(1, 11))
+        x = amb(list(range(1, 11)))
+        y = amb(list(range(1, 11)))
+        z = amb(list(range(1, 11)))
 
         for _dummy in amb(lambda x, y, z: x * x + y * y == z * z):
-            print ('%s %s %s' % (x, y, z))
+            print(('%s %s %s' % (x, y, z)))
 
     if True:
         amb = Amb()
@@ -88,7 +88,7 @@ if __name__ == '__main__':
                                   w1[-1] == w2[0] and \
                                   w2[-1] == w3[0] and \
                                   w3[-1] == w4[0]):
-            print ('%s %s %s %s' % (w1, w2, w3, w4))
+            print(('%s %s %s %s' % (w1, w2, w3, w4)))
 
     if True:
         amb = Amb()
@@ -99,4 +99,4 @@ if __name__ == '__main__':
         y = amb([4, 5, 6])
 
         for _dummy in amb(lambda x, y: x * y != 8):
-            print ('%s %s' % (x, y))
+            print(('%s %s' % (x, y)))

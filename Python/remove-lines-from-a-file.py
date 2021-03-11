@@ -9,5 +9,5 @@ for line in fileinput.input(fname, inplace=1, backup='.orig'):
     if start <= fileinput.lineno() < start + count:
         pass
     else:
-        print line[:-1]
+        print(line[:-1])
 fileinput.close()

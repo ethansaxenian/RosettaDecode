@@ -37,7 +37,7 @@ def aliquot(n, maxlen=16, maxterm=2 ** 47):
 
 if __name__ == '__main__':
     for n in range(1, 11):
-        print('%s: %r' % aliquot(n))
+        print(('%s: %r' % aliquot(n)))
     print()
     for n in [11, 12, 28, 496, 220, 1184, 12496, 1264460, 790, 909, 562, 1064, 1488, 15355717786080]:
-        print('%s: %r' % aliquot(n))
+        print(('%s: %r' % aliquot(n)))

@@ -18,7 +18,7 @@ def GammaInc_Q( a, x):
     n = int(y/h)
     h = y/n
     hh = 0.5*h
-    gamax = h * sum( f0(t)+hh*df0(t) for t in ( h*j for j in xrange(n-1, -1, -1)))
+    gamax = h * sum( f0(t)+hh*df0(t) for t in ( h*j for j in range(n-1, -1, -1)))
 
     return gamax/gamma_spounge(a)
 
@@ -58,10 +58,10 @@ dset1 = [ 199809, 200665, 199607, 200270, 199649 ]
 dset2 = [ 522573, 244456, 139979,  71531,  21461 ]
 
 for ds in (dset1, dset2):
-    print "Data set:", ds
+    print("Data set:", ds)
     dof = len(ds)-1
     distance =chi2UniformDistance(ds)
-    print "dof: %d distance: %.4f" % (dof, distance),
+    print("dof: %d distance: %.4f" % (dof, distance), end=' ')
     prob = chi2Probability( dof, distance)
-    print "probability: %.4f"%prob,
-    print "uniform? ", "Yes"if chi2IsUniform(ds,0.05) else "No"
+    print("probability: %.4f"%prob, end=' ')
+    print("uniform? ", "Yes"if chi2IsUniform(ds,0.05) else "No")

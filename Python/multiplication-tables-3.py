@@ -28,13 +28,13 @@ def table(xs):
 # main :: IO ()
 def main():
     '''Test'''
-    print('\n\n'.join(
+    print(('\n\n'.join(
         fmap(fmap(fmap(showTable)(table))(
             liftA2(enumFromTo)(fst)(snd)
         ))(
             [(13, 20), (1, 12), (95, 100)]
         )
-    ))
+    )))
 
 
 # DISPLAY -------------------------------------------------
@@ -258,7 +258,7 @@ def zipWith(f):
        default tuple constructor.
     '''
     return lambda xs: lambda ys: (
-        map(uncurry(f), xs, ys)
+        list(map(uncurry(f), xs, ys))
     )
 
 

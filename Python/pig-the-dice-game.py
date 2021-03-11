@@ -20,10 +20,10 @@ while max(safescore) < maxscore:
                     % (player, safescore[player], score)).strip().lower() in {'yes', 'y', ''}
     if rolling:
         rolled = randint(1, 6)
-        print('  Rolled %i' % rolled)
+        print(('  Rolled %i' % rolled))
         if rolled == 1:
-            print('  Bust! you lose %i but still keep your previous %i'
-                  % (score, safescore[player]))
+            print(('  Bust! you lose %i but still keep your previous %i'
+                  % (score, safescore[player])))
             score, player = 0, (player + 1) % playercount
         else:
             score += rolled
@@ -31,7 +31,7 @@ while max(safescore) < maxscore:
         safescore[player] += score
         if safescore[player] >= maxscore:
             break
-        print('  Sticking with %i' % safescore[player])
+        print(('  Sticking with %i' % safescore[player]))
         score, player = 0, (player + 1) % playercount
 
-print('\nPlayer %i wins with a score of %i' %(player, safescore[player]))
+print(('\nPlayer %i wins with a score of %i' %(player, safescore[player])))

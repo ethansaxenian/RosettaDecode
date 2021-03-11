@@ -46,7 +46,7 @@ def concatMap(f):
        empty list to represent computational failure).
     '''
     return lambda xs: (''.join if isinstance(xs, str) else list)(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 

@@ -17,5 +17,5 @@ def fractran(n, fstring='17 / 91, 78 / 85, 19 / 51, 23 / 38, 29 / 33,'
 
 if __name__ == '__main__':
     n, m = 2, 15
-    print('First %i members of fractran(%i):\n  ' % (m, n) +
-          ', '.join(str(f) for f,i in zip(fractran(n), range(m))))
+    print(('First %i members of fractran(%i):\n  ' % (m, n) +
+          ', '.join(str(f) for f,i in zip(fractran(n), list(range(m))))))

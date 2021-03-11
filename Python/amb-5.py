@@ -5,7 +5,7 @@ from itertools import chain
 def amb(xs):
     return lambda f: list(
         chain.from_iterable(
-            map(f, xs)
+            list(map(f, xs))
         )
     )
 
@@ -22,7 +22,7 @@ def joins(a, b):
     return a[-1] == b[0]
 
 
-print (
+print((
     amb(['the', 'that', 'a'])(
         lambda w1: when(True)
 
@@ -39,4 +39,4 @@ print (
            ))))))
          )
     )
-)
+))

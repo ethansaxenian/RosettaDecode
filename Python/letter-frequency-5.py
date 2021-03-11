@@ -1,3 +1,3 @@
 lettercounts = countletters(sourcedata)
-for letter,count in lettercounts.iteritems():
-    print "%s=%s" % (letter, count),
+for letter,count in lettercounts.items():
+    print("%s=%s" % (letter, count), end=' ')

@@ -2,6 +2,7 @@
 
 from functools import (reduce)
 from itertools import (chain)
+from functools import reduce
 
 
 # permutations :: [a] -> [[a]]
@@ -29,7 +30,7 @@ def permutations(xs):
 def main():
     '''Permutations of lists, strings and tuples.'''
 
-    print(
+    print((
         fTable(__doc__ + ':\n')(repr)(showList)(
             permutations
         )([
@@ -37,7 +38,7 @@ def main():
             'abc',
             (1, 2, 3),
         ])
-    )
+    ))
 
 
 # GENERIC -------------------------------------------------
@@ -49,7 +50,7 @@ def concatMap(f):
        wraps its output in a list,
        (using an empty list to represent computational failure).'''
     return lambda xs: list(
-        chain.from_iterable(map(f, xs))
+        chain.from_iterable(list(map(f, xs)))
     )
 
 
@@ -63,7 +64,7 @@ def fTable(s):
     '''
     def go(xShow, fxShow, f, xs):
         ys = [xShow(x) for x in xs]
-        w = max(map(len, ys))
+        w = max(list(map(len, ys)))
         return s + '\n' + '\n'.join(map(
             lambda x, y: y.rjust(w, ' ') + ' -> ' + fxShow(f(x)),
             xs, ys

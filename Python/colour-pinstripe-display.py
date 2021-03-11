@@ -31,4 +31,4 @@ for quarter in range(4):
         pendown()
         setposition(x,max_y)
 
-notused = input("Hit enter to continue: ")
+notused = eval(input("Hit enter to continue: "))

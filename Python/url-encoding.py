@@ -1,3 +1,3 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 s = 'http://foo/bar/'
-s = urllib.quote(s)
+s = urllib.parse.quote(s)

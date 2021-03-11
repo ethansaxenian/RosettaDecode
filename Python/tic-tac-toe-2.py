@@ -11,7 +11,7 @@ wins = ((0,1,2), (3,4,5), (6,7,8),
         (0,4,8), (2,4,6))
 
 def printboard():
-    print('\n-+-+-\n'.join('|'.join(board[x:x+3]) for x in(0,3,6)))
+    print(('\n-+-+-\n'.join('|'.join(board[x:x+3]) for x in(0,3,6))))
 
 def score(board=board):
     for w in wins:
@@ -64,13 +64,13 @@ def your_turn(xo, board):
 
 def me(xo='X'):
     printboard()
-    print('\nI go at', my_better_turn(xo, board))
+    print(('\nI go at', my_better_turn(xo, board)))
     return score()
 
 def you(xo='O'):
     printboard()
     # Call my_turn(xo, board) below for it to play itself
-    print('\nYou went at', your_turn(xo, board))
+    print(('\nYou went at', your_turn(xo, board)))
     return score()
 
 
@@ -79,13 +79,13 @@ while not finished():
     s = me('X')
     if s:
         printboard()
-        print("\n%s wins along %s" % s)
+        print(("\n%s wins along %s" % s))
         break
     if not finished():
         s = you('O')
         if s:
             printboard()
-            print("\n%s wins along %s" % s)
+            print(("\n%s wins along %s" % s))
             break
 else:
     print('\nA draw')

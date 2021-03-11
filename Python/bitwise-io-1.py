@@ -86,4 +86,4 @@ if __name__ == '__main__':
                 if not reader.read:  # End-of-file?
                     break
                 chars.append(chr(x))
-            print(''.join(chars))
+            print((''.join(chars)))

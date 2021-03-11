@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import math
 from operator import mul
@@ -44,8 +44,8 @@ def fact(n):
 def divisors(n):
     'Returns all the divisors of n'
     factors = fact(n)   # [(primefactor, multiplicity), ...]
-    primes, maxpowers = zip(*factors)
-    powerranges = (range(m+1) for m in maxpowers)
+    primes, maxpowers = list(zip(*factors))
+    powerranges = (list(range(m+1)) for m in maxpowers)
     powers = product(*powerranges)
     return (
         reduce(mul,
@@ -70,8 +70,8 @@ if __name__ == '__main__':
         fangpairs = vampire(n)
         if fangpairs:
             count += 1
-            print('%i: %r' % (n, fangpairs))
+            print(('%i: %r' % (n, fangpairs)))
     print('\nSpecific checks for fangpairs')
     for n in (16758243290880, 24959017348650, 14593825548650):
         fangpairs = vampire(n)
-        print('%i: %r' % (n, fangpairs))
+        print(('%i: %r' % (n, fangpairs)))
