@@ -2,20 +2,7 @@ import os
 
 from xlwt import Workbook
 
-EXTENSION_TO_LANGUAGE = {
-    ".c": "C",
-    ".cpp": "C++",
-    ".go": "Go",
-    ".hs": "Haskell",
-    ".java": "Java",
-    ".js": "JavaScript",
-    ".julia": "Julia",
-    ".pl": "Perl",
-    ".py": "Python",
-    ".rb": "Ruby",
-    ".rust": "Rust",
-    ".scala": "Scala"
-}
+from supported_languages import EXTENSION_TO_LANGUAGE, SUPPORTED_LANGUAGES
 
 if __name__ == '__main__':
     wb = Workbook()
@@ -31,7 +18,7 @@ if __name__ == '__main__':
 
     # label all supported files
     row = 1
-    for lang in EXTENSION_TO_LANGUAGE.values():
+    for lang in SUPPORTED_LANGUAGES:
         for filename in os.listdir(f'lang/{lang}'):
             extension = filename[filename.index("."):]
             labels.write(row, 0, filename)
