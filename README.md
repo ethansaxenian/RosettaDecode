@@ -7,8 +7,8 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 | ABAP        | 80          |
 | Ada         | 1045        |
 | C           | 1139        |
-| C++         | 926         |
 | C-sharp     | 294         |
+| C++         | 926         |
 | COBOL       | 356         |
 | Dart        | 90          |
 | Delphi      | 304         |
@@ -22,7 +22,7 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 | Lua         | 622         |
 | MATLAB      | 559         |
 | Objective-C | 228         |
-| Perl        | 1421        |
+| Perl        | 1223        |
 | PHP         | 514         |
 | Python      | 1677        |
 | R           | 664         |
