@@ -1,8 +1,6 @@
-import os
-
 from xlwt import Workbook
 
-from supported_languages import EXTENSION_TO_LANGUAGE, SUPPORTED_LANGUAGES
+from language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
 
 if __name__ == '__main__':
     wb = Workbook()
@@ -18,11 +16,10 @@ if __name__ == '__main__':
 
     # label all supported files
     row = 1
-    for lang in SUPPORTED_LANGUAGES:
-        for filename in os.listdir(f'lang/{lang}'):
-            extension = filename[filename.index("."):]
-            labels.write(row, 0, filename)
-            labels.write(row, 1, EXTENSION_TO_LANGUAGE[extension])
-            row += 1
+    for filename in LANGUAGE_FILES:
+        extension = filename[filename.index("."):]
+        labels.write(row, 0, filename)
+        labels.write(row, 1, EXTENSION_TO_LANGUAGE[extension])
+        row += 1
 
     wb.save('labels.xls')
