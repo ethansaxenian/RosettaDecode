@@ -1,17 +1,17 @@
->>> dif = lambda s: [x-s[i] for i,x in enumerate(s[1:])]
->>> # or, dif = lambda s: [x-y for x,y in zip(s[1:],s)]
->>> difn = lambda s, n: difn(dif(s), n-1) if n else s
+dif = lambda s: [x-s[i] for i,x in enumerate(s[1:])]
+# or, dif = lambda s: [x-y for x,y in zip(s[1:],s)]
+difn = lambda s, n: difn(dif(s), n-1) if n else s
 
->>> s = [90, 47, 58, 29, 22, 32, 55, 5, 55, 73]
->>> difn(s, 0)
+s = [90, 47, 58, 29, 22, 32, 55, 5, 55, 73]
+difn(s, 0)
 [90, 47, 58, 29, 22, 32, 55, 5, 55, 73]
->>> difn(s, 1)
+difn(s, 1)
 [-43, 11, -29, -7, 10, 23, -50, 50, 18]
->>> difn(s, 2)
+difn(s, 2)
 [54, -40, 22, 17, 13, -73, 100, -32]
 
->>> from pprint import pprint
->>> pprint( [difn(s, i) for i in xrange(10)] )
+from pprint import pprint
+pprint( [difn(s, i) for i in xrange(10)] )
 [[90, 47, 58, 29, 22, 32, 55, 5, 55, 73],
  [-43, 11, -29, -7, 10, 23, -50, 50, 18],
  [54, -40, 22, 17, 13, -73, 100, -32],

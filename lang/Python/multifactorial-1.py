@@ -1,8 +1,8 @@
->>> from functools import reduce
->>> from operator import mul
->>> def mfac(n, m): return reduce(mul, range(n, 0, -m))
+from functools import reduce
+from operator import mul
+def mfac(n, m): return reduce(mul, range(n, 0, -m))
 
->>> for m in range(1, 11): print("%2i: %r" % (m, [mfac(n, m) for n in range(1, 11)]))
+for m in range(1, 11): print("%2i: %r" % (m, [mfac(n, m) for n in range(1, 11)]))
 
  1: [1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800]
  2: [1, 2, 3, 8, 15, 48, 105, 384, 945, 3840]
@@ -14,4 +14,4 @@
  8: [1, 2, 3, 4, 5, 6, 7, 8, 9, 20]
  9: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 10: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
->>>
+

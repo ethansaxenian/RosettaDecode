@@ -1,4 +1,4 @@
->>> for i in (False, True):
+for i in (False, True):
 	for j in (False, True):
 		print ("\nCalculating: x = a(i) and b(j) using x = b(j) if a(i) else False")
 		x = b(j) if a(i) else False

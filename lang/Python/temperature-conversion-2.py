@@ -1,8 +1,8 @@
->>> toK = {'C': (lambda c: c + 273.15),
+toK = {'C': (lambda c: c + 273.15),
            'F': (lambda f: (f + 459.67) / 1.8),
            'R': (lambda r: r / 1.8),
            'K': (lambda k: k) }
->>> while True:
+while True:
 	magnitude, unit = input('<value> <K/R/F/C> ? ').split()
 	k = toK[unit](float(magnitude))
 	print("%g Kelvin = %g Celsius = %g Fahrenheit = %g Rankine degrees."

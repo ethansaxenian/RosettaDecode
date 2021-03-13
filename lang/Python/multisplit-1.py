@@ -1,5 +1,5 @@
->>> import re
->>> def ms2(txt="a!===b=!=c", sep=["==", "!=", "="]):
+import re
+def ms2(txt="a!===b=!=c", sep=["==", "!=", "="]):
 	if not txt or not sep:
 		return []
 	ans = m = []
@@ -9,7 +9,7 @@
 		ans += [txt[m.end(m.lastindex):]]
 	return ans
 
->>> ms2()
+ms2()
 ['a', (1, 1), '', (0, 3), 'b', (2, 6), '', (1, 7), 'c']
->>> ms2(txt="a!===b=!=c", sep=["=", "!=", "=="])
+ms2(txt="a!===b=!=c", sep=["=", "!=", "=="])
 ['a', (1, 1), '', (0, 3), '', (0, 4), 'b', (0, 6), '', (1, 7), 'c']

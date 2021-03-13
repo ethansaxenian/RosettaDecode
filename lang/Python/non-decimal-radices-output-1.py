@@ -1,4 +1,4 @@
->>> for n in range(34):
+for n in range(34):
 	print " {0:6b} {1:3o} {2:2d} {3:2X}".format(n, n, n, n)
 	#The following would give the same output, and,
 	#due to the outer brackets, works with Python 3.0 too
@@ -39,4 +39,4 @@
   11111  37 31 1F
  100000  40 32 20
  100001  41 33 21
->>>
+

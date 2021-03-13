@@ -1,3 +1,3 @@
->>> import random
->>> random.choice(['foo', 'bar', 'baz'])
+import random
+random.choice(['foo', 'bar', 'baz'])
 'baz'

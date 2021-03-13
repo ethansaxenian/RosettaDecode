@@ -1,10 +1,10 @@
->>> s = ' \t \r \n String with spaces  \t  \r  \n  '
->>> s
+s = ' \t \r \n String with spaces  \t  \r  \n  '
+s
 ' \t \r \n String with spaces  \t  \r  \n  '
->>> s.lstrip()
+s.lstrip()
 'String with spaces  \t  \r  \n  '
->>> s.rstrip()
+s.rstrip()
 ' \t \r \n String with spaces'
->>> s.strip()
+s.strip()
 'String with spaces'
->>>
+

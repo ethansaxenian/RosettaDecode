@@ -4,13 +4,13 @@ from functools import reduce
 
 def comb(n,r):
     ''' calculate nCr - the binomial coefficient
-    >>> comb(3,2)
+    comb(3,2)
     3
-    >>> comb(9,4)
+    comb(9,4)
     126
-    >>> comb(9,6)
+    comb(9,6)
     84
-    >>> comb(20,14)
+    comb(20,14)
     38760
     '''
 

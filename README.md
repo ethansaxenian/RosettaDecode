@@ -24,7 +24,7 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 | Objective-C | 228         |
 | Perl        | 1223        |
 | PHP         | 514         |
-| Python      | 1677        |
+| Python      | 1675        |
 | R           | 664         |
 | Ruby        | 1125        |
 | Rust        | 580         |

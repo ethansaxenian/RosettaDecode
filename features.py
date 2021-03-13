@@ -7,9 +7,16 @@ Potential features:
 """
 import re
 from collections import Counter
+from dataclasses import dataclass
 
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 SPECIAL_CHARACTERS = '~`!@#$%^&*()_-+=[]{}|;:",.<>/?\\\''
+
+@dataclass
+class FeatureSet:
+    word_freqs: dict[str, int]
+    special_chars: dict[str, int]
+    line_endings: dict[str, int]
 
 
 def count_words(code: str) -> dict[str, int]:
@@ -35,7 +42,9 @@ def count_line_endings(code: str) -> dict[str, int]:
 if __name__ == '__main__':
     with open('lang/Python/conways-game-of-life-3.py', 'r') as file:
         code = file.read().lower()
-        print(count_line_endings(code))
-        print(count_words(code))
-        print(count_special_characters(code))
-
+        features = FeatureSet(
+            count_words(code),
+            count_special_characters(code),
+            count_line_endings(code)
+        )
+        print(features)

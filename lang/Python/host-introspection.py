@@ -1,14 +1,14 @@
->>> import platform, sys, socket
->>> platform.architecture()
+import platform, sys, socket
+platform.architecture()
 ('64bit', 'ELF')
->>> platform.machine()
+platform.machine()
 'x86_64'
->>> platform.node()
+platform.node()
 'yourhostname'
->>> platform.system()
+platform.system()
 'Linux'
->>> sys.byteorder
+sys.byteorder
 little
->>> socket.gethostname()
+socket.gethostname()
 'yourhostname'
->>>
+

@@ -1,4 +1,4 @@
->>> def lcm(*values):
+def lcm(*values):
 	values = set([abs(int(v)) for v in values])
 	if values and 0 not in values:
 		n = n0 = max(values)
@@ -8,12 +8,12 @@
 		return n
 	return 0
 
->>> lcm(-6, 14)
+lcm(-6, 14)
 42
->>> lcm(2, 0)
+lcm(2, 0)
 0
->>> lcm(12, 18)
+lcm(12, 18)
 36
->>> lcm(12, 18, 22)
+lcm(12, 18, 22)
 396
->>>
+

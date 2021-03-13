@@ -2,21 +2,21 @@ class Isprime():
     '''
     Extensible sieve of Eratosthenes
 
-    >>> isprime.check(11)
+    isprime.check(11)
     True
-    >>> isprime.multiples
+    isprime.multiples
     {2, 4, 6, 8, 9, 10}
-    >>> isprime.primes
+    isprime.primes
     [2, 3, 5, 7, 11]
-    >>> isprime(13)
+    isprime(13)
     True
-    >>> isprime.multiples
+    isprime.multiples
     {2, 4, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18, 20, 21, 22}
-    >>> isprime.primes
+    isprime.primes
     [2, 3, 5, 7, 11, 13, 17, 19]
-    >>> isprime.nmax
+    isprime.nmax
     22
-    >>>
+
     '''
     multiples = {2}
     primes = [2]

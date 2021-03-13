@@ -16,7 +16,7 @@ def multisplit(text, sep):
         matches.append(text[lastmatch:i])
     return matches
 
->>> multisplit('a!===b=!=c', ['==', '!=', '='])
+multisplit('a!===b=!=c', ['==', '!=', '='])
 ['a', (1, 1), (0, 3), 'b', (2, 6), (1, 7), 'c']
->>> multisplit('a!===b=!=c', ['!=', '==', '='])
+multisplit('a!===b=!=c', ['!=', '==', '='])
 ['a', (0, 1), (1, 3), 'b', (2, 6), (0, 7), 'c']

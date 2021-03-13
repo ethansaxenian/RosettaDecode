@@ -1,4 +1,4 @@
->>> help('heapq')
+help('heapq')
 Help on module heapq:
 
 NAME
@@ -65,7 +65,7 @@ FUNCTIONS
         does not pull the data into memory all at once, and assumes that each of
         the input streams is already sorted (smallest to largest).
 
-        >>> list(merge([1,3,5,7], [0,2,4,8], [5,10,15,20], [], [25]))
+        list(merge([1,3,5,7], [0,2,4,8], [5,10,15,20], [], [25]))
         [0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]
 
     nlargest(n, iterable, key=None)
@@ -86,4 +86,4 @@ FILE
     c:\python32\lib\heapq.py
 
 
->>>
+

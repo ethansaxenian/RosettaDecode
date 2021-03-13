@@ -1,4 +1,4 @@
->>> "the three truths".count("th")
+"the three truths".count("th")
 3
->>> "ababababab".count("abab")
+"ababababab".count("abab")
 2

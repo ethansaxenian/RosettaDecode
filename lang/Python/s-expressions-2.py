@@ -1,6 +1,6 @@
->>> from pprint import pprint as pp
->>> x = [[(t,v) for t,v in  termtypes.groupdict().items() if v][0] for termtypes in re.finditer(term_regex, sexp)]
->>> pp(x)
+from pprint import pprint as pp
+x = [[(t,v) for t,v in  termtypes.groupdict().items() if v][0] for termtypes in re.finditer(term_regex, sexp)]
+pp(x)
 [('brackl', '('),
  ('brackl', '('),
  ('s', 'data'),
@@ -20,4 +20,4 @@
  ('brackr', ')'),
  ('brackr', ')'),
  ('brackr', ')')]
->>>
+

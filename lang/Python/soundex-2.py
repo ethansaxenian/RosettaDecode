@@ -1,8 +1,8 @@
->>>print soundex("soundex")
+print soundex("soundex")
 S532
->>>print soundex("example")
+print soundex("example")
 E251
->>>print soundex("ciondecks")
+print soundex("ciondecks")
 C532
->>>print soundex("ekzampul")
+print soundex("ekzampul")
 E251

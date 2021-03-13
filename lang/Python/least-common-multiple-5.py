@@ -1,4 +1,4 @@
->>> def lcm(p,q):
+def lcm(p,q):
 	p, q = abs(p), abs(q)
 	m = p * q
 	if not m: return 0
@@ -9,10 +9,10 @@
 		if not q: return m // p
 
 		
->>> lcm(-6, 14)
+lcm(-6, 14)
 42
->>> lcm(12, 18)
+lcm(12, 18)
 36
->>> lcm(2, 0)
+lcm(2, 0)
 0
->>>
+

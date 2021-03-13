@@ -1,6 +1,6 @@
 """
->>> # EXAMPLE USAGE
->>> result = rpn_to_infix('3 4 2 * 1 5 - 2 3 ^ ^ / +', VERBOSE=True)
+# EXAMPLE USAGE
+result = rpn_to_infix('3 4 2 * 1 5 - 2 3 ^ ^ / +', VERBOSE=True)
 TOKEN  STACK
 3      ['3']
 4      ['3', '4']
@@ -62,7 +62,7 @@ class Node:
 
     def __repr__(self):
         """
-        >>> repr(Node('3','+','4')) == repr(eval(repr(Node('3','+','4'))))
+        repr(Node('3','+','4')) == repr(eval(repr(Node('3','+','4'))))
         True
         """
         return 'Node(%s,%s,%s)'%(repr(self.x), repr(self.op), repr(self.y))

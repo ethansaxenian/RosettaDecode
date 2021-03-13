@@ -28,7 +28,7 @@ if __name__ == "__main__":
     f.push(1)
     while not f.empty():
         print f.pop(),
-    # >>> 3 2 1
+    # 3 2 1
     # Another simple example gives the same results:
     f = FIFO(3,2,1)
     while not f.empty():

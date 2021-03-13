@@ -1,6 +1,6 @@
 def lcs(xstr, ystr):
     """
-    >>> lcs('thisisatest', 'testing123testing')
+    lcs('thisisatest', 'testing123testing')
     'tsitest'
     """
     if not xstr or not ystr:

@@ -1,4 +1,4 @@
->>> for b in range(3,6):
+for b in range(3,6):
 	print('\nBase', b)
 	print([vdc(i, base=Fraction(b)) for i in range(10)])
 

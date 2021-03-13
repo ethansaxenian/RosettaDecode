@@ -1,5 +1,5 @@
->>> from itertools import permutations
->>> def f1(p):
+from itertools import permutations
+def f1(p):
 	i = 0
 	while True:
 		p0  = p[0]
@@ -8,10 +8,10 @@
 		i  += 1
 	return i
 
->>> def fannkuch(n):
+def fannkuch(n):
 	return max(f1(list(p)) for p in permutations(range(1, n+1)))
 
->>> for n in range(1, 11): print(n,fannkuch(n))
+for n in range(1, 11): print(n,fannkuch(n))
 
 1 0
 2 1
@@ -23,4 +23,4 @@
 8 22
 9 30
 10 38
->>>
+

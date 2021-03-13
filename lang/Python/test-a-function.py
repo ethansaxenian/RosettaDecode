@@ -1,32 +1,32 @@
 def is_palindrome(s):
     '''
-        >>> is_palindrome('')
+        is_palindrome('')
         True
-        >>> is_palindrome('a')
+        is_palindrome('a')
         True
-        >>> is_palindrome('aa')
+        is_palindrome('aa')
         True
-        >>> is_palindrome('baa')
+        is_palindrome('baa')
         False
-        >>> is_palindrome('baab')
+        is_palindrome('baab')
         True
-        >>> is_palindrome('ba_ab')
+        is_palindrome('ba_ab')
         True
-        >>> is_palindrome('ba_ ab')
+        is_palindrome('ba_ ab')
         False
-        >>> is_palindrome('ba _ ab')
+        is_palindrome('ba _ ab')
         True
-        >>> is_palindrome('ab'*2)
+        is_palindrome('ab'*2)
         False
-        >>> x = 'ab' *2**15
-        >>> len(x)
+        x = 'ab' *2**15
+        len(x)
         65536
-        >>> xreversed = x[::-1]
-        >>> is_palindrome(x+xreversed)
+        xreversed = x[::-1]
+        is_palindrome(x+xreversed)
         True
-        >>> len(x+xreversed)
+        len(x+xreversed)
         131072
-        >>>
+        
     '''
     return s == s[::-1]
 

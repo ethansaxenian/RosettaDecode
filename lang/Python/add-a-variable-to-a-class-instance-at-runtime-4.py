@@ -13,4 +13,4 @@ def patch_empty(obj):
 e = empty()
 patch_empty(e)
 e.print_output()
-# >>> whatever
+# whatever

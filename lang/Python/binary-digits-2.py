@@ -1,4 +1,4 @@
->>> for i in range(16): print(bin(i)[2:])
+for i in range(16): print(bin(i)[2:])
 
 0
 1

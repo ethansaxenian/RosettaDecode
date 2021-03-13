@@ -1,5 +1,5 @@
->>> from fractions import Fraction
->>> for s in range(11):
+from fractions import Fraction
+for s in range(11):
 	print("%2g maps to %s" % (s, maprange( (0, 10), (-1, 0), Fraction(s))))
 
 	
@@ -14,4 +14,4 @@
  8 maps to -1/5
  9 maps to -1/10
 10 maps to 0
->>>
+

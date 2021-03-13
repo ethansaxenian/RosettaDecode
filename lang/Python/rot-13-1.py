@@ -1,4 +1,4 @@
->>> u'foo'.encode('rot13')
+u'foo'.encode('rot13')
 'sbb'
->>> 'sbb'.decode('rot13')
+'sbb'.decode('rot13')
 u'foo'

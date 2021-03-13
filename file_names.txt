@@ -9221,7 +9221,6 @@ numerical-integration-2.py
 sieve-of-eratosthenes-2.py
 galton-box-animation.py
 increment-a-numerical-string-1.py
-xml-output-1.py
 anagrams-2.py
 generate-chess960-starting-position-4.py
 keyboard-input-flush-the-keyboard-buffer.py
@@ -9252,6 +9251,7 @@ prime-decomposition-2.py
 ordered-partitions-2.py
 fibonacci-sequence-11.py
 first-class-functions-2.py
+xml-output.py
 gui-enabling-disabling-of-controls.py
 longest-increasing-subsequence-2.py
 cut-a-rectangle-1.py
@@ -9509,7 +9509,6 @@ state-name-puzzle.py
 digital-root-multiplicative-digital-root-1.py
 subtractive-generator-1.py
 binary-digits-1.py
-rsa-code-3.py
 one-of-n-lines-in-a-file.py
 sort-an-array-of-composite-structures-3.py
 dragon-curve-1.py
@@ -10693,7 +10692,6 @@ parse-an-ip-address-2.py
 symmetric-difference-3.py
 man-or-boy-test-2.py
 sorting-algorithms-heapsort.py
-xml-output-2.py
 anagrams-1.py
 shell-one-liner-1.py
 numerical-integration-1.py

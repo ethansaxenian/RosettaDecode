@@ -1,10 +1,10 @@
->>> import json
->>> data = json.loads('{ "foo": 1, "bar": [10, "apples"] }')
->>> sample = { "blue": [1,2], "ocean": "water" }
->>> json_string = json.dumps(sample)
->>> json_string
+import json
+data = json.loads('{ "foo": 1, "bar": [10, "apples"] }')
+sample = { "blue": [1,2], "ocean": "water" }
+json_string = json.dumps(sample)
+json_string
 '{"blue": [1, 2], "ocean": "water"}'
->>> sample
+sample
 {'blue': [1, 2], 'ocean': 'water'}
->>> data
+data
 {'foo': 1, 'bar': [10, 'apples']}

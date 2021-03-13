@@ -5,9 +5,9 @@ Circle = namedtuple('Circle', 'x, y, r')
 
 def solveApollonius(c1, c2, c3, s1, s2, s3):
     '''
-    >>> solveApollonius((0, 0, 1), (4, 0, 1), (2, 4, 2), 1,1,1)
+    solveApollonius((0, 0, 1), (4, 0, 1), (2, 4, 2), 1,1,1)
     Circle(x=2.0, y=2.1, r=3.9)
-    >>> solveApollonius((0, 0, 1), (4, 0, 1), (2, 4, 2), -1,-1,-1)
+    solveApollonius((0, 0, 1), (4, 0, 1), (2, 4, 2), -1,-1,-1)
     Circle(x=2.0, y=0.8333333333333333, r=1.1666666666666667)
     '''
     x1, y1, r1 = c1

@@ -16,4 +16,4 @@ def Entropy(text):
     return infoc
 
 while True:
-    print(Entropy(input('>>>')))
+    print(Entropy(input('')))

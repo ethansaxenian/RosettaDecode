@@ -8,7 +8,7 @@ def Dijkstra(Graph, source):
         | 3   4 | 5
         +---+---+---+
 
-        >>> graph = (        # or ones on the diagonal
+        graph = (        # or ones on the diagonal
         ...     (0,1,0,0,0,0,),
         ...     (1,0,1,0,1,0,),
         ...     (0,1,0,0,0,1,),
@@ -17,9 +17,9 @@ def Dijkstra(Graph, source):
         ...     (0,0,1,0,0,0,),
         ... )
         ...
-        >>> Dijkstra(graph, 0)
+        Dijkstra(graph, 0)
         ([0, 1, 2, 3, 2, 3], [1e+140, 0, 1, 4, 1, 2])
-        >>> display_solution([1e+140, 0, 1, 4, 1, 2])
+        display_solution([1e+140, 0, 1, 4, 1, 2])
         5<2<1<0
     '''
     # Graph[u][v] is the weight from u to v (however 0 means infinity)

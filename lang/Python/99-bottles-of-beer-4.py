@@ -99,7 +99,7 @@ def get_inventory(
     """
     Used to return the first or the fourth line of the verse
 
-    >>> get_inventory("10 bottles of beer", location="on the wall")
+    get_inventory("10 bottles of beer", location="on the wall")
     "10 bottles of beer on the wall"
     """
     return ' '.join((asset, location))
@@ -115,7 +115,7 @@ def get_asset(
     """
     Quantified asset
 
-    >>> get_asset(0, container="jar", plurifier=regular_plural, liquid='milk')
+    get_asset(0, container="jar", plurifier=regular_plural, liquid='milk')
     "No more jars of milk"
     """
 

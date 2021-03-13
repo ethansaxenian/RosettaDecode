@@ -9,11 +9,11 @@ from functools import reduce
 def fac(n):
     '''\
     return the prime factors for n
-    >>> fac(600)
+    fac(600)
     [5, 5, 3, 2, 2, 2]
-    >>> fac(1000)
+    fac(1000)
     [5, 5, 5, 2, 2, 2]
-    >>>
+    
     '''
     step = lambda x: 1 + x*4 - (x//2)*2
     maxq = int(math.floor(math.sqrt(n)))
@@ -32,11 +32,11 @@ def fac(n):
 def fact(n):
     '''\
     return the prime factors and their multiplicities for n
-    >>> fact(600)
+    fact(600)
     [(2, 3), (3, 1), (5, 2)]
-    >>> fact(1000)
+    fact(1000)
     [(2, 3), (5, 3)]
-    >>>
+    
     '''
     res = fac(n)
     return [(c, res.count(c)) for c in set(res)]

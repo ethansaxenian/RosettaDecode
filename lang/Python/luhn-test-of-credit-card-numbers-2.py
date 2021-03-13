@@ -1,4 +1,4 @@
->>> def vérifLuhn(ch):
+def vérifLuhn(ch):
   sum = 0
   chParity = len(ch) % 2
   for i in range (len(ch)-1, -1, -1):

@@ -14,6 +14,6 @@ def haversine(lat1, lon1, lat2, lon2):
 
     return R * c
 
->>> haversine(36.12, -86.67, 33.94, -118.40)
+haversine(36.12, -86.67, 33.94, -118.40)
 2887.2599506071106
->>>
+

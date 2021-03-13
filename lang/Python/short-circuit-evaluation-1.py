@@ -1,12 +1,12 @@
->>> def a(answer):
+def a(answer):
 	print("  # Called function a(%r) -> %r" % (answer, answer))
 	return answer
 
->>> def b(answer):
+def b(answer):
 	print("  # Called function b(%r) -> %r" % (answer, answer))
 	return answer
 
->>> for i in (False, True):
+for i in (False, True):
 	for j in (False, True):
 		print ("\nCalculating: x = a(i) and b(j)")
 		x = a(i) and b(j)

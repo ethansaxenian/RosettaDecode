@@ -1,5 +1,5 @@
->>> import os
->>> print('\n'.join(sorted(os.listdir(''))))
+import os
+print('\n'.join(sorted(os.listdir(''))))
 DLLs
 Doc
 LICENSE.txt
@@ -13,4 +13,4 @@ libs
 python.exe
 pythonw.exe
 tcl
->>>
+

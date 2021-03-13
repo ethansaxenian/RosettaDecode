@@ -1,4 +1,4 @@
->>> def int2bin(n):
+def int2bin(n):
 	'From positive integer to list of binary bits, msb at index 0'
 	if n:
 		bits = []
@@ -9,7 +9,7 @@
 	else: return [0]
 
 	
->>> def bin2int(bits):
+def bin2int(bits):
 	'From binary bits, msb at index 0 to integer'
 	i = 0
 	for bit in bits:

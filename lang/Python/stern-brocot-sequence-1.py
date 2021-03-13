@@ -2,10 +2,10 @@ def stern_brocot(predicate=lambda series: len(series) < 20):
     """\
     Generates members of the stern-brocot series, in order, returning them when the predicate becomes false
 
-    >>> print('The first 10 values:',
+    print('The first 10 values:',
               stern_brocot(lambda series: len(series) < 10)[:10])
     The first 10 values: [1, 1, 2, 1, 3, 2, 3, 1, 4, 3]
-    >>>
+    
     """
 
     sb, i = [1, 1], 0

@@ -1,4 +1,4 @@
->>> def magic(n):
+def magic(n):
     for row in range(1, n + 1):
         print(' '.join('%*i' % (len(str(n**2)), cell) for cell in
                        (n * ((row + col - 1 + n // 2) % n) +
@@ -7,7 +7,7 @@
     print('\nAll sum to magic number %i' % ((n * n + 1) * n // 2))
 
 
->>> for n in (5, 3, 7):
+for n in (5, 3, 7):
 	print('\nOrder %i\n=======' % n)
 	magic(n)
 
@@ -42,4 +42,4 @@ Order 7
 22 31 40 49  2 11 20
 
 All sum to magic number 175
->>>
+

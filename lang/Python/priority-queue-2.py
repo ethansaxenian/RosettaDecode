@@ -1,5 +1,5 @@
->>> import queue
->>> help(queue.PriorityQueue)
+import queue
+help(queue.PriorityQueue)
 Help on class PriorityQueue in module queue:
 
 class PriorityQueue(Queue)
@@ -104,4 +104,4 @@ class PriorityQueue(Queue)
  |  __weakref__
  |      list of weak references to the object (if defined)
 
->>>
+

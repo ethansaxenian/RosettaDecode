@@ -1,6 +1,6 @@
->>> size = 12
->>> width = len(str(size**2))
->>> for row in range(-1,size+1):
+size = 12
+width = len(str(size**2))
+for row in range(-1,size+1):
 	if row==0:
 		print("─"*width + "┼"+"─"*((width+1)*size-1))
 	else:
@@ -26,4 +26,4 @@
  10│                                    100 110 120
  11│                                        121 132
  12│                                            144
->>>
+

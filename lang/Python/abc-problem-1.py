@@ -29,21 +29,21 @@ def can_make_word(word, block_collection=blocks):
     """
     Return True if `word` can be made from the blocks in `block_collection`.
 
-    >>> can_make_word("")
+    can_make_word("")
     False
-    >>> can_make_word("a")
+    can_make_word("a")
     True
-    >>> can_make_word("bark")
+    can_make_word("bark")
     True
-    >>> can_make_word("book")
+    can_make_word("book")
     False
-    >>> can_make_word("treat")
+    can_make_word("treat")
     True
-    >>> can_make_word("common")
+    can_make_word("common")
     False
-    >>> can_make_word("squad")
+    can_make_word("squad")
     True
-    >>> can_make_word("coNFused")
+    can_make_word("coNFused")
     True
     """
     if not word:

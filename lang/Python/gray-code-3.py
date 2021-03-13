@@ -1,4 +1,4 @@
->>> for i in range(16):
+for i in range(16):
 	print('int:%2i -> bin:%12r -> gray:%12r -> bin:%12r -> int:%2i' %
 	      ( i,
 	        int2bin(i),
@@ -24,4 +24,4 @@ int:12 -> bin:[1, 1, 0, 0] -> gray:[1, 0, 1, 0] -> bin:[1, 1, 0, 0] -> int:12
 int:13 -> bin:[1, 1, 0, 1] -> gray:[1, 0, 1, 1] -> bin:[1, 1, 0, 1] -> int:13
 int:14 -> bin:[1, 1, 1, 0] -> gray:[1, 0, 0, 1] -> bin:[1, 1, 1, 0] -> int:14
 int:15 -> bin:[1, 1, 1, 1] -> gray:[1, 0, 0, 0] -> bin:[1, 1, 1, 1] -> int:15
->>>
+

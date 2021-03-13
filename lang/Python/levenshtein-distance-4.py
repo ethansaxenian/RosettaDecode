@@ -1,5 +1,5 @@
->>> from functools import lru_cache
->>> @lru_cache(maxsize=4095)
+from functools import lru_cache
+@lru_cache(maxsize=4095)
 def ld(s, t):
 	if not s: return len(t)
 	if not t: return len(s)
@@ -9,5 +9,5 @@ def ld(s, t):
 	l3 = ld(s[1:], t[1:])
 	return 1 + min(l1, l2, l3)
 
->>> print( ld("kitten","sitting"),ld("rosettacode","raisethysword") )
+print( ld("kitten","sitting"),ld("rosettacode","raisethysword") )
 3 8

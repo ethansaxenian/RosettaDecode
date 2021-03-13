@@ -42,19 +42,19 @@ def sortkeygen(s):
     '''Generate 'natural' sort key for s
 
     Doctests:
-        >>> sortkeygen('  some extra    spaces  ')
+        sortkeygen('  some extra    spaces  ')
         [u'some extra spaces']
-        >>> sortkeygen('CasE InseNsItIve')
+        sortkeygen('CasE InseNsItIve')
         [u'case insensitive']
-        >>> sortkeygen('The Wind in the Willows')
+        sortkeygen('The Wind in the Willows')
         [u'wind in the willows']
-        >>> sortkeygen(u'\462 ligature')
+        sortkeygen(u'\462 ligature')
         [u'ij ligature']
-        >>> sortkeygen(u'\335\375 upper/lower case Y with acute accent')
+        sortkeygen(u'\335\375 upper/lower case Y with acute accent')
         [u'yy upper/lower case y with acute accent']
-        >>> sortkeygen('foo9.txt')
+        sortkeygen('foo9.txt')
         [u'foo', 9, u'.txt']
-        >>> sortkeygen('x9y99')
+        sortkeygen('x9y99')
         [u'x', 9, u'y', 99]
     '''
     # Ignore leading and trailing spaces
@@ -81,7 +81,7 @@ def naturalsort(items):
     ''' Naturally sort a series of strings
 
     Doctests:
-        >>> naturalsort(['The Wind in the Willows','The 40th step more',
+        naturalsort(['The Wind in the Willows','The 40th step more',
                          'The 39 steps', 'Wanda'])
         ['The 39 steps', 'The 40th step more', 'Wanda', 'The Wind in the Willows']
 

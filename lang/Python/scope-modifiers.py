@@ -1,5 +1,5 @@
->>> x="From global scope"
->>> def outerfunc():
+x="From global scope"
+def outerfunc():
     x = "From scope at outerfunc"
 
     def scoped_local():
@@ -22,9 +22,9 @@
     print(scoped_notdefinedlocally())
 
 
->>> outerfunc()
+outerfunc()
 scoped_local scope gives x = scope local
 scoped_nonlocal scope gives x = From scope at outerfunc
 scoped_global scope gives x = From global scope
 scoped_notdefinedlocally scope gives x = From global scope
->>>
+

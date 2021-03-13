@@ -1,11 +1,11 @@
->>> import calendar
->>> help(calendar.prcal)
+import calendar
+help(calendar.prcal)
 Help on method pryear in module calendar:
 
 pryear(self, theyear, w=0, l=0, c=6, m=3) method of calendar.TextCalendar instance
     Print a years calendar.
 
->>> calendar.prcal(1969)
+calendar.prcal(1969)
                                   1969
 
       January                   February                   March

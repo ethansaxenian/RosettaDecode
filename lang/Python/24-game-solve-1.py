@@ -67,7 +67,7 @@ def check(answer, digits):
 
 def solve(digits):
     """\
-    >>> for digits in '3246 4788 1111 123456 1127 3838'.split():
+    for digits in '3246 4788 1111 123456 1127 3838'.split():
             solve(list(digits))
 
 
@@ -83,7 +83,7 @@ def solve(digits):
     '( 1 + 2 ) * ( 1 + 7 )'
     Solution found: 8 / ( 3 - 8 / 3 )
     '8 / ( 3 - 8 / 3 )'
-    >>> """
+    """
     digilen = len(digits)
     # length of an exp without brackets
     exprlen = 2 * digilen - 1
