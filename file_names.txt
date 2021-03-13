@@ -9137,7 +9137,6 @@ formatted-numeric-output-2.py
 enforced-immutability-2.py
 string-length-15.py
 determine-if-a-string-is-numeric-4.py
-reverse-words-in-a-string-1.py
 count-the-coins-2.py
 comments-1.py
 conditional-structures-3.py
@@ -9216,7 +9215,6 @@ input-loop-1.py
 100-doors-1.py
 rsa-code.py
 distributed-programming-10.py
-shell-one-liner-2.py
 numerical-integration-2.py
 sieve-of-eratosthenes-2.py
 galton-box-animation.py
@@ -9299,7 +9297,6 @@ tree-traversal-3.py
 five-weekends-1.py
 xml-xpath-1.py
 paraffins-3.py
-runtime-evaluation-2.py
 phrase-reversals-2.py
 sorting-algorithms-quicksort-2.py
 verify-distribution-uniformity-naive.py
@@ -9526,6 +9523,7 @@ quickselect-algorithm-2.py
 loop-over-multiple-arrays-simultaneously-2.py
 partial-function-application-1.py
 function-definition-3.py
+runtime-evaluation.py
 write-float-arrays-to-a-text-file-1.py
 natural-sorting.py
 abundant,-deficient-and-perfect-number-classifications-1.py
@@ -10010,7 +10008,6 @@ quine-4.py
 globally-replace-text-in-several-files.py
 bernoulli-numbers-1.py
 averages-arithmetic-mean-5.py
-priority-queue-4.py
 json-1.py
 calendar.py
 exceptions-7.py
@@ -10402,7 +10399,6 @@ xml-xpath-2.py
 md4.py
 seven-sided-dice-from-five-sided-dice.py
 median-filter.py
-runtime-evaluation-1.py
 animate-a-pendulum.py
 josephus-problem-1.py
 set-puzzle-1.py
@@ -10626,7 +10622,6 @@ averages-mode-3.py
 sieve-of-eratosthenes-5.py
 comments-2.py
 filter-3.py
-reverse-words-in-a-string-2.py
 count-the-coins-1.py
 formatted-numeric-output-1.py
 enforced-immutability-1.py
@@ -10675,6 +10670,7 @@ find-largest-left-truncatable-prime-in-a-given-base.py
 arithmetic-rational-1.py
 paraffins-1.py
 copy-a-string-1.py
+reverse-words-in-a-string.py
 hello-world-text-2.py
 tree-traversal-1.py
 semiprime-1.py
@@ -10693,7 +10689,6 @@ symmetric-difference-3.py
 man-or-boy-test-2.py
 sorting-algorithms-heapsort.py
 anagrams-1.py
-shell-one-liner-1.py
 numerical-integration-1.py
 sieve-of-eratosthenes-1.py
 increment-a-numerical-string-2.py
