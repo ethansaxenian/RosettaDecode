@@ -62,6 +62,6 @@ def DiningPhilosophers():
     for p in philosophers: p.start()
     time.sleep(100)
     Philosopher.running = False
-    print ("Now we're finishing.")
+    print("Now we're finishing.")
 
 DiningPhilosophers()

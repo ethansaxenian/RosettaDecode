@@ -1,14 +1,14 @@
->> > import itertools
+import itertools
 import urllib
->> > words = urllib.urlopen('http://wiki.puzzlers.org/pub/wordlists/unixdict.txt').read().split()
->> > len(words)
+words = urllib.urlopen('http://wiki.puzzlers.org/pub/wordlists/unixdict.txt').read().split()
+len(words)
 25104
->> > anagrams = [list(g) for k, g in itertools.groupby(sorted(words, key=sorted), key=sorted)]
+anagrams = [list(g) for k, g in itertools.groupby(sorted(words, key=sorted), key=sorted)]
 
->> > count = max(len(ana) for ana in anagrams)
->> > for ana in anagrams:
+count = max(len(ana) for ana in anagrams)
+for ana in anagrams:
     if len(ana) >= count:
-        print ana
+        print(ana)
 
 ['abel', 'able', 'bale', 'bela', 'elba']
 ['caret', 'carte', 'cater', 'crate', 'trace']
@@ -16,6 +16,6 @@ import urllib
 ['alger', 'glare', 'lager', 'large', 'regal']
 ['elan', 'lane', 'lean', 'lena', 'neal']
 ['evil', 'levi', 'live', 'veil', 'vile']
->> > count
+count
 5
->> >
+

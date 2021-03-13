@@ -91,7 +91,7 @@ if __name__ == '__main__':
                   Pt(x=10, y=5), Pt(x=8, y=5),
                   Pt(x=10, y=10))
 
-    print ("\n TESTING WHETHER POINTS ARE WITHIN POLYGONS")
+    print("\n TESTING WHETHER POINTS ARE WITHIN POLYGONS")
     for poly in polys:
         polypp(poly)
         print(('   ', '\t'.join("%s: %s" % (p, ispointinside(p, poly))

@@ -10,7 +10,7 @@ def balanced(txt):
      return all(x>=0 for x in accumulate(brackets))
 
 for txt in (gen(N) for N in range(10)):
-     print ("%-22r is%s balanced" % (txt, '' if balanced(txt) else ' not'))
+     print("%-22r is%s balanced" % (txt, '' if balanced(txt) else ' not'))
 
 ''                     is balanced
 ']['                   is not balanced

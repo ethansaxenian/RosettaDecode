@@ -7,8 +7,8 @@ def characterstoxml(names, remarks):
 		c.text = remark
 	return ET.tostring(root)
 
-print characterstoxml(
+print(characterstoxml(
 	names = ["April", "Tam O'Shanter", "Emily"],
 	remarks = [ "Bubbly: I'm > Tam and <= Emily",
 		    'Burns: "When chapman billies leave the street ..."',
-		    'Short & shrift' ] ).replace('><','>\n<')
+		    'Short & shrift' ] ).replace('><','>\n<'))

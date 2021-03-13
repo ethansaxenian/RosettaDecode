@@ -1,3 +1,12 @@
+from collections import namedtuple
+
+from caffe2.python.caffe2_pybind11_state import Edge
+
+Pt = namedtuple('Pt', 'x, y')  # Point
+Edge = namedtuple('Edge', 'a, b')  # Polygon edge from a to b
+Poly = namedtuple('Poly', 'name, edges')  # Polygon
+
+
 def _convert_fortran_shapes():
     point = Pt
     pts = (point(0,0), point(10,0), point(10,10), point(0,10),
@@ -19,9 +28,9 @@ def _convert_fortran_shapes():
     names = ( "square", "square_hole", "strange", "exagon" )
     polys = [Poly(name, edges)
              for name, edges in zip(names, polys)]
-    print 'polys = ['
+    print('polys = [')
     for p in polys:
-        print "  Poly(name='%s', edges=(" % p.name
-        print '   ', ',\n    '.join(str(e) for e in p.edges) + '\n    )),'
-    print '  ]'
- _convert_fortran_shapes()
+        print("  Poly(name='%s', edges=(" % p.name)
+        print('   ', ',\n    '.join(str(e) for e in p.edges) + '\n    )),')
+    print('  ]')
+_convert_fortran_shapes()

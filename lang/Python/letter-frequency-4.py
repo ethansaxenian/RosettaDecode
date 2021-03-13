@@ -1,4 +1,4 @@
-...
+
 from collections import defaultdict
 def countletters(file_handle):
     """Count occurences of letters and return a dictionary of them

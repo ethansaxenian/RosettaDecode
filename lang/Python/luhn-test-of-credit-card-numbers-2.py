@@ -11,4 +11,4 @@ def vérifLuhn(ch):
   return sum % 10 == 0, “somme calculée obtenue = “ + str(sum)
 
 for n in (49927398716, 49927398717, 1234567812345678, 1234567812345670):
-        print (str(n)+" =>", vérifLuhn(str(n)))
+        print(str(n)+" =>", vérifLuhn(str(n)))

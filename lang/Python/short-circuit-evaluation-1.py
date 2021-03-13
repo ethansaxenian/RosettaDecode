@@ -8,9 +8,9 @@ def b(answer):
 
 for i in (False, True):
 	for j in (False, True):
-		print ("\nCalculating: x = a(i) and b(j)")
+		print("\nCalculating: x = a(i) and b(j)")
 		x = a(i) and b(j)
-		print ("Calculating: y = a(i) or  b(j)")
+		print("Calculating: y = a(i) or  b(j)")
 		y = a(i) or  b(j)
 
 		

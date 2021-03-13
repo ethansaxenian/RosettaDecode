@@ -8,5 +8,5 @@ def flatten(lst):
 
 
 lst = [[1], 2, [[3,4], 5], [[[]]], [[[6]]], 7, 8, []]
-print list(flatten(lst))
+print( list(flatten(lst)))
 [1, 2, 3, 4, 5, 6, 7, 8]

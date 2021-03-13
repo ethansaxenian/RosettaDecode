@@ -58,6 +58,6 @@ def decompress(compressed):
 
 # How to use:
 compressed = compress('TOBEORNOTTOBEORTOBEORNOT')
-print (compressed)
+print(compressed)
 decompressed = decompress(compressed)
-print (decompressed)
+print(decompressed)

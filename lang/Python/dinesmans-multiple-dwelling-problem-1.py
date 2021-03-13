@@ -128,5 +128,5 @@ def parse_and_solve(problem):
     p = re.sub(r'\s+', ' ', problem).strip()
     for x in problem_re.finditer(p):
         groupname, txt = [(k,v) for k,v in list(x.groupdict().items()) if v][0]
-        #print ("%r, %r" % (groupname, txt))
+        #print("%r, %r" % (groupname, txt))
         handler[groupname](txt)

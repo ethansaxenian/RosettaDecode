@@ -5,5 +5,5 @@ def lookandsay(number):
 
 numberstring='1'
 for i in range(10):
-	print numberstring
+	print(numberstring)
 	numberstring = lookandsay(numberstring)

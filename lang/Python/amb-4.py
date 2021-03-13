@@ -13,7 +13,7 @@ def amb(xs):
 # main :: IO ()
 def main():
     xs = enumFromTo(1)(10)
-    print ('Pythagorean triples from integers 1-10:')
+    print('Pythagorean triples from integers 1-10:')
     print((
         amb(xs)(
             lambda x: amb(xs)
@@ -31,7 +31,7 @@ def main():
     def joins(a, b):
         return a[-1] == b[0]
 
-    print ('\nRC problem given above:')
+    print('\nRC problem given above:')
     print((
         amb(['the', 'that', 'a'])(
             lambda w1: amb(

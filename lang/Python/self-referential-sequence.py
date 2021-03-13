@@ -56,7 +56,7 @@ The longest length, followed by the number(s) with the longest sequence length
 for starting sequence numbers below 1000000 are:
   Iterations = %i and sequence-starts = %s.''' % (lenmax, allstarts)   ))
 
-print ( '''
+print( '''
 Note that only the first of any sequences with the same digits is printed below.
 (The others will differ only in their first term)''' )
 

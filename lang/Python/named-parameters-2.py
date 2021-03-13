@@ -2,25 +2,25 @@ from __future__ import print_function
 
 def show_args(defparam1, defparam2 = 'default value', *posparam, **keyparam):
   "Straight-forward function to show its arguments"
-  print ("  Default Parameters:")
-  print ("    defparam1 value is:", defparam1)
-  print ("    defparam2 value is:", defparam2)
+  print("  Default Parameters:")
+  print("    defparam1 value is:", defparam1)
+  print("    defparam2 value is:", defparam2)
 
-  print ("  Positional Arguments:")
+  print("  Positional Arguments:")
   if posparam:
     n = 0
     for p in posparam:
-      print ("    positional argument:", n, "is:", p)
+      print("    positional argument:", n, "is:", p)
       n += 1
   else:
-    print ("    <None>")
+    print("    <None>")
 
-  print ("  Keyword Arguments (by sorted key name):")
+  print("  Keyword Arguments (by sorted key name):")
   if keyparam:
     for k,v in sorted(keyparam.items()):
-      print ("    keyword argument:", k, "is:", v)
+      print("    keyword argument:", k, "is:", v)
   else:
-    print ("    <None>")
+    print("    <None>")
 
 
 show_args('POSITIONAL', 'ARGUMENTS')

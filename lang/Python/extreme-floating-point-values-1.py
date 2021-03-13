@@ -6,7 +6,7 @@ nan = inf + _inf
 inf, _inf, _zero, nan
 (inf, -inf, -0.0, nan)
 # Print
-for value in (inf, _inf, _zero, nan): print (value)
+for value in (inf, _inf, _zero, nan): print(value)
 
 inf
 -inf

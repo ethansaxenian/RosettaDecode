@@ -11,7 +11,7 @@ def bar():
     """documentation for the bar function"""
 
 if __name__ == "__main__":
-    print (__doc__)
+    print(__doc__)
     print((Foo.__doc__))
     print((Foo.__init__.__doc__))
     print((bar.__doc__))

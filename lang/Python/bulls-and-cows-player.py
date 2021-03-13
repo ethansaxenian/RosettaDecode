@@ -6,7 +6,7 @@ try:
 except:
     raw_input = input
 try:
-    
+    from itertools import izip
 except:
     izip = zip
 
@@ -36,7 +36,7 @@ print(("Playing Bulls & Cows with %i unique digits\n" % size))
 while True:
     ans = choices[0]
     answers.append(ans)
-    #print ("(Narrowed to %i possibilities)" % len(choices))
+    #print("(Narrowed to %i possibilities)" % len(choices))
     score = input("Guess %2i is %*s. Answer (Bulls, cows)? "
                       % (len(answers), size, ''.join(ans)))
     score = parse_score(score)
@@ -44,11 +44,11 @@ while True:
     #print("Bulls: %i, Cows: %i" % score)
     found =  score == (size, 0)
     if found:
-        print ("Ye-haw!")
+        print("Ye-haw!")
         break
     choices = [c for c in choices if scorecalc(c, ans) == score]
     if not choices:
-        print ("Bad scoring? nothing fits those scores you gave:")
+        print("Bad scoring? nothing fits those scores you gave:")
         print(('  ' +
                '\n  '.join("%s -> %s" % (''.join(an),sc)
                            for an,sc in zip(answers, scores))))

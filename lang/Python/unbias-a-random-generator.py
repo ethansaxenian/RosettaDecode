@@ -21,8 +21,8 @@ if __name__ == '__main__':
         biased = randN(N)
         v = [biased() for x in range(1000000)]
         v1, v0 = v.count(1), v.count(0)
-        print ( "Biased(%i)  = %r" % (N, Stats(v1, v0, 100. * v1/(v1 + v0))) )
+        print( "Biased(%i)  = %r" % (N, Stats(v1, v0, 100. * v1/(v1 + v0))) )
 
         v = [unbiased(biased) for x in range(1000000)]
         v1, v0 = v.count(1), v.count(0)
-        print ( "  Unbiased = %r" % (Stats(v1, v0, 100. * v1/(v1 + v0)), ) )
+        print( "  Unbiased = %r" % (Stats(v1, v0, 100. * v1/(v1 + v0)), ) )

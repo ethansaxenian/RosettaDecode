@@ -3,7 +3,7 @@ def joins(a, b):
     return a[-1] == b[0]
 
 
-print (
+print(
     [
         ' '.join([w1, w2, w3, w4])
         for w1 in ['the', 'that', 'a']

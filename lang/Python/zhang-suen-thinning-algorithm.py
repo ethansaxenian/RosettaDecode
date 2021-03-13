@@ -70,7 +70,7 @@ def neighbours(x, y, image):
     '''Return 8-neighbours of point p1 of picture, in order'''
     i = image
     x1, y1, x_1, y_1 = x+1, y-1, x-1, y+1
-    #print ((x,y))
+    #print((x,y))
     return [i[y1][x],  i[y1][x1],   i[y][x1],  i[y_1][x1],  # P2,P3,P4,P5
             i[y_1][x], i[y_1][x_1], i[y][x_1], i[y1][x_1]]  # P6,P7,P8,P9
 
@@ -105,8 +105,8 @@ def zhangSuen(image):
                     2 <= sum(n) <= 6):      # Condition 1
                     changing2.append((x,y))
         for x, y in changing2: image[y][x] = 0
-        #print changing1
-        #print changing2
+        #print(changing1)
+        #print(changing2)
     return image
 
 
