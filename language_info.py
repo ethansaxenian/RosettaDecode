@@ -10,9 +10,7 @@ EXTENSION_TO_LANGUAGE = {
     ".julia": "Julia",
     ".pl": "Perl",
     ".py": "Python",
-    ".rb": "Ruby",
-    ".rust": "Rust",
-    ".scala": "Scala"
+    ".rb": "Ruby"
 }
 
 SUPPORTED_LANGUAGES = list(EXTENSION_TO_LANGUAGE.values())

@@ -2,16 +2,12 @@ This git repo has been modified from [github.com/acmeism/RosettaCodeData](https:
 
 It contains all tasks from [Rosetta Code](https://rosettacode.org) in the languages from this [programming language popularity ranking](https://pypl.github.io/PYPL.html).
 
+Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl, Python, Ruby
+
 | Language    | Examples    |
 | ----------- | ----------- |
-| ABAP        | 80          |
-| Ada         | 1045        |
 | C           | 1139        |
-| C-sharp     | 294         |
 | C++         | 926         |
-| COBOL       | 356         |
-| Dart        | 90          |
-| Delphi      | 304         |
 | Go          | 1130        |
 | Groovy      | 717         |
 | Haskell     | 1427        |
@@ -20,8 +16,6 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 | Julia       | 990         |
 | Kotlin      | 769         |
 | Lua         | 622         |
-| MATLAB      | 559         |
-| Objective-C | 228         |
 | Perl        | 1223        |
 | PHP         | 514         |
 | Python      | 1670        |
@@ -30,6 +24,3 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 | Rust        | 580         |
 | Scala       | 931         |
 | Swift       | 505         |
-| TypeScript  | 15          |
-| VBA         | 342         |
-| Visual-Basic| 111         |

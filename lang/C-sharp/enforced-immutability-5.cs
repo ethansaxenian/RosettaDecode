@@ -1,1 +1,0 @@
-public string Key { get; }

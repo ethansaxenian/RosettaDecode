@@ -4,10 +4,7 @@ from shutil import copyfile
 from language_info import LANGUAGE_FILES, EXTENSION_TO_LANGUAGE
 
 if __name__ == '__main__':
-    try:
-        os.mkdir(f'text')
-    except FileExistsError:
-        pass
+    os.makedirs('text', exist_ok=True)
     for i, filename in enumerate(LANGUAGE_FILES):
         name, ext = os.path.splitext(filename)
         language = EXTENSION_TO_LANGUAGE[ext]
