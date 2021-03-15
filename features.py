@@ -2,6 +2,8 @@ import re
 from collections import Counter
 from typing import Callable
 
+from language_info import LANGUAGE_FILES
+
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 SPECIAL_CHARACTERS = '~`!@#$%^&*()_-+=[]{}|;:",.<>/?\\\''
 
@@ -42,6 +44,9 @@ def count_n_length_substrings(n: int, code: str) -> Counter[str, int]:
 
 
 if __name__ == '__main__':
-    with open('lang/Python/a+b-1.py', 'r') as file:
-        code = file.read().lower()
+    with open('file_paths.txt', 'r') as file1:
+        for path in file1:
+            with open(path.strip(), 'r') as file2:
+                code = file2.read().lower()
+                print(code)
 

@@ -1,4 +1,5 @@
 import os
+import pathlib
 from enum import Enum
 
 
@@ -29,3 +30,9 @@ EXTENSION_TO_LANGUAGE = {
 }
 
 LANGUAGE_FILES = [file for lang in Language for file in os.listdir(f'lang/{lang.value}')]
+
+
+def get_path_from_filename(filename: str) -> str:
+    ext = pathlib.Path(filename).suffix
+    language = EXTENSION_TO_LANGUAGE[ext]
+    return f'lang/{language}/{filename}'
