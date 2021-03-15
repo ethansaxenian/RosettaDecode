@@ -1,4 +1,7 @@
-# This isn't really needed
+"""
+Converts all language files to text files and stores them in a text/ directory
+This isn't really needed, as Python can read files in other languages anyways
+"""
 
 import os
 from shutil import copyfile

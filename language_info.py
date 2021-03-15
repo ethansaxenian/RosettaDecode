@@ -1,19 +1,5 @@
 import os
 import pathlib
-from enum import Enum
-
-
-class Language(Enum):
-    C = "C"
-    CPP = "C++"
-    Go = "Go"
-    Haskell = "Haskell"
-    Java = "Java"
-    JavaScript = "JavaScript"
-    Julia = "Julia"
-    Perl = "Perl"
-    Python = "Python"
-    Ruby = "Ruby"
 
 
 EXTENSION_TO_LANGUAGE = {
@@ -29,7 +15,7 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "Ruby"
 }
 
-LANGUAGE_FILES = [file for lang in Language for file in os.listdir(f'lang/{lang.value}')]
+LANGUAGE_FILES = [file for lang in EXTENSION_TO_LANGUAGE.values() for file in os.listdir(f'lang/{lang}')]
 
 
 def get_path_from_filename(filename: str) -> str:

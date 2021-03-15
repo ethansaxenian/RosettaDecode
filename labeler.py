@@ -1,3 +1,6 @@
+"""
+Creates an excel file with labels for each file
+"""
 from xlwt import Workbook
 
 from language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
@@ -22,4 +25,4 @@ if __name__ == '__main__':
         labels.write(row, 1, EXTENSION_TO_LANGUAGE[extension])
         row += 1
 
-    wb.save('labels.xls')
+    wb.save('data/labels.xls')
