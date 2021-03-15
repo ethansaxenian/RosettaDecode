@@ -21,15 +21,15 @@ if __name__ == '__main__':
         with open(get_path_from_filename(filename), 'r') as file:
             code = file.read().lower()
             words |= set(find_words(code))
-            # for i in substrings.keys():
-            #     substrings[i] |= set(n_length_substrings(i, code))
+            for i in substrings.keys():
+                substrings[i] |= set(n_length_substrings(i, code))
 
-    with open(f'data/vocabulary.txt', 'w') as outfile1:
+    data = {}
+    for n, subs in substrings.items():
+        data[n] = {sub: i for i, sub in enumerate(subs)}
+    with open(f'data/substrings.jsonl', 'w') as outfile2:
+        json.dump(data, outfile2)
+
+    with open(f'data/vocabulary.jsonl', 'w') as outfile1:
         json.dump({word: i for i, word in enumerate(words)}, outfile1)
-
-    # data = {}
-    # with open(f'data/substrings.jsonl', 'w') as outfile2:
-    #     for n, subs in substrings.items():
-    #         data[n] = {sub: i for i, sub in enumerate(subs)}
-    #     json.dump(data, outfile2)
 

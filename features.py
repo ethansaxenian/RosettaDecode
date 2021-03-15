@@ -4,14 +4,15 @@ Preliminary Features List:
     - percent of each special character from the total number of special characters
     - percent of all chars that are special
     -
-    - most common line endings
-    - most common words (use substrings.jsonl)
+    - most common line endings (use special characters mapping with alpha characters mapping?)
+    - most common words (use vocabulary.jsonl)
     - most common n-length substrings of words (use substrings.jsonl)
 """
 import re
 from collections import Counter
 from typing import Callable
 
+ALPHANUMS = "abcdefghijklmnopqrstuvwxyz_1234567890"
 SPECIAL_CHARACTERS_MAPPING = {
     "'": 0,
     "~": 1,
@@ -46,6 +47,8 @@ SPECIAL_CHARACTERS_MAPPING = {
     "\\": 30,
     "...": 31,
 }
+SPECIALS = list(SPECIAL_CHARACTERS_MAPPING.keys())
+ALL_CHARS_MAPPING = {c: i for i, c in enumerate(SPECIALS + list(ALPHANUMS))}
 
 
 def remove_spaces(code: str) -> str:
@@ -69,7 +72,7 @@ def n_length_substrings(n: int, code: str) -> list[str]:
 
 
 def count_line_endings(code: str) -> Counter[str, int]:
-    return Counter(re.findall(r'.(?=\n)', code))
+    return Counter(re.findall(r'[.]{3}|.(?=\n)', code))
 
 
 def pct_specials(code: str) -> float:
@@ -80,3 +83,5 @@ if __name__ == '__main__':
     with open('lang/Haskell/24-game.hs', 'r') as file:
         code = file.read().lower()
         print(SPECIAL_CHARACTERS_MAPPING)
+        print(ALL_CHARS_MAPPING)
+        print([ord(c) if len(c) == 1 else 8230 for c in ALL_CHARS_MAPPING.keys()])
