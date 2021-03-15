@@ -1,4 +1,19 @@
 import os
+from enum import Enum
+
+
+class Language(Enum):
+    C = "C"
+    CPP = "C++"
+    Go = "Go"
+    Haskell = "Haskell"
+    Java = "Java"
+    JavaScript = "JavaScript"
+    Julia = "Julia"
+    Perl = "Perl"
+    Python = "Python"
+    Ruby = "Ruby"
+
 
 EXTENSION_TO_LANGUAGE = {
     ".c": "C",
@@ -13,6 +28,4 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "Ruby"
 }
 
-SUPPORTED_LANGUAGES = list(EXTENSION_TO_LANGUAGE.values())
-
-LANGUAGE_FILES = [file for lang in SUPPORTED_LANGUAGES for file in os.listdir(f'lang/{lang}')]
+LANGUAGE_FILES = [file for lang in Language for file in os.listdir(f'lang/{lang.value}')]
