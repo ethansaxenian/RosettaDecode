@@ -28,8 +28,8 @@ if __name__ == '__main__':
     for n, subs in substrings.items():
         data[n] = {sub: i for i, sub in enumerate(subs)}
     with open(f'data/substrings.jsonl', 'w') as outfile2:
-        json.dump(data, outfile2)
+        json.dump(data, outfile2, indent=2)
 
     with open(f'data/vocabulary.jsonl', 'w') as outfile1:
-        json.dump({word: i for i, word in enumerate(words)}, outfile1)
+        json.dump({word: i for i, word in enumerate(words)}, outfile1, indent=2)
 

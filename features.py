@@ -1,10 +1,9 @@
 """
 Preliminary Features List:
     - count of each special character
-    - percent of each special character from the total number of special characters
+    - percent of each special character out of the total number of special characters
     - percent of all chars that are special
-    -
-    - most common line endings (use special characters mapping with alpha characters mapping?)
+    - most common line endings (use all characters mapping or unicode with ord())
     - most common words (use vocabulary.jsonl)
     - most common n-length substrings of words (use substrings.jsonl)
 """
