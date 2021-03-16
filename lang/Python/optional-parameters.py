@@ -1,6 +1,6 @@
 def printtable(data):
     for row in data:
-        print ' '.join('%-5s' % ('"%s"' % cell) for cell in row)
+        print(' '.join('%-5s' % ('"%s"' % cell) for cell in row))
 
 
 import operator

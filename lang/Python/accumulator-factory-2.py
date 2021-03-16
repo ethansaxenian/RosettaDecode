@@ -1,7 +1,6 @@
 def accumulator(sum):
     def f(n):
-        nonlocal
-        sum
+        nonlocal sum
         sum += n
         return sum
 

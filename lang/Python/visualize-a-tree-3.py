@@ -1,3 +1,5 @@
+from pprint import pprint
+
 pprint(tree, width=60)
 ('a',
  ('b0',

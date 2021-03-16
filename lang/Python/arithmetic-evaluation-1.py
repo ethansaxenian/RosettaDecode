@@ -29,7 +29,7 @@ class Yaccer(object):
         # Value String
         self.nodestak.append(LeafNode(valStrg))
         self.__dict__.update(self.state2)
-        # print 'push', valStrg
+        # print('push', valStrg)
 
     def o2(self, operchar):
         # Operator character or open paren in state1
@@ -48,7 +48,7 @@ class Yaccer(object):
 
         self.operstak.append(opDict[operchar])
         self.__dict__.update(self.state1)
-        # print 'pushop', operchar
+        # print('pushop', operchar)
 
     def syntaxErr(self, char):
         # Open Parenthesis
@@ -77,7 +77,7 @@ class Yaccer(object):
             vrgt = self.nodestak.pop()
             vlft = self.nodestak.pop()
             self.nodestak.append(AstNode(tailOper[0], vlft, vrgt))
-            # print 'reduce'
+            # print('reduce')
 
     state1 = {'v': v1, 'o': syntaxErr, 'po': o2, 'pc': syntaxErr}
     state2 = {'v': syntaxErr, 'o': o2, 'po': syntaxErr, 'pc': pc2}

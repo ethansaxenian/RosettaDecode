@@ -13,13 +13,13 @@ pi = piCompute()
 D2 = Decimal(2)
 
 Vec = namedtuple("Vec", "x y")
-vcross = lambda (a, b), (c, d): a*d - b*c
-vdot   = lambda (a, b), (c, d): a*c + b*d
-vadd   = lambda (a, b), (c, d): Vec(a + c, b + d)
-vsub   = lambda (a, b), (c, d): Vec(a - c, b - d)
+vcross = lambda a, b, c, d: a*d - b*c
+vdot   = lambda a, b, c, d: a*c + b*d
+vadd   = lambda a, b, c, d: Vec(a + c, b + d)
+vsub   = lambda a, b, c, d: Vec(a - c, b - d)
 vlen   = lambda x: sqrt(vdot(x, x))
 vdist  = lambda a, b: vlen(vsub(a, b))
-vscale = lambda s, (x, y): Vec(x * s, y * s)
+vscale = lambda s, x, y: Vec(x * s, y * s)
 
 def vnorm(v):
     l = vlen(v)
@@ -57,7 +57,7 @@ Angle2 = namedtuple("Angle2", "a1 a2")
 
 Arc = namedtuple("Arc", "c aa")
 
-arcPoint = lambda (x, y, r), a: \
+arcPoint = lambda x, y, r, a: \
     vadd(Vec(x, y), Vec(r * cos(a), r * sin(a)))
 
 arc_start  = lambda c_a0_a1:  arcPoint(c_a0_a1[0], c_a0_a1[1][0])
@@ -73,7 +73,7 @@ def split_circles(cs):
 
     # If an arc that was part of one circle is inside *another* circle,
     # it will not be part of the zero-winding path, so reject it.
-    in_circle = lambda ((x0, y0), c), (x, y, r): \
+    in_circle = lambda x0, y0, c, x, y, r: \
         c != Circle(x, y, r) and vdist(Vec(x0, y0), Vec(x, y)) < r
 
     def in_any_circle(arc):
@@ -118,7 +118,7 @@ def polyline_area(vvs):
     return sum(tri_area(v, v1, v2) for v1, v2 in zip(vs, vs[1:]))
 
 def path_area(arcs):
-    f = lambda (a, e), arc: \
+    f = lambda a, e, arc: \
         (a + arc_area(arc), e + [arc_center(arc), arc_end(arc)])
     (a, e) = reduce(f, arcs, (0, []))
     return a + polyline_area(e)

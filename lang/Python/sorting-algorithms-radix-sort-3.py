@@ -18,4 +18,4 @@ def radix(l, p=None, s=None):
     for e in l:
         bins[int(str(e).zfill(s)[i])] += [e]
 
-    return flatten([radix(b, p-1, s) for b in bins]
+    return flatten([radix(b, p-1, s) for b in bins])

@@ -7,7 +7,7 @@ import random
 digits = '123456789'
 size = 4
 chosen = ''.join(random.sample(digits,size))
-#print chosen # Debug
+#print(chosen) # Debug
 print('''I have chosen a number from %s unique digits from 1 to 9 arranged in a random order.
 You need to input a %i digit, unique digit number as a guess at what I have chosen''' % (size, size))
 guesses = 0

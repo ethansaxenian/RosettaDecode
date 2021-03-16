@@ -7,7 +7,7 @@ def encode(input_string):
             if prev:
                 entry = (prev,count)
                 lst.append(entry)
-                #print lst
+                #print(lst)
             count = 1
             prev = character
         else:
