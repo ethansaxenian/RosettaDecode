@@ -11,12 +11,12 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 | Go          | 1130        |
 | Groovy      | 717         |
 | Haskell     | 1427        |
-| Java        | 1051        |
+| Java        | 1050        |
 | JavaScript  | 1186        |
-| Julia       | 990         |
+| Julia       | 989         |
 | Kotlin      | 769         |
 | Lua         | 622         |
-| Perl        | 1223        |
+| Perl        | 1220        |
 | PHP         | 514         |
 | Python      | 1670        |
 | R           | 664         |
