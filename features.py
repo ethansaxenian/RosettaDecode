@@ -108,20 +108,19 @@ def generate_feature_set(code: str) -> dict[str: int]:
 
 
 def compile_dataset():
-    with open("data/features_data.jsonl", "w") as outfile:
-        with open("data/file_paths.jsonl", "r") as infile:
-            for line in infile:
-                info = json.loads(line)
-                with open(info["path"], "r") as file:
-                    code = file.read().lower()
-                    data = {
-                        "name": os.path.basename(info["path"]),
-                        "features": generate_feature_set(code),
-                        "lang": get_language_from_filename(info["path"]),
-                        # "code": code,
-                    }
-                    json.dump(data, outfile)
-                    outfile.write("\n")
+    with open("data/features_data.jsonl", "w") as outfile, open("data/file_paths.jsonl", "r") as infile:
+        for line in infile:
+            info = json.loads(line)
+            with open(info["path"], "r") as file:
+                code = file.read().lower()
+                data = {
+                    "name": os.path.basename(info["path"]),
+                    "features": generate_feature_set(code),
+                    "lang": get_language_from_filename(info["path"]),
+                    # "code": code,
+                }
+                json.dump(data, outfile)
+                outfile.write("\n")
 
 
 if __name__ == '__main__':
