@@ -17,10 +17,4 @@ im
 123
 im.value = 124
 
-Traceback (most recent call last):
-  File "<pyshell#27>", line 1, in <module>
-    del a.value
-  File "<pyshell#23>", line 4, in __setattr__
-    "'Immut' object does not support item assignment")
-TypeError: 'Immut' object does not support item assignment
 

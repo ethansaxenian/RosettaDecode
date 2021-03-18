@@ -12,5 +12,5 @@ except NameError:
         return ''.join(sorted((str(n) for n in x),
                               key=cmp_to_key(lambda x,y:cmp(y+x, x+y))))
 
-for numbers in [(1, 34, 3, 98, 9, 76, 45, 4), (54, 546, 548, 60):
+for numbers in [(1, 34, 3, 98, 9, 76, 45, 4), (54, 546, 548, 60)]:
     print('Numbers: %r\n  Largest integer: %15s' % (numbers, maxnum(numbers)))

@@ -37,25 +37,18 @@ ALL_CHAR_MAPPING = {"'": 0, '~': 1, '`': 2, '!': 3, '@': 4, '#': 5, '$': 6, '%':
                     'x': 55, 'y': 56, 'z': 57, '_': 58, '1': 59, '2': 60, '3': 61, '4': 62, '5': 63, '6': 64, '7': 65,
                     '8': 66, '9': 67, '0': 68}
 
-RESERVED_KEYWORDS = ['abstract', 'alias', 'and', 'and_eq', 'arguments', 'as', 'asm', 'assert', 'auto', 'await',
-                     'baremodule', 'begin', 'bitand', 'bitor', 'bool', 'boolean', 'break', 'byte', 'case', 'catch',
-                     'chan', 'char', 'class', 'cmp', 'compl', 'const', 'const_cast', 'continue', 'core', 'data',
-                     'debugger', 'def', 'default', 'defer', 'defined', 'del', 'delete', 'deriving', 'die', 'do',
-                     'double', 'dynamic_cast', 'elif', 'else', 'elseif', 'elsif', 'end', 'ensure', 'enum', 'eq', 'eval',
-                     'except', 'exit', 'exp', 'explicit', 'export', 'exports', 'extends', 'extern', 'fallthrough',
-                     'false', 'family', 'final', 'finally', 'float', 'for', 'forall', 'foreach', 'foreign', 'friend',
-                     'from', 'func', 'function', 'ge', 'global', 'go', 'goto', 'gt', 'hiding', 'if', 'implements',
-                     'import', 'in', 'infix', 'infixl', 'infixr', 'inline', 'instance', 'instanceof', 'int',
-                     'interface', 'is', 'lambda', 'last', 'le', 'let', 'local', 'lock', 'long', 'lt', 'macro', 'map',
-                     'mdo', 'module', 'mutable', 'my', 'namespace', 'native', 'ne', 'new', 'newtype', 'next', 'nil',
-                     'no', 'none', 'nonlocal', 'not', 'not_eq', 'null', 'of', 'operator', 'or', 'or_eq', 'package',
-                     'pass', 'print', 'private', 'proc', 'protected', 'public', 'qualified', 'quote', 'qw', 'raise',
-                     'range', 'rec', 'redo', 'ref', 'register', 'require', 'requires', 'rescue', 'retry', 'return',
-                     'select', 'self', 'short', 'signed', 'sizeof', 'static', 'static_cast', 'strictfp', 'struct',
-                     'sub', 'super', 'switch', 'synchronized', 'template', 'then', 'this', 'throw', 'throws',
-                     'transient', 'true', 'try', 'type', 'typedef', 'typeid', 'typename', 'typeof', 'undef', 'union',
-                     'unless', 'unsigned', 'until', 'use', 'using', 'var', 'virtual', 'void', 'volatile', 'wchar_t',
-                     'when', 'where', 'while', 'with', 'xor', 'xor_eq', 'yield']
+RESERVED_KEYWORDS = ['abstract', 'and', 'as', 'assert', 'begin', 'bool', 'boolean', 'break', 'byte', 'case', 'catch',
+                     'chan', 'char', 'class', 'const', 'continue', 'def', 'default', 'defer', 'del', 'delete',
+                     'deriving', 'die', 'do', 'double', 'elif', 'else', 'elseif', 'elsif', 'end', 'enum', 'eq', 'eval',
+                     'except', 'exit', 'extends', 'false', 'final', 'finally', 'float', 'for', 'foreach', 'friend',
+                     'from', 'func', 'function', 'global', 'go', 'goto', 'if', 'implements', 'import', 'in', 'inline',
+                     'instanceof', 'int', 'interface', 'is', 'lambda', 'let', 'local', 'long', 'map', 'module', 'my',
+                     'namespace', 'new', 'nil', 'none', 'not', 'null', 'of', 'operator', 'or', 'package',
+                     'pass', 'print', 'private', 'proc', 'protected', 'public', 'qualified', 'raise', 'range', 'ref',
+                     'require', 'rescue', 'return', 'self', 'short', 'signed', 'sizeof', 'static', 'struct',
+                     'super', 'switch', 'template', 'then', 'this', 'throw', 'throws', 'true', 'try', 'type', 'typedef',
+                     'typename', 'typeof', 'undef', 'undefined', 'unless', 'unsigned', 'until', 'use', 'using', 'var',
+                     'virtual', 'void', 'when', 'where', 'while', 'with', 'yield']
 
 
 def remove_spaces(code: str) -> str:
@@ -126,5 +119,9 @@ def compile_dataset():
 
 
 if __name__ == '__main__':
-    generate_file_paths()
-    compile_dataset()
+    # generate_file_paths()
+    # compile_dataset()
+    # with open("lang/Python/24-game-1.py", "r") as file:
+    #     code = file.read().lower()
+    #     print(sorted(find_words(code)))
+    print(len(RESERVED_KEYWORDS))
