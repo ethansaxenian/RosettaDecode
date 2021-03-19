@@ -12,13 +12,4 @@ def balanced(txt):
 for txt in (gen(N) for N in range(10)):
      print("%-22r is%s balanced" % (txt, '' if balanced(txt) else ' not'))
 
-''                     is balanced
-']['                   is not balanced
-'[]]['                 is not balanced
-']][[[]'               is not balanced
-'][[][][]'             is not balanced
-'[[[][][]]]'           is balanced
-'][[[][][]][]'         is not balanced
-'][]][][[]][[]['       is not balanced
-'][[]]][][[]][[[]'     is not balanced
-'][[][[]]]][[[]][]['   is not balanced
+

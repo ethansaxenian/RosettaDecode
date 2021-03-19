@@ -1,5 +1,5 @@
 """
-Creates an excel file with labels for each file
+Creates an excel sheet with labels for each file
 """
 from xlwt import Workbook
 

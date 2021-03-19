@@ -1,30 +1,37 @@
-def _row2trextra(row, attr=None):
-    cols = escape(row).split(',')
-    attr_tr = attr.get('TR', '')
-    attr_td = attr.get('TD', '')
-    return (('<TR%s>' % attr_tr)
-            + ''.join('<TD%s>%s</TD>' % (attr_td, data) for data in cols)
-            + '</TR>')
+from csv import DictReader
+from xml.etree import ElementTree as ET
 
-def csv2htmlextra(txt, header=True, attr=None):
-    ' attr is a dictionary mapping tags to attributes to add to that tag'
+def csv2html_robust(txt, header=True, attr=None):
+    # Use DictReader because, despite what the docs say, reader() doesn't
+    # return an object with .fieldnames
+    # (DictReader expects an iterable that returns lines, so split on \n)
+    reader = DictReader(txt.split('\n'))
 
-    attr_table = attr.get('TABLE', '')
-    attr_thead = attr.get('THEAD', '')
-    attr_tbody = attr.get('TBODY', '')
-    htmltxt = '<TABLE%s>\n' % attr_table
-    for rownum, row in enumerate(txt.split('\n')):
-        htmlrow = _row2trextra(row, attr)
-        rowclass = ('THEAD%s' % attr_thead) if (header and rownum == 0) else ('TBODY%s' % attr_tbody)
-        htmlrow = '  <%s>%s</%s>\n' % (rowclass, htmlrow, rowclass[:5])
-        htmltxt += htmlrow
-    htmltxt += '</TABLE>\n'
-    return htmltxt
+    table = ET.Element("TABLE", **attr.get('TABLE', {}))
+    thead_tr = ET.SubElement(
+        ET.SubElement(table, "THEAD", **attr.get('THEAD', {})),
+        "TR")
+    tbody = ET.SubElement(table, "TBODY", **attr.get('TBODY', {}))
 
-htmltxt = csv2htmlextra(csvtxt, True,
-                        dict(TABLE=' border="1" summary="csv2html extra program output"',
-                             THEAD=' bgcolor="yellow"',
-                             TBODY=' bgcolor="orange"'
-                             )
-                        )
-print(htmltxt)
+    if header:
+        for name in reader.fieldnames:
+            ET.SubElement(thead_tr, "TD").text = name
+
+    for row in reader:
+        tr_elem = ET.SubElement(tbody, "TR", **attr.get('TR', {}))
+
+        # Use reader.fieldnames to query `row` in the correct order.
+        # (`row` isn't an OrderedDict prior to Python 3.6)
+        for field in reader.fieldnames:
+            td_elem = ET.SubElement(tr_elem, "TD", **attr.get('TD', {}))
+            td_elem.text = row[field]
+
+    return ET.tostring(table, method='html')
+
+htmltxt = csv2html_robust(csvtxt, True, {
+    'TABLE': {'border': "1", 'summary': "csv2html extra program output"},
+    'THEAD': {'bgcolor': "yellow"},
+    'TBODY': {'bgcolor': "orange"}
+})
+
+print((htmltxt.decode('utf8')))

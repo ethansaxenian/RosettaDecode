@@ -4,7 +4,7 @@ This is not needed
 """
 import json
 
-from features import n_length_substrings, find_words
+from feature_extractor import n_length_substrings, find_words
 from language_info import LANGUAGE_FILES, get_path_from_filename
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
- def addN(n):
-     def adder(x):
-         return x + n
-     return adder
+def addN(n):
+    def adder(x):
+        return x + n
+    return adder
