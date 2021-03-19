@@ -1,7 +1,7 @@
 from itertools import islice, tee
 from fractions import Fraction
 try:
-     # for 2.6
+     pass# for 2.6
 except:
     pass
 

@@ -1,7 +1,7 @@
-  from PyQt4.QtGui import *
+from PyQt4.QtGui import *
 
-  app = QApplication([])
-  win = QWidget()
-  win.show()
+app = QApplication([])
+win = QWidget()
+win.show()
 
-  app.exec_()
+app.exec_()

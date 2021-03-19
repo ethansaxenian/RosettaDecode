@@ -1,11 +1,6 @@
-$ cat reproducing.py
-  File "reproducing.py", line 1
-    File "reproducing.py", line 1
-    ^
-IndentationError: unexpected indent
+def applyToOwnSourceCode(functionBody):
+	print("def applyToOwnSourceCode(functionBody):")
+	print(functionBody)
+	print("applyToOwnSourceCode(" + repr(functionBody) + ")")
 
-$ python reproducing.py
-  File "reproducing.py", line 1
-    File "reproducing.py", line 1
-    ^
-IndentationError: unexpected indent
+applyToOwnSourceCode('\tprint("def applyToOwnSourceCode(functionBody):")\n\tprint(functionBody)\n\tprint("applyToOwnSourceCode(" + repr(functionBody) + ")")')

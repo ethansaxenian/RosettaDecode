@@ -5,8 +5,8 @@ for seq in ([], ["ABC"], ["ABC", "DEF"], ["ABC", "DEF", "G", "H"]):
     print('Input: %-24r -> Output: %r' % (seq, strcat(seq)))
 
 	
-Input: []                       -> Output: '{}'
+"""Input: []                       -> Output: '{}'
 Input: ['ABC']                  -> Output: '{ABC}'
 Input: ['ABC', 'DEF']           -> Output: '{ABC and DEF}'
-Input: ['ABC', 'DEF', 'G', 'H'] -> Output: '{ABC, DEF, G and H}'
+Input: ['ABC', 'DEF', 'G', 'H'] -> Output: '{ABC, DEF, G and H}'"""
 

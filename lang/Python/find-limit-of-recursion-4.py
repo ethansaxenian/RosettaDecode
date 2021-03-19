@@ -1,3 +1,7 @@
-File "<stdin>", line 2, in recurse
-RecursionError: maximum recursion depth exceeded while calling a Python object
-996
+def recurseDeeper(counter):
+    try:
+        print(counter)
+        recurseDeeper(counter + 1)
+    except RecursionError:
+        print(("RecursionError at depth", counter))
+        recurseDeeper(counter + 1)

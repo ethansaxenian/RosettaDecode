@@ -2,6 +2,8 @@ import os
 
 pid = os.fork()
 if pid > 0:
- # parent code
+    pass
+# parent code
 else:
+    pass
  # child code

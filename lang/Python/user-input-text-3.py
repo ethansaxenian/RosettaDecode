@@ -1,1 +1,1 @@
-   number = input("Input a number: ")  # Deprecated, please don't use.
+number = input("Input a number: ")  # Deprecated, please don't use.

@@ -9,4 +9,4 @@ def spiral_matrix(n):
             m[x][y] = c
             c += 1
     return m
-for i in spiral_matrix(5): print((*i))
+for i in spiral_matrix(5): print((i))

@@ -10,4 +10,3 @@ def ld(s, t):
 	return 1 + min(l1, l2, l3)
 
 print( ld("kitten","sitting"),ld("rosettacode","raisethysword") )
-3 8

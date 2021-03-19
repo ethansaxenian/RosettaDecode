@@ -1,1 +1,1 @@
-   string = input("Input a string: ")
+string = input("Input a string: ")

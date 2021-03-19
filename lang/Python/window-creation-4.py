@@ -1,5 +1,5 @@
-  import gtk
+import gtk
 
-  window = gtk.Window()
-  window.show()
-  gtk.main()
+window = gtk.Window()
+window.show()
+gtk.main()

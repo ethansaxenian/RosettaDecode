@@ -1,7 +1,4 @@
-$ python3
-Python 3.6.0 |Anaconda custom (64-bit)| (default, Dec 23 2016, 12:22:00)
-[GCC 4.4.7 20120313 (Red Hat 4.4.7-1)] on linux
-Type "help", "copyright", "credits" or "license" for more information.
+
 # https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.solve.html
 import numpy.linalg
 a = [[2, 9, 4], [7, 5, 3], [6, 1, 8]]

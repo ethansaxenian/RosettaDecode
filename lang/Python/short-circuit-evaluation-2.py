@@ -7,7 +7,7 @@ for i in (False, True):
 
 		
 
-Calculating: x = a(i) and b(j) using x = b(j) if a(i) else False
+"""Calculating: x = a(i) and b(j) using x = b(j) if a(i) else False
   # Called function a(False) -> False
 Calculating: y = a(i) or  b(j) using y = b(j) if not a(i) else True
   # Called function a(False) -> False
@@ -29,4 +29,4 @@ Calculating: x = a(i) and b(j) using x = b(j) if a(i) else False
   # Called function a(True) -> True
   # Called function b(True) -> True
 Calculating: y = a(i) or  b(j) using y = b(j) if not a(i) else True
-  # Called function a(True) -> True
+  # Called function a(True) -> True"""

@@ -1,4 +1,4 @@
-IDLE 2.6.1
+
 # Number literals
 x,xi, y,yi = 2.0,0.5, 4.0,0.25
 # Numbers from calculation

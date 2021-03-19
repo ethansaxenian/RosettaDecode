@@ -22,12 +22,12 @@ def move_down():
 	curses.move(y+1,x)
 
 #    Demonstrate how to move the cursor to the beginning of the line
-def move_line_home()	
+def move_line_home():
 	y,x = curses.getyx()
 	curses.move(y,0)
 
 #    Demonstrate how to move the cursor to the end of the line
-def move_line_end()	
+def move_line_end():
 	y,x = curses.getyx()
 	maxy,maxx = scr.getmaxyx()
 	curses.move(y,maxx)

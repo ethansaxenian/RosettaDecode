@@ -1,5 +1,5 @@
 from itertools import takewhile, tee, islice
- from collections import deque
+from collections import deque
 from fractions import gcd
 
 def stern_brocot():

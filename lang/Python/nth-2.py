@@ -10,6 +10,6 @@ def ord(n):
     return str(n)+'th'
 
 if __name__ == '__main__':
-    print((*(ord(n) for n in range(26))))
-    print((*(ord(n) for n in range(250,266))))
-    print((*(ord(n) for n in range(1000,1026))))
+    print(((ord(n) for n in range(26))))
+    print(((ord(n) for n in range(250,266))))
+    print(((ord(n) for n in range(1000,1026))))

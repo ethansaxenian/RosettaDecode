@@ -1,4 +1,4 @@
-  import Tkinter
+import Tkinter
 
-  w = Tkinter.Tk()
-  w.mainloop()
+w = Tkinter.Tk()
+w.mainloop()

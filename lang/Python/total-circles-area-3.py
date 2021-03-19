@@ -3,7 +3,7 @@ from math import sqrt
 from itertools import count
 from pprint import pprint as pp
 try:
-    
+    pass
 except:
     pass
 

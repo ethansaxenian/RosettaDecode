@@ -1,1 +1,2 @@
 while stack:
+    pass

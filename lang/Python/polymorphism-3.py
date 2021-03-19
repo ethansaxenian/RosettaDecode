@@ -17,8 +17,5 @@ p = Point(1.25, 3.87)
 p
 Point(x=1.25, y=3.87)
 p.x = 10.81
-Traceback (most recent call last):
-  File "<pyshell#27>", line 1, in <module>
-    p.x = 10.81
-AttributeError: can't set attribute
+
 
