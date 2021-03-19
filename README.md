@@ -14,5 +14,5 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 | JavaScript  | 1186        |
 | Julia       | 989         |
 | Perl        | 1220        |
-| Python      | 1667        |
+| Python      | 1657        |
 | Ruby        | 1125        |
