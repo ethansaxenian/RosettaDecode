@@ -2,6 +2,20 @@ import os
 import pathlib
 
 
+RESERVED_KEYWORDS = ['abstract', 'and', 'as', 'assert', 'begin', 'bool', 'boolean', 'break', 'byte', 'case', 'catch',
+                     'chan', 'char', 'class', 'const', 'continue', 'def', 'default', 'defer', 'del', 'delete',
+                     'deriving', 'die', 'do', 'double', 'elif', 'else', 'elseif', 'elsif', 'end', 'enum', 'eq', 'eval',
+                     'except', 'exit', 'extends', 'false', 'final', 'finally', 'float', 'for', 'foreach', 'friend',
+                     'from', 'func', 'function', 'global', 'go', 'goto', 'if', 'implements', 'import', 'in', 'inline',
+                     'instanceof', 'int', 'interface', 'is', 'lambda', 'let', 'local', 'long', 'map', 'module', 'my',
+                     'namespace', 'new', 'nil', 'none', 'not', 'null', 'of', 'operator', 'or', 'package',
+                     'pass', 'print', 'private', 'proc', 'protected', 'public', 'qualified', 'raise', 'range', 'ref',
+                     'require', 'rescue', 'return', 'self', 'short', 'signed', 'sizeof', 'static', 'struct',
+                     'super', 'switch', 'template', 'then', 'this', 'throw', 'throws', 'true', 'try', 'type', 'typedef',
+                     'typename', 'typeof', 'undef', 'undefined', 'unless', 'unsigned', 'until', 'use', 'using', 'var',
+                     'virtual', 'void', 'when', 'where', 'while', 'with', 'yield']
+
+
 EXTENSION_TO_LANGUAGE = {
     ".c": "C",
     ".cpp": "C++",

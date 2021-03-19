@@ -1,5 +1,6 @@
 """
 Stores all 2-8 length substrings from the data in a corresponding text file
+This is not needed
 """
 import json
 

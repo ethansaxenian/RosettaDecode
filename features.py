@@ -5,7 +5,7 @@ Preliminary Features List:
     - percent of all chars that are special
     - most common line endings (use all characters mapping or unicode with ord())
     - most common words (use vocabulary.jsonl)
-    - most common n-length substrings of words: n-grams (use substrings.jsonl)
+    - n-grams
 
 Bag-of-words model?
     - use reserved words in the languages?
@@ -18,7 +18,7 @@ from collections import Counter
 from typing import Callable
 
 from file_path_storer import generate_file_paths
-from language_info import get_language_from_filename
+from language_info import get_language_from_filename, RESERVED_KEYWORDS
 
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
                       "$": "dollar", "%": "pct", "^": "caret", "&": "amp", "*": "times", "(": "lparen",
@@ -36,19 +36,6 @@ ALL_CHAR_MAPPING = {"'": 0, '~': 1, '`': 2, '!': 3, '@': 4, '#': 5, '$': 6, '%':
                     'm': 44, 'n': 45, 'o': 46, 'p': 47, 'q': 48, 'r': 49, 's': 50, 't': 51, 'u': 52, 'v': 53, 'w': 54,
                     'x': 55, 'y': 56, 'z': 57, '_': 58, '1': 59, '2': 60, '3': 61, '4': 62, '5': 63, '6': 64, '7': 65,
                     '8': 66, '9': 67, '0': 68}
-
-RESERVED_KEYWORDS = ['abstract', 'and', 'as', 'assert', 'begin', 'bool', 'boolean', 'break', 'byte', 'case', 'catch',
-                     'chan', 'char', 'class', 'const', 'continue', 'def', 'default', 'defer', 'del', 'delete',
-                     'deriving', 'die', 'do', 'double', 'elif', 'else', 'elseif', 'elsif', 'end', 'enum', 'eq', 'eval',
-                     'except', 'exit', 'extends', 'false', 'final', 'finally', 'float', 'for', 'foreach', 'friend',
-                     'from', 'func', 'function', 'global', 'go', 'goto', 'if', 'implements', 'import', 'in', 'inline',
-                     'instanceof', 'int', 'interface', 'is', 'lambda', 'let', 'local', 'long', 'map', 'module', 'my',
-                     'namespace', 'new', 'nil', 'none', 'not', 'null', 'of', 'operator', 'or', 'package',
-                     'pass', 'print', 'private', 'proc', 'protected', 'public', 'qualified', 'raise', 'range', 'ref',
-                     'require', 'rescue', 'return', 'self', 'short', 'signed', 'sizeof', 'static', 'struct',
-                     'super', 'switch', 'template', 'then', 'this', 'throw', 'throws', 'true', 'try', 'type', 'typedef',
-                     'typename', 'typeof', 'undef', 'undefined', 'unless', 'unsigned', 'until', 'use', 'using', 'var',
-                     'virtual', 'void', 'when', 'where', 'while', 'with', 'yield']
 
 
 def remove_spaces(code: str) -> str:
@@ -119,9 +106,9 @@ def compile_dataset():
 
 
 if __name__ == '__main__':
-    # generate_file_paths()
-    # compile_dataset()
+    generate_file_paths()
+    compile_dataset()
     # with open("lang/Python/24-game-1.py", "r") as file:
     #     code = file.read().lower()
     #     print(sorted(find_words(code)))
-    print(len(RESERVED_KEYWORDS))
+    # print(len(RESERVED_KEYWORDS))
