@@ -146,7 +146,7 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
 
 
 if __name__ == '__main__':
-    generate_file_paths()
+    # generate_file_paths()
     compile_dataset()
     # print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
 
