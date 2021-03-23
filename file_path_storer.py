@@ -2,11 +2,13 @@
 Stores the path of each language file in a text file
 """
 import json
+import os
 
 from language_info import LANGUAGE_FILES, get_path_from_filename, get_language_from_filename
 
 
 def generate_file_paths():
+    os.makedirs("data", exist_ok=True)
     with open("data/file_paths.jsonl", "w") as file:
         for filename in LANGUAGE_FILES:
             data = {

@@ -6,7 +6,7 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 
 | Language    | Examples    |
 | ----------- | ----------- |
-| C           | 1139        |
+| C           | 1138        |
 | C++         | 926         |
 | Go          | 1130        |
 | Haskell     | 1427        |

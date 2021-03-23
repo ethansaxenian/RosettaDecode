@@ -1,11 +1,14 @@
 """
 Creates an excel sheet with labels for each file
 """
+import os
+
 from xlwt import Workbook
 
 from language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
 
 if __name__ == '__main__':
+    os.makedirs("data", exist_ok=True)
     wb = Workbook()
     labels = wb.add_sheet('labels', cell_overwrite_ok=True)
     labels.write(0, 0, "Filename")

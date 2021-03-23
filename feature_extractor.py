@@ -81,6 +81,9 @@ def pct_specials(code: str) -> float:
 
 
 def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
+    """
+    returns a dictionary of features extracted from a string
+    """
     features_dict = {}
 
     bag_of_words = Counter(find_words(code))
@@ -105,6 +108,9 @@ def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
 
 
 def compile_dataset(lowercase: bool = True, binary_counts: bool = False):
+    """
+    stores the features data for each code file in data/features_data.jsonl
+    """
     with open("data/features_data.jsonl", "w") as outfile, open("data/file_paths.jsonl", "r") as infile:
         for line in infile:
             info = json.loads(line)
@@ -114,6 +120,9 @@ def compile_dataset(lowercase: bool = True, binary_counts: bool = False):
 
 
 def read_file(path: str, lowercase: bool = True) -> str:
+    """
+    reads a file path and returns the contents as a string
+    """
     with open(path, "r") as file:
         code = file.read()
         if lowercase:
@@ -121,7 +130,11 @@ def read_file(path: str, lowercase: bool = True) -> str:
         return unidecode.unidecode(code)
 
 
-def parse_file(path: str, binary_counts: bool = False, lowercase: bool = True) -> dict[str: int]:
+def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -> dict[str: int]:
+    """
+    compiles and returns the data from a single file path, which includes the filename, the features dictionary,
+    and the language of the code in the file
+    """
     code = read_file(path, lowercase)
     data = {
         "name": os.path.basename(path),
@@ -133,8 +146,7 @@ def parse_file(path: str, binary_counts: bool = False, lowercase: bool = True) -
 
 
 if __name__ == '__main__':
-    # generate_file_paths()
-    # compile_dataset()
-    #
-    print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
+    generate_file_paths()
+    compile_dataset()
+    # print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
 
