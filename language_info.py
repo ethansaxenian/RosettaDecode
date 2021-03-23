@@ -18,12 +18,6 @@ EXTENSION_TO_LANGUAGE = {
 LANGUAGE_FILES = [file for lang in EXTENSION_TO_LANGUAGE.values() for file in os.listdir(f'lang/{lang}')]
 
 
-def get_path_from_filename(filename: str) -> str:
-    ext = pathlib.Path(filename).suffix
-    language = EXTENSION_TO_LANGUAGE[ext]
-    return f'lang/{language}/{filename}'
-
-
 def get_language_from_filename(filename: str) -> str:
     ext = pathlib.Path(filename).suffix
     return EXTENSION_TO_LANGUAGE[ext]

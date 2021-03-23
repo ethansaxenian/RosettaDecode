@@ -7,7 +7,8 @@ from xlwt import Workbook
 
 from language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
 
-if __name__ == '__main__':
+
+def generate_labels():
     os.makedirs("data", exist_ok=True)
     wb = Workbook()
     labels = wb.add_sheet('labels', cell_overwrite_ok=True)
@@ -29,3 +30,7 @@ if __name__ == '__main__':
         row += 1
 
     wb.save('data/labels.xls')
+
+
+if __name__ == '__main__':
+    generate_labels()

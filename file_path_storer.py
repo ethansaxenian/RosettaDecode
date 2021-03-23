@@ -3,8 +3,15 @@ Stores the path of each language file in a text file
 """
 import json
 import os
+import pathlib
 
-from language_info import LANGUAGE_FILES, get_path_from_filename, get_language_from_filename
+from language_info import LANGUAGE_FILES, get_language_from_filename, EXTENSION_TO_LANGUAGE
+
+
+def get_path_from_filename(filename: str) -> str:
+    ext = pathlib.Path(filename).suffix
+    language = EXTENSION_TO_LANGUAGE[ext]
+    return f'lang/{language}/{filename}'
 
 
 def generate_file_paths():
