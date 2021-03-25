@@ -136,17 +136,16 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
     and the language of the code in the file
     """
     code = read_file(path, lowercase)
-    data = {
+    return {
         "name": os.path.basename(path),
         "features": extract_features(code, binary_counts),
         "lang": get_language_from_filename(path),
         # "code": code,
     }
-    return data
 
 
 if __name__ == '__main__':
     # generate_file_paths()
-    compile_dataset()
-    # print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
+    # compile_dataset()
+    print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
 

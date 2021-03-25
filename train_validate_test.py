@@ -11,7 +11,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from language_info import LANG_TO_INT
+from feature_extractor import parse_file
+
+LANG_TO_INT = {
+    "C": 1,
+    "C++": 2,
+    "Go": 3,
+    "Haskell": 4,
+    "Java": 5,
+    "JavaScript": 6,
+    "Julia": 7,
+    "Perl": 8,
+    "Python": 9,
+    "Ruby": 10
+}
 
 RANDOM_SEED = 12345678
 
@@ -31,27 +44,23 @@ def parse_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
     X = feature_numbering.fit_transform(examples)
     y = np.array(ys)
 
-    # print(f"Features as {X.shape} matrix.")
-
     return X, y
 
 
-def split_train_vali_test(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def split_train_vali_test(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     X_tv, X_test, y_tv, y_test = train_test_split(
         X, y, train_size=0.75, shuffle=True, random_state=RANDOM_SEED
     )
     X_train, X_vali, y_train, y_vali = train_test_split(
         X_tv, y_tv, train_size=0.66, shuffle=True, random_state=RANDOM_SEED
     )
-    # print(X_train.shape, X_vali.shape, X_test.shape)
 
-    return X_train, X_vali, y_train, y_vali
+    return X_train, X_vali, X_test, y_train, y_vali, y_test
 
 # Define & Run Experiments
 @dataclass
 class ExperimentResult:
     vali_acc: float
-    params: dict[str, any]
     model: ClassifierMixin
 
 
@@ -70,7 +79,7 @@ def consider_decision_trees():
                 f = DecisionTreeClassifier(**params)
                 f.fit(X_train, y_train)
                 vali_acc = f.score(X_vali, y_vali)
-                result = ExperimentResult(vali_acc, params, f)
+                result = ExperimentResult(vali_acc, f)
                 performances.append(result)
     return max(performances, key=lambda result: result.vali_acc)
 
@@ -90,7 +99,7 @@ def consider_random_forest():
                 f = RandomForestClassifier(**params)
                 f.fit(X_train, y_train)
                 vali_acc = f.score(X_vali, y_vali)
-                result = ExperimentResult(vali_acc, params, f)
+                result = ExperimentResult(vali_acc, f)
                 performances.append(result)
     return max(performances, key=lambda result: result.vali_acc)
 
@@ -107,7 +116,7 @@ def consider_perceptron() -> ExperimentResult:
         f = Perceptron(**params)
         f.fit(X_train, y_train)
         vali_acc = f.score(X_vali, y_vali)
-        result = ExperimentResult(vali_acc, params, f)
+        result = ExperimentResult(vali_acc, f)
         performances.append(result)
 
     return max(performances, key=lambda result: result.vali_acc)
@@ -122,11 +131,12 @@ def consider_logistic_regression() -> ExperimentResult:
             "penalty": "l2",
             "max_iter": 500,
             "C": 1.0,
+            "multi_class": "multinomial",
         }
         f = LogisticRegression(**params)
         f.fit(X_train, y_train)
         vali_acc = f.score(X_vali, y_vali)
-        result = ExperimentResult(vali_acc, params, f)
+        result = ExperimentResult(vali_acc, f)
         performances.append(result)
 
     return max(performances, key=lambda result: result.vali_acc)
@@ -147,7 +157,7 @@ def consider_neural_net() -> ExperimentResult:  # Optimized
         f = MLPClassifier(**params)
         f.fit(X_train, y_train)
         vali_acc = f.score(X_vali, y_vali)
-        result = ExperimentResult(vali_acc, params, f)
+        result = ExperimentResult(vali_acc, f)
         performances.append(result)
 
     return max(performances, key=lambda result: result.vali_acc)
@@ -156,17 +166,27 @@ def consider_neural_net() -> ExperimentResult:  # Optimized
 if __name__ == '__main__':
     X, y = parse_features_data("data/features_data.jsonl")
 
-    X_train, X_vali, y_train, y_vali = split_train_vali_test(X, y)
+    X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
-    logit = consider_logistic_regression()
-    perceptron = consider_perceptron()
-    dtree = consider_decision_trees()
+    # dtree = consider_decision_trees()
     rforest = consider_random_forest()
-    mlp = consider_neural_net()
+    # perceptron = consider_perceptron()
+    # logit = consider_logistic_regression()
+    # mlp = consider_neural_net()
 
-    print("Best Logistic Regression", logit)
-    print("Best Perceptron", perceptron)
-    print("Best DTree", dtree)
-    print("Best RForest", rforest)
-    print("Best MLP", mlp)
+    # print("Best DTree", dtree)
+    # print("Best RForest", rforest)
+    # print("Best Perceptron", perceptron)
+    # print("Best Logistic Regression", logit)
+    # print("Best MLP", mlp)
 
+    count = 0
+    correct = 0
+    for x, y in zip(X_test, y_test):
+        pred = rforest.model.predict_proba([x])
+        print(pred[0], "----", y)
+        if list(pred[0]).index(max(list(pred[0]))) == y - 1:
+            correct += 1
+        count += 1
+
+    print(correct / count)
