@@ -55,9 +55,9 @@ def train_model(model: Type[ClassifierMixin], params: dict[str, any], X_train: n
 def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarray) -> tuple[float, dict[str, float], dict[str, float]]:
     total = 0
     accurate = 0
-    tp: dict[str, int] = defaultdict(int)
-    fp: dict[str, int] = defaultdict(int)
-    fn: dict[str, int] = defaultdict(int)
+    true_pos: dict[str, int] = defaultdict(int)
+    false_pos: dict[str, int] = defaultdict(int)
+    false_neg: dict[str, int] = defaultdict(int)
 
     for x, y in zip(X_vali, y_vali):
         probs = model.predict_proba([x])[0]
@@ -65,21 +65,21 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
         # print(probs, "----", y)
         total += 1
         if pred == y:
-            tp[INT_TO_LANG[pred]] += 1
+            true_pos[INT_TO_LANG[pred]] += 1
             accurate += 1
         else:
-            fp[INT_TO_LANG[pred]] += 1
-            fn[INT_TO_LANG[y]] += 1
+            false_pos[INT_TO_LANG[pred]] += 1
+            false_neg[INT_TO_LANG[y]] += 1
 
     acc = accurate / total
 
     precisions: dict[str, float] = {}
-    for lang in tp.keys():
-        precisions[lang] = round(tp[lang] / (tp[lang] + fp[lang]), 3)
+    for lang in true_pos.keys():
+        precisions[lang] = round(true_pos[lang] / (true_pos[lang] + false_pos[lang]), 3)
 
     recalls: dict[str, float] = {}
-    for lang in tp.keys():
-        recalls[lang] = round(tp[lang] / (tp[lang] + fn[lang]), 3)
+    for lang in true_pos.keys():
+        recalls[lang] = round(true_pos[lang] / (true_pos[lang] + false_neg[lang]), 3)
 
     return acc, precisions, recalls
 
