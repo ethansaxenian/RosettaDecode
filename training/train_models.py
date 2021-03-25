@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from training.split_data import parse_features_data, split_train_vali_test, LANG_TO_INT
+from training.data_splits import parse_features_data, split_train_vali_test, LANG_TO_INT
 
 INT_TO_LANG = {i: lang for (lang, i) in LANG_TO_INT.items()}
 
