@@ -99,19 +99,17 @@ def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
         percent_specials = (specials_count[char] / num_specials) if num_specials > 0 else 0
         features_dict[f'percent_{SPECIAL_CHAR_NAMES[char]}'] = percent_specials
 
-    features_dict['percent_specials'] = pct_specials(code)
-
     most_common_ending = count_line_endings(code).most_common(1)[0][0]
     features_dict['most_frequent_line_ending'] = CHAR_MAPPING[most_common_ending]
 
     return features_dict
 
 
-def compile_dataset(lowercase: bool = True, binary_counts: bool = False):
+def compile_dataset(filename: str, lowercase: bool = True, binary_counts: bool = False):
     """
     stores the features data for each code file in data/features_data.jsonl
     """
-    with open("data/features_data.jsonl", "w") as outfile, open("data/file_paths.jsonl", "r") as infile:
+    with open(f"data/{filename}{'_bc' if binary_counts else ''}.jsonl", "w") as outfile, open("data/file_paths.jsonl", "r") as infile:
         for line in infile:
             info = json.loads(line)
             data = parse_file(info["path"], lowercase, binary_counts)
@@ -146,6 +144,4 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
 
 if __name__ == '__main__':
     # generate_file_paths()
-    # compile_dataset()
-    print(parse_file("lang/Python/conditional-structures-1.py", binary_counts=True))
-
+    compile_dataset("features_data")
