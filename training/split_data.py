@@ -65,6 +65,6 @@ def split_train_vali_test(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.
 
 
 if __name__ == '__main__':
-    X, y = parse_features_data(f"data/features_data.jsonl")
+    X, y = parse_features_data("../data/features_data.jsonl")
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)

@@ -1,6 +1,5 @@
 import os
 import pathlib
-from enum import Enum
 
 
 EXTENSION_TO_LANGUAGE = {
@@ -16,7 +15,7 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "Ruby"
 }
 
-LANGUAGE_FILES = [file for lang in EXTENSION_TO_LANGUAGE.values() for file in os.listdir(f'lang/{lang}')]
+LANGUAGE_FILES = [file for lang in EXTENSION_TO_LANGUAGE.values() for file in os.listdir(f'../lang/{lang}')]
 
 
 def get_language_from_filename(filename: str) -> str:

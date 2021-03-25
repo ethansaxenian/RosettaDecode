@@ -2,14 +2,15 @@
 Creates an excel sheet with labels for each file
 """
 import os
+import pathlib
 
 from xlwt import Workbook
 
-from language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
+from data_wrangling.language_info import EXTENSION_TO_LANGUAGE, LANGUAGE_FILES
 
 
 def generate_labels():
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("../data", exist_ok=True)
     wb = Workbook()
     labels = wb.add_sheet('labels', cell_overwrite_ok=True)
     labels.write(0, 0, "Filename")
@@ -24,12 +25,12 @@ def generate_labels():
     # label all supported files
     row = 1
     for filename in LANGUAGE_FILES:
-        extension = filename[filename.index("."):]
+        extension = pathlib.Path(filename).suffix
         labels.write(row, 0, filename)
         labels.write(row, 1, EXTENSION_TO_LANGUAGE[extension])
         row += 1
 
-    wb.save('data/labels.xls')
+    wb.save('../data/labels.xls')
 
 
 if __name__ == '__main__':

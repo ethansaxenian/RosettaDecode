@@ -18,8 +18,8 @@ import unidecode
 from collections import Counter
 from typing import Callable
 
-from file_path_storer import generate_file_paths
-from language_info import get_language_from_filename
+from data_wrangling.file_path_storer import generate_file_paths
+from data_wrangling.language_info import get_language_from_filename
 
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
                       "$": "dollar", "%": "pct", "^": "caret", "&": "amp", "*": "times", "(": "lparen",
@@ -109,7 +109,8 @@ def compile_dataset(filename: str, lowercase: bool = True, binary_counts: bool =
     """
     stores the features data for each code file in data/features_data.jsonl
     """
-    with open(f"data/{filename}{'_bc' if binary_counts else ''}.jsonl", "w") as outfile, open("data/file_paths.jsonl", "r") as infile:
+    with open(f"../data/{filename}{'_bc' if binary_counts else ''}.jsonl", "w") as outfile, open(
+            "../data/file_paths.jsonl", "r") as infile:
         for line in infile:
             info = json.loads(line)
             data = parse_file(info["path"], lowercase, binary_counts)
