@@ -1,7 +1,3 @@
-"""
-Basic training on the split data with some models we've used in the practicals
-Train the models, validate using predict_proba() method and compute accuracy, precision, and recall
-"""
 from collections import defaultdict
 from typing import Type
 
@@ -85,7 +81,7 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data.jsonl"
+    data_path = "../data/features_data_bc.jsonl"
     X, y = parse_features_data(data_path)
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
@@ -95,10 +91,11 @@ if __name__ == '__main__':
         trained_models.append(train_model(model, params, X_train, y_train))
 
     with open("../data/training_data.txt", "a+") as file:
+        file.write("=====================================================\n")
+        file.write(f"data from {data_path}\n")
         for model in trained_models:
             acc, prec, rec = validate_model(model, X_vali, y_vali)
-            file.write("=====================================================\n")
-            file.write(f"stats for {model} with data from {data_path}:\n")
-            file.write(f"accuracy: {acc:.3}\n")
-            file.write(f"precisions: {dict(sorted(prec.items()))}\n")
-            file.write(f"recalls: {dict(sorted(rec.items()))}\n")
+            file.write(f"stats for {model}:\n")
+            file.write(f"\taccuracy: {acc:.3}\n")
+            file.write(f"\tprecisions: {dict(sorted(prec.items()))}\n")
+            file.write(f"\trecalls: {dict(sorted(rec.items()))}\n\n")

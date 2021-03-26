@@ -94,8 +94,7 @@ def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
     specials_count = Counter(find_special_characters(code))
     num_specials = len(list(specials_count.elements()))
     for char in SPECIALS:
-        num = specials_count[char]
-        features_dict[f'num_{SPECIAL_CHAR_NAMES[char]}'] = int(bool(num)) if binary_counts else num
+        features_dict[f'num_{SPECIAL_CHAR_NAMES[char]}'] = specials_count[char]
         percent_specials = (specials_count[char] / num_specials) if num_specials > 0 else 0
         features_dict[f'percent_{SPECIAL_CHAR_NAMES[char]}'] = percent_specials
 
@@ -145,4 +144,4 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
 
 if __name__ == '__main__':
     # generate_file_paths()
-    compile_dataset("features_data")
+    compile_dataset("features_data", binary_counts=True)
