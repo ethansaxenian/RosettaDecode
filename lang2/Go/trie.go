@@ -1,46 +1,54 @@
-// Package trie provides Trie data structures in golang.
-//
-// Wikipedia: https://en.wikipedia.org/wiki/Trie
-package trie
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
-// Node represents each node in Trie.
-type Node struct {
-	children map[rune]*Node // map children nodes
-	isLeaf   bool           // current node value
+package norm
+
+type valueRange struct {
+	value  uint16 // header: value:stride
+	lo, hi byte   // header: lo:n
 }
 
-// NewNode creates a new Trie node with initialized
-// children map.
-func NewNode() *Node {
-	n := &Node{}
-	n.children = make(map[rune]*Node)
-	n.isLeaf = false
-	return n
+type sparseBlocks struct {
+	values []valueRange
+	offset []uint16
 }
 
-// Insert inserts words at a Trie node.
-func (n *Node) Insert(s string) {
-	curr := n
-	for _, c := range s {
-		next, ok := curr.children[c]
-		if !ok {
-			next = NewNode()
-			curr.children[c] = next
+var nfcSparse = sparseBlocks{
+	values: nfcSparseValues[:],
+	offset: nfcSparseOffset[:],
+}
+
+var nfkcSparse = sparseBlocks{
+	values: nfkcSparseValues[:],
+	offset: nfkcSparseOffset[:],
+}
+
+var (
+	nfcData  = newNfcTrie(0)
+	nfkcData = newNfkcTrie(0)
+)
+
+// lookupValue determines the type of block n and looks up the value for b.
+// For n < t.cutoff, the block is a simple lookup table. Otherwise, the block
+// is a list of ranges with an accompanying value. Given a matching range r,
+// the value for b is by r.value + (b - r.lo) * stride.
+func (t *sparseBlocks) lookup(n uint32, b byte) uint16 {
+	offset := t.offset[n]
+	header := t.values[offset]
+	lo := offset + 1
+	hi := lo + uint16(header.lo)
+	for lo < hi {
+		m := lo + (hi-lo)/2
+		r := t.values[m]
+		if r.lo <= b && b <= r.hi {
+			return r.value + uint16(b-r.lo)*header.value
 		}
-		curr = next
-	}
-	curr.isLeaf = true
-}
-
-// Find finds words at a Trie node.
-func (n *Node) Find(s string) bool {
-	curr := n
-	for _, c := range s {
-		next, ok := curr.children[c]
-		if !ok {
-			return false
+		if b < r.lo {
+			hi = m
+		} else {
+			lo = m + 1
 		}
-		curr = next
 	}
-	return true
+	return 0
 }
