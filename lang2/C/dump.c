@@ -1,2767 +1,3138 @@
-// This file is a part of Julia. License is MIT: https://julialang.org/license
+/*    dump.c
+ *
+ *    Copyright (C) 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+ *    2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008 by Larry Wall and others
+ *
+ *    You may distribute under the terms of either the GNU General Public
+ *    License or the Artistic License, as specified in the README file.
+ *
+ */
 
 /*
-  saving and restoring precompiled modules (.ji files)
+ *  'You have talked long in your sleep, Frodo,' said Gandalf gently, 'and
+ *   it has not been hard for me to read your mind and memory.'
+ *
+ *     [p.220 of _The Lord of the Rings_, II/i: "Many Meetings"]
+ */
+
+/* This file contains utility routines to dump the contents of SV and OP
+ * structures, as used by command-line options like -Dt and -Dx, and
+ * by Devel::Peek.
+ *
+ * It also holds the debugging version of the  runops function.
+
+=for apidoc_section $display
+ */
+
+#include "EXTERN.h"
+#define PERL_IN_DUMP_C
+#include "perl.h"
+#include "regcomp.h"
+
+static const char* const svtypenames[SVt_LAST] = {
+    "NULL",
+    "IV",
+    "NV",
+    "PV",
+    "INVLIST",
+    "PVIV",
+    "PVNV",
+    "PVMG",
+    "REGEXP",
+    "PVGV",
+    "PVLV",
+    "PVAV",
+    "PVHV",
+    "PVCV",
+    "PVFM",
+    "PVIO"
+};
+
+
+static const char* const svshorttypenames[SVt_LAST] = {
+    "UNDEF",
+    "IV",
+    "NV",
+    "PV",
+    "INVLST",
+    "PVIV",
+    "PVNV",
+    "PVMG",
+    "REGEXP",
+    "GV",
+    "PVLV",
+    "AV",
+    "HV",
+    "CV",
+    "FM",
+    "IO"
+};
+
+struct flag_to_name {
+    U32 flag;
+    const char *name;
+};
+
+static void
+S_append_flags(pTHX_ SV *sv, U32 flags, const struct flag_to_name *start,
+               const struct flag_to_name *const end)
+{
+    do {
+        if (flags & start->flag)
+            sv_catpv(sv, start->name);
+    } while (++start < end);
+}
+
+#define append_flags(sv, f, flags) \
+    S_append_flags(aTHX_ (sv), (f), (flags), C_ARRAY_END(flags))
+
+#define generic_pv_escape(sv,s,len,utf8) pv_escape( (sv), (s), (len), \
+                              (len) * (4+UTF8_MAXBYTES) + 1, NULL, \
+                              PERL_PV_ESCAPE_NONASCII | PERL_PV_ESCAPE_DWIM \
+                              | ((utf8) ? PERL_PV_ESCAPE_UNI : 0) )
+
+/*
+=for apidoc pv_escape
+
+Escapes at most the first C<count> chars of C<pv> and puts the results into
+C<dsv> such that the size of the escaped string will not exceed C<max> chars
+and will not contain any incomplete escape sequences.  The number of bytes
+escaped will be returned in the C<STRLEN *escaped> parameter if it is not null.
+When the C<dsv> parameter is null no escaping actually occurs, but the number
+of bytes that would be escaped were it not null will be calculated.
+
+If flags contains C<PERL_PV_ESCAPE_QUOTE> then any double quotes in the string
+will also be escaped.
+
+Normally the SV will be cleared before the escaped string is prepared,
+but when C<PERL_PV_ESCAPE_NOCLEAR> is set this will not occur.
+
+If C<PERL_PV_ESCAPE_UNI> is set then the input string is treated as UTF-8
+if C<PERL_PV_ESCAPE_UNI_DETECT> is set then the input string is scanned
+using C<is_utf8_string()> to determine if it is UTF-8.
+
+If C<PERL_PV_ESCAPE_ALL> is set then all input chars will be output
+using C<\x01F1> style escapes, otherwise if C<PERL_PV_ESCAPE_NONASCII> is set, only
+non-ASCII chars will be escaped using this style; otherwise, only chars above
+255 will be so escaped; other non printable chars will use octal or
+common escaped patterns like C<\n>.
+Otherwise, if C<PERL_PV_ESCAPE_NOBACKSLASH>
+then all chars below 255 will be treated as printable and
+will be output as literals.
+
+If C<PERL_PV_ESCAPE_FIRSTCHAR> is set then only the first char of the
+string will be escaped, regardless of max.  If the output is to be in hex,
+then it will be returned as a plain hex
+sequence.  Thus the output will either be a single char,
+an octal escape sequence, a special escape like C<\n> or a hex value.
+
+If C<PERL_PV_ESCAPE_RE> is set then the escape char used will be a C<"%"> and
+not a C<"\\">.  This is because regexes very often contain backslashed
+sequences, whereas C<"%"> is not a particularly common character in patterns.
+
+Returns a pointer to the escaped text as held by C<dsv>.
+
+=for apidoc Amnh||PERL_PV_ESCAPE_ALL
+=for apidoc Amnh||PERL_PV_ESCAPE_FIRSTCHAR
+=for apidoc Amnh||PERL_PV_ESCAPE_NOBACKSLASH
+=for apidoc Amnh||PERL_PV_ESCAPE_NOCLEAR
+=for apidoc Amnh||PERL_PV_ESCAPE_NONASCII
+=for apidoc Amnh||PERL_PV_ESCAPE_QUOTE
+=for apidoc Amnh||PERL_PV_ESCAPE_RE
+=for apidoc Amnh||PERL_PV_ESCAPE_UNI
+=for apidoc Amnh||PERL_PV_ESCAPE_UNI_DETECT
+
+=cut
+
+Unused or not for public use
+=for apidoc Cmnh||PERL_PV_PRETTY_REGPROP
+=for apidoc Cmnh||PERL_PV_PRETTY_DUMP
+=for apidoc Cmnh||PERL_PV_PRETTY_NOCLEAR
+
+=cut
 */
-#include <stdlib.h>
-#include <string.h>
+#define PV_ESCAPE_OCTBUFSIZE 32
 
-#include "julia.h"
-#include "julia_internal.h"
-#include "builtin_proto.h"
-#include "serialize.h"
-
-#ifndef _OS_WINDOWS_
-#include <dlfcn.h>
-#endif
-
-#ifndef _COMPILER_MICROSOFT_
-#include "valgrind.h"
-#else
-#define RUNNING_ON_VALGRIND 0
-#endif
-#include "julia_assert.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// TODO: put WeakRefs on the weak_refs list during deserialization
-// TODO: handle finalizers
-
-// hash of definitions for predefined tagged object
-static htable_t ser_tag;
-// array of definitions for the predefined tagged object types
-// (reverse of ser_tag)
-static jl_value_t *deser_tag[256];
-// hash of some common symbols, encoded as CommonSym_tag plus 1 byte
-static htable_t common_symbol_tag;
-static jl_value_t *deser_symbols[256];
-
-// table of all objects that have been deserialized, indexed by pos
-// (the order in the serializer stream). the low
-// bit is reserved for flagging certain entries and pos is
-// left shift by 1
-static htable_t backref_table;
-static int backref_table_numel;
-static arraylist_t backref_list;
-
-// list of (jl_value_t **loc, size_t pos) entries
-// for anything that was flagged by the deserializer for later
-// type-rewriting of some sort
-static arraylist_t flagref_list;
-static htable_t uniquing_table;
-
-// list of (size_t pos, (void *f)(jl_value_t*)) entries
-// for the serializer to mark values in need of rework by function f
-// during deserialization later
-static arraylist_t reinit_list;
-
-// list of stuff that is being serialized
-// This is not quite globally rooted, but we take care to only
-// ever assigned rooted values here.
-static jl_array_t *serializer_worklist JL_GLOBALLY_ROOTED;
-
-// inverse of backedges tree
-htable_t edges_map;
-
-// list of requested ccallable signatures
-static arraylist_t ccallable_list;
-
-typedef struct {
-    ios_t *s;
-    jl_ptls_t ptls;
-    jl_array_t *loaded_modules_array;
-} jl_serializer_state;
-
-static jl_value_t *jl_idtable_type = NULL;
-static jl_typename_t *jl_idtable_typename = NULL;
-static jl_value_t *jl_bigint_type = NULL;
-static int gmp_limb_size = 0;
-
-static void write_uint64(ios_t *s, uint64_t i) JL_NOTSAFEPOINT
+char *
+Perl_pv_escape( pTHX_ SV *dsv, char const * const str, 
+                const STRLEN count, const STRLEN max, 
+                STRLEN * const escaped, const U32 flags ) 
 {
-    ios_write(s, (char*)&i, 8);
-}
+    const char esc = (flags & PERL_PV_ESCAPE_RE) ? '%' : '\\';
+    const char dq = (flags & PERL_PV_ESCAPE_QUOTE) ? '"' : esc;
+    char octbuf[PV_ESCAPE_OCTBUFSIZE] = "%123456789ABCDF";
+    STRLEN wrote = 0;    /* chars written so far */
+    STRLEN chsize = 0;   /* size of data to be written */
+    STRLEN readsize = 1; /* size of data just read */
+    bool isuni= flags & PERL_PV_ESCAPE_UNI ? 1 : 0; /* is this UTF-8 */
+    const char *pv  = str;
+    const char * const end = pv + count; /* end of string */
+    octbuf[0] = esc;
 
-static void write_float64(ios_t *s, double x) JL_NOTSAFEPOINT
-{
-    write_uint64(s, *((uint64_t*)&x));
-}
+    PERL_ARGS_ASSERT_PV_ESCAPE;
 
-void *jl_lookup_ser_tag(jl_value_t *v)
-{
-    return ptrhash_get(&ser_tag, v);
-}
-
-void *jl_lookup_common_symbol(jl_value_t *v)
-{
-    return ptrhash_get(&common_symbol_tag, v);
-}
-
-jl_value_t *jl_deser_tag(uint8_t tag)
-{
-    return deser_tag[tag];
-}
-
-jl_value_t *jl_deser_symbol(uint8_t tag)
-{
-    return deser_symbols[tag];
-}
-
-// --- serialize ---
-
-#define jl_serialize_value(s, v) jl_serialize_value_((s), (jl_value_t*)(v), 0)
-static void jl_serialize_value_(jl_serializer_state *s, jl_value_t *v, int as_literal) JL_GC_DISABLED;
-
-static void jl_serialize_cnull(jl_serializer_state *s, jl_value_t *t)
-{
-    backref_table_numel++;
-    write_uint8(s->s, TAG_CNULL);
-    jl_serialize_value(s, t);
-}
-
-static int module_in_worklist(jl_module_t *mod) JL_NOTSAFEPOINT
-{
-    int i, l = jl_array_len(serializer_worklist);
-    for (i = 0; i < l; i++) {
-        jl_module_t *workmod = (jl_module_t*)jl_array_ptr_ref(serializer_worklist, i);
-        if (jl_is_module(workmod) && jl_is_submodule(mod, workmod))
-            return 1;
+    if (dsv && !(flags & PERL_PV_ESCAPE_NOCLEAR)) {
+            /* This won't alter the UTF-8 flag */
+            SvPVCLEAR(dsv);
     }
-    return 0;
-}
-
-// compute whether a type references something internal to worklist
-// and thus could not have existed before deserialize
-// and thus does not need delayed unique-ing
-static int type_in_worklist(jl_datatype_t *dt) JL_NOTSAFEPOINT
-{
-    if (module_in_worklist(dt->name->module))
-        return 1;
-    int i, l = jl_svec_len(dt->parameters);
-    for (i = 0; i < l; i++) {
-        jl_value_t *p = jl_unwrap_unionall(jl_tparam(dt, i));
-        // TODO: what about Union and TypeVar??
-        if (type_in_worklist((jl_datatype_t*)(jl_is_datatype(p) ? p : jl_typeof(p))))
-            return 1;
-    }
-    return 0;
-}
-
-static int type_recursively_external(jl_datatype_t *dt);
-
-static int type_parameter_recursively_external(jl_value_t *p0) JL_NOTSAFEPOINT
-{
-    if (!jl_is_concrete_type(p0))
-        return 0;
-    jl_datatype_t *p = (jl_datatype_t*)p0;
-    //while (jl_is_unionall(p)) {
-    //    if (!type_parameter_recursively_external(((jl_unionall_t*)p)->var->lb))
-    //        return 0;
-    //    if (!type_parameter_recursively_external(((jl_unionall_t*)p)->var->ub))
-    //        return 0;
-    //    p = (jl_datatype_t*)((jl_unionall_t*)p)->body;
-    //}
-    if (module_in_worklist(p->name->module))
-        return 0;
-    if (p->name->wrapper != (jl_value_t*)p0) {
-        if (!type_recursively_external(p))
-            return 0;
-    }
-    return 1;
-}
-
-// returns true if all of the parameters are tag 6 or 7
-static int type_recursively_external(jl_datatype_t *dt) JL_NOTSAFEPOINT
-{
-    if (!dt->isconcretetype)
-        return 0;
-    if (jl_svec_len(dt->parameters) == 0)
-        return 1;
-
-    int i, l = jl_svec_len(dt->parameters);
-    for (i = 0; i < l; i++) {
-        if (!type_parameter_recursively_external(jl_tparam(dt, i)))
-            return 0;
-    }
-    return 1;
-}
-
-
-static void jl_serialize_datatype(jl_serializer_state *s, jl_datatype_t *dt) JL_GC_DISABLED
-{
-    int tag = 0;
-    int internal = module_in_worklist(dt->name->module);
-    if (!internal && jl_unwrap_unionall(dt->name->wrapper) == (jl_value_t*)dt) {
-        tag = 6; // external primary type
-    }
-    else if (jl_is_tuple_type(dt) ? !dt->isconcretetype : dt->hasfreetypevars) {
-        tag = 0; // normal struct
-    }
-    else if (internal) {
-        if (jl_unwrap_unionall(dt->name->wrapper) == (jl_value_t*)dt) // comes up often since functions create types
-            tag = 5; // internal, and not in the typename cache
-        else
-            tag = 10; // anything else that's internal (just may need recaching)
-    }
-    else if (type_recursively_external(dt)) {
-        tag = 7; // external type that can be immediately recreated (with apply_type)
-    }
-    else if (type_in_worklist(dt)) {
-        tag = 11; // external, but definitely new (still needs caching, but not full unique-ing)
-    }
-    else {
-        // this is eligible for (and possibly requires) unique-ing later,
-        // so flag this in the backref table as special
-        uintptr_t *bp = (uintptr_t*)ptrhash_bp(&backref_table, dt);
-        assert(*bp != (uintptr_t)HT_NOTFOUND);
-        *bp |= 1;
-        tag = 12;
-    }
-
-    char *dtname = jl_symbol_name(dt->name->name);
-    size_t dtnl = strlen(dtname);
-    if (dtnl > 4 && strcmp(&dtname[dtnl - 4], "##kw") == 0 && !internal && tag != 0) {
-        /* XXX: yuck, this is horrible, but the auto-generated kw types from the serializer isn't a real type, so we *must* be very careful */
-        assert(tag == 6); // other struct types should never exist
-        tag = 9;
-        if (jl_type_type_mt->kwsorter != NULL && dt == (jl_datatype_t*)jl_typeof(jl_type_type_mt->kwsorter)) {
-            dt = jl_datatype_type; // any representative member with this MethodTable
-        }
-        else if (jl_nonfunction_mt->kwsorter != NULL && dt == (jl_datatype_t*)jl_typeof(jl_nonfunction_mt->kwsorter)) {
-            dt = jl_symbol_type; // any representative member with this MethodTable
-        }
-        else {
-            // search for the representative member of this MethodTable
-            jl_methtable_t *mt = dt->name->mt;
-            size_t l = strlen(jl_symbol_name(mt->name));
-            char *prefixed;
-            prefixed = (char*)malloc_s(l + 2);
-            prefixed[0] = '#';
-            strcpy(&prefixed[1], jl_symbol_name(mt->name));
-            // remove ##kw suffix
-            prefixed[l-3] = 0;
-            jl_sym_t *tname = jl_symbol(prefixed);
-            free(prefixed);
-            jl_value_t *primarydt = jl_get_global(mt->module, tname);
-            if (!primarydt)
-                primarydt = jl_get_global(mt->module, mt->name);
-            primarydt = jl_unwrap_unionall(primarydt);
-            assert(jl_is_datatype(primarydt));
-            assert(primarydt == (jl_value_t*)jl_any_type || jl_typeof(((jl_datatype_t*)primarydt)->name->mt->kwsorter) == (jl_value_t*)dt);
-            dt = (jl_datatype_t*)primarydt;
-        }
-    }
-
-    write_uint8(s->s, TAG_DATATYPE);
-    write_uint8(s->s, tag);
-    if (tag == 6 || tag == 7) {
-        // for tag==6, copy its typevars in case there are references to them elsewhere
-        jl_serialize_value(s, dt->name);
-        jl_serialize_value(s, dt->parameters);
-        return;
-    }
-    if (tag == 9) {
-        jl_serialize_value(s, dt);
-        return;
-    }
-
-    write_int32(s->s, dt->size);
-    int has_instance = (dt->instance != NULL);
-    int has_layout = (dt->layout != NULL);
-    write_uint8(s->s, dt->abstract | (dt->mutabl << 1) | (has_layout << 2) | (has_instance << 3));
-    write_uint8(s->s, dt->hasfreetypevars
-            | (dt->isconcretetype << 1)
-            | (dt->isdispatchtuple << 2)
-            | (dt->isbitstype << 3)
-            | (dt->zeroinit << 4)
-            | (dt->isinlinealloc << 5)
-            | (dt->has_concrete_subtype << 6)
-            | (dt->cached_by_hash << 7));
-    if (!dt->abstract) {
-        write_uint16(s->s, dt->ninitialized);
-    }
-    write_int32(s->s, dt->hash);
-
-    if (has_layout) {
-        uint8_t layout = 0;
-        if (dt->layout == ((jl_datatype_t*)jl_unwrap_unionall((jl_value_t*)jl_array_type))->layout) {
-            layout = 1;
-        }
-        else if (dt->layout == jl_nothing_type->layout) {
-            layout = 2;
-        }
-        else if (dt->layout == ((jl_datatype_t*)jl_unwrap_unionall((jl_value_t*)jl_pointer_type))->layout) {
-            layout = 3;
-        }
-        write_uint8(s->s, layout);
-        if (layout == 0) {
-            uint32_t nf = dt->layout->nfields;
-            uint32_t np = dt->layout->npointers;
-            size_t fieldsize = jl_fielddesc_size(dt->layout->fielddesc_type);
-            ios_write(s->s, (const char*)dt->layout, sizeof(*dt->layout));
-            size_t fldsize = nf * fieldsize;
-            if (dt->layout->first_ptr != -1)
-                fldsize += np << dt->layout->fielddesc_type;
-            ios_write(s->s, (const char*)(dt->layout + 1), fldsize);
-        }
-    }
-
-    if (has_instance)
-        jl_serialize_value(s, dt->instance);
-    jl_serialize_value(s, dt->name);
-    jl_serialize_value(s, dt->names);
-    jl_serialize_value(s, dt->parameters);
-    jl_serialize_value(s, dt->super);
-    jl_serialize_value(s, dt->types);
-}
-
-static void jl_serialize_module(jl_serializer_state *s, jl_module_t *m)
-{
-    write_uint8(s->s, TAG_MODULE);
-    jl_serialize_value(s, m->name);
-    size_t i;
-    if (!module_in_worklist(m)) {
-        if (m == m->parent) {
-            // top-level module
-            write_int8(s->s, 2);
-            int j = 0;
-            for (i = 0; i < jl_array_len(s->loaded_modules_array); i++) {
-                jl_module_t *mi = (jl_module_t*)jl_array_ptr_ref(s->loaded_modules_array, i);
-                if (!module_in_worklist(mi)) {
-                    if (m == mi) {
-                        write_int32(s->s, j);
-                        return;
-                    }
-                    j++;
-                }
-            }
-            assert(0 && "top level module not found in modules array");
-        }
-        else {
-            write_int8(s->s, 1);
-            jl_serialize_value(s, m->parent);
-        }
-        return;
-    }
-    write_int8(s->s, 0);
-    jl_serialize_value(s, m->parent);
-    void **table = m->bindings.table;
-    for (i = 0; i < m->bindings.size; i += 2) {
-        if (table[i+1] != HT_NOTFOUND) {
-            jl_serialize_value(s, (jl_value_t*)table[i]);
-            jl_binding_t *b = (jl_binding_t*)table[i+1];
-            jl_serialize_value(s, b->name);
-            jl_value_t *e = b->value;
-            if (!b->constp && e && jl_is_cpointer(e) && jl_unbox_voidpointer(e) != (void*)-1 && jl_unbox_voidpointer(e) != NULL)
-                // reset Ptr fields to C_NULL (but keep MAP_FAILED / INVALID_HANDLE)
-                jl_serialize_cnull(s, jl_typeof(e));
+    
+    if ((flags & PERL_PV_ESCAPE_UNI_DETECT) && is_utf8_string((U8*)pv, count))
+        isuni = 1;
+    
+    for ( ; (pv < end && (!max || (wrote < max))) ; pv += readsize ) {
+        const UV u= (isuni) ? utf8_to_uvchr_buf((U8*)pv, (U8*) end, &readsize) : (U8)*pv;
+        const U8 c = (U8)u & 0xFF;
+        
+        if ( ( u > 255 )
+          || (flags & PERL_PV_ESCAPE_ALL)
+          || (( ! isASCII(u) ) && (flags & (PERL_PV_ESCAPE_NONASCII|PERL_PV_ESCAPE_DWIM))))
+        {
+            if (flags & PERL_PV_ESCAPE_FIRSTCHAR) 
+                chsize = my_snprintf( octbuf, PV_ESCAPE_OCTBUFSIZE, 
+                                      "%" UVxf, u);
             else
-                jl_serialize_value(s, e);
-            jl_serialize_value(s, b->globalref);
-            jl_serialize_value(s, b->owner);
-            write_int8(s->s, (b->deprecated<<3) | (b->constp<<2) | (b->exportp<<1) | (b->imported));
-        }
-    }
-    jl_serialize_value(s, NULL);
-    write_int32(s->s, m->usings.len);
-    for(i=0; i < m->usings.len; i++) {
-        jl_serialize_value(s, (jl_value_t*)m->usings.items[i]);
-    }
-    write_uint8(s->s, m->istopmod);
-    write_uint64(s->s, m->uuid.hi);
-    write_uint64(s->s, m->uuid.lo);
-    write_uint64(s->s, m->build_id);
-    write_int32(s->s, m->counter);
-    write_int32(s->s, m->nospecialize);
-    write_uint8(s->s, m->optlevel);
-    write_uint8(s->s, m->compile);
-    write_uint8(s->s, m->infer);
-}
+                chsize = my_snprintf( octbuf, PV_ESCAPE_OCTBUFSIZE, 
+                                      ((flags & PERL_PV_ESCAPE_DWIM) && !isuni)
+                                      ? "%cx%02" UVxf
+                                      : "%cx{%02" UVxf "}", esc, u);
 
-static int jl_serialize_generic(jl_serializer_state *s, jl_value_t *v) JL_GC_DISABLED
-{
-    if (v == NULL) {
-        write_uint8(s->s, TAG_NULL);
-        return 1;
-    }
-
-    void *tag = ptrhash_get(&ser_tag, v);
-    if (tag != HT_NOTFOUND) {
-        uint8_t t8 = (intptr_t)tag;
-        if (t8 <= LAST_TAG)
-            write_uint8(s->s, 0);
-        write_uint8(s->s, t8);
-        return 1;
-    }
-
-    if (jl_is_symbol(v)) {
-        void *idx = ptrhash_get(&common_symbol_tag, v);
-        if (idx != HT_NOTFOUND) {
-            write_uint8(s->s, TAG_COMMONSYM);
-            write_uint8(s->s, (uint8_t)(size_t)idx);
-            return 1;
-        }
-    }
-    else if (v == (jl_value_t*)jl_core_module) {
-        write_uint8(s->s, TAG_CORE);
-        return 1;
-    }
-    else if (v == (jl_value_t*)jl_base_module) {
-        write_uint8(s->s, TAG_BASE);
-        return 1;
-    }
-
-    if (jl_typeis(v, jl_string_type) && jl_string_len(v) == 0) {
-        jl_serialize_value(s, jl_an_empty_string);
-        return 1;
-    }
-    else if (!jl_is_uint8(v)) {
-        void **bp = ptrhash_bp(&backref_table, v);
-        if (*bp != HT_NOTFOUND) {
-            uintptr_t pos = (char*)*bp - (char*)HT_NOTFOUND - 1;
-            if (pos < 65536) {
-                write_uint8(s->s, TAG_SHORT_BACKREF);
-                write_uint16(s->s, pos);
-            }
-            else {
-                write_uint8(s->s, TAG_BACKREF);
-                write_int32(s->s, pos);
-            }
-            return 1;
-        }
-        intptr_t pos = backref_table_numel++;
-        if (((jl_datatype_t*)(jl_typeof(v)))->name == jl_idtable_typename) {
-            // will need to rehash this, later (after types are fully constructed)
-            arraylist_push(&reinit_list, (void*)pos);
-            arraylist_push(&reinit_list, (void*)1);
-        }
-        if (jl_is_module(v)) {
-            jl_module_t *m = (jl_module_t*)v;
-            if (module_in_worklist(m) && !module_in_worklist(m->parent)) {
-                // will need to reinsert this into parent bindings, later (in case of any errors during reinsert)
-                arraylist_push(&reinit_list, (void*)pos);
-                arraylist_push(&reinit_list, (void*)2);
-            }
-        }
-        // TypeMapLevels need to be rehashed
-        if (jl_is_mtable(v)) {
-            arraylist_push(&reinit_list, (void*)pos);
-            arraylist_push(&reinit_list, (void*)3);
-        }
-        pos <<= 1;
-        ptrhash_put(&backref_table, v, (char*)HT_NOTFOUND + pos + 1);
-    }
-
-    return 0;
-}
-
-static void jl_serialize_code_instance(jl_serializer_state *s, jl_code_instance_t *codeinst, int skip_partial_opaque) JL_GC_DISABLED
-{
-    if (jl_serialize_generic(s, (jl_value_t*)codeinst)) {
-        return;
-    }
-
-    int validate = 0;
-    if (codeinst->max_world == ~(size_t)0)
-        validate = 1; // can check on deserialize if this cache entry is still valid
-    int flags = validate << 0;
-    if (codeinst->invoke == jl_fptr_const_return)
-        flags |= 1 << 2;
-    if (codeinst->precompile)
-        flags |= 1 << 3;
-
-    // CodeInstances with PartialOpaque return type are currently not allowed
-    // to be cached. We skip them in serialization here, forcing them to
-    // be re-infered on reload.
-    int write_ret_type = validate || codeinst->min_world == 0;
-    if (write_ret_type && codeinst->rettype_const &&
-            jl_typeis(codeinst->rettype_const, jl_partial_opaque_type)) {
-        if (skip_partial_opaque) {
-            jl_serialize_code_instance(s, codeinst->next, skip_partial_opaque);
-            return;
-        }
-        else {
-            jl_error("Cannot serialize CodeInstance with PartialOpaque rettype");
-        }
-    }
-
-    write_uint8(s->s, TAG_CODE_INSTANCE);
-    write_uint8(s->s, flags);
-    jl_serialize_value(s, (jl_value_t*)codeinst->def);
-    if (write_ret_type) {
-        jl_serialize_value(s, codeinst->inferred);
-        jl_serialize_value(s, codeinst->rettype_const);
-        jl_serialize_value(s, codeinst->rettype);
-    }
-    else {
-        // skip storing useless data
-        jl_serialize_value(s, NULL);
-        jl_serialize_value(s, NULL);
-        jl_serialize_value(s, jl_any_type);
-    }
-    jl_serialize_code_instance(s, codeinst->next, skip_partial_opaque);
-}
-
-static void jl_serialize_value_(jl_serializer_state *s, jl_value_t *v, int as_literal) JL_GC_DISABLED
-{
-    if (jl_serialize_generic(s, v)) {
-        return;
-    }
-
-    size_t i;
-    if (jl_is_svec(v)) {
-        size_t l = jl_svec_len(v);
-        if (l <= 255) {
-            write_uint8(s->s, TAG_SVEC);
-            write_uint8(s->s, (uint8_t)l);
-        }
-        else {
-            write_uint8(s->s, TAG_LONG_SVEC);
-            write_int32(s->s, l);
-        }
-        for (i = 0; i < l; i++) {
-            jl_serialize_value(s, jl_svecref(v, i));
-        }
-    }
-    else if (jl_is_symbol(v)) {
-        size_t l = strlen(jl_symbol_name((jl_sym_t*)v));
-        if (l <= 255) {
-            write_uint8(s->s, TAG_SYMBOL);
-            write_uint8(s->s, (uint8_t)l);
-        }
-        else {
-            write_uint8(s->s, TAG_LONG_SYMBOL);
-            write_int32(s->s, l);
-        }
-        ios_write(s->s, jl_symbol_name((jl_sym_t*)v), l);
-    }
-    else if (jl_is_array(v)) {
-        jl_array_t *ar = (jl_array_t*)v;
-        jl_value_t *et = jl_tparam0(jl_typeof(ar));
-        int isunion = jl_is_uniontype(et);
-        if (ar->flags.ndims == 1 && ar->elsize <= 0x1f) {
-            write_uint8(s->s, TAG_ARRAY1D);
-            write_uint8(s->s, (ar->flags.ptrarray << 7) | (ar->flags.hasptr << 6) | (isunion << 5) | (ar->elsize & 0x1f));
-        }
-        else {
-            write_uint8(s->s, TAG_ARRAY);
-            write_uint16(s->s, ar->flags.ndims);
-            write_uint16(s->s, (ar->flags.ptrarray << 15) | (ar->flags.hasptr << 14) | (isunion << 13) | (ar->elsize & 0x1fff));
-        }
-        for (i = 0; i < ar->flags.ndims; i++)
-            jl_serialize_value(s, jl_box_long(jl_array_dim(ar,i)));
-        jl_serialize_value(s, jl_typeof(ar));
-        size_t l = jl_array_len(ar);
-        if (ar->flags.ptrarray) {
-            for (i = 0; i < l; i++) {
-                jl_value_t *e = jl_array_ptr_ref(v, i);
-                if (e && jl_is_cpointer(e) && jl_unbox_voidpointer(e) != (void*)-1 && jl_unbox_voidpointer(e) != NULL)
-                    // reset Ptr elements to C_NULL (but keep MAP_FAILED / INVALID_HANDLE)
-                    jl_serialize_cnull(s, jl_typeof(e));
-                else
-                    jl_serialize_value(s, e);
-            }
-        }
-        else if (ar->flags.hasptr) {
-            const char *data = (const char*)jl_array_data(ar);
-            uint16_t elsz = ar->elsize;
-            size_t j, np = ((jl_datatype_t*)et)->layout->npointers;
-            for (i = 0; i < l; i++) {
-                const char *start = data;
-                for (j = 0; j < np; j++) {
-                    uint32_t ptr = jl_ptr_offset((jl_datatype_t*)et, j);
-                    const jl_value_t *const *fld = &((const jl_value_t *const *)data)[ptr];
-                    if ((const char*)fld != start)
-                        ios_write(s->s, start, (const char*)fld - start);
-                    JL_GC_PROMISE_ROOTED(*fld);
-                    jl_serialize_value(s, *fld);
-                    start = (const char*)&fld[1];
-                }
-                data += elsz;
-                if (data != start)
-                    ios_write(s->s, start, data - start);
-            }
-        }
-        else if (jl_is_cpointer_type(et)) {
-            // reset Ptr elements to C_NULL
-            const void **data = (const void**)jl_array_data(ar);
-            for (i = 0; i < l; i++) {
-                const void *e = data[i];
-                if (e != (void*)-1)
-                    e = NULL;
-                ios_write(s->s, (const char*)&e, sizeof(e));
-            }
-        }
-        else {
-            ios_write(s->s, (char*)jl_array_data(ar), l * ar->elsize);
-            if (jl_array_isbitsunion(ar))
-                ios_write(s->s, jl_array_typetagdata(ar), l);
-        }
-    }
-    else if (jl_is_datatype(v)) {
-        jl_serialize_datatype(s, (jl_datatype_t*)v);
-    }
-    else if (jl_is_unionall(v)) {
-        write_uint8(s->s, TAG_UNIONALL);
-        jl_datatype_t *d = (jl_datatype_t*)jl_unwrap_unionall(v);
-        if (jl_is_datatype(d) && d->name->wrapper == v &&
-            !module_in_worklist(d->name->module)) {
-            write_uint8(s->s, 1);
-            jl_serialize_value(s, d->name->module);
-            jl_serialize_value(s, d->name->name);
-        }
-        else {
-            write_uint8(s->s, 0);
-            jl_serialize_value(s, ((jl_unionall_t*)v)->var);
-            jl_serialize_value(s, ((jl_unionall_t*)v)->body);
-        }
-    }
-    else if (jl_is_typevar(v)) {
-        write_uint8(s->s, TAG_TVAR);
-        jl_serialize_value(s, ((jl_tvar_t*)v)->name);
-        jl_serialize_value(s, ((jl_tvar_t*)v)->lb);
-        jl_serialize_value(s, ((jl_tvar_t*)v)->ub);
-    }
-    else if (jl_is_method(v)) {
-        write_uint8(s->s, TAG_METHOD);
-        jl_method_t *m = (jl_method_t*)v;
-        int internal = 1;
-        internal = m->is_for_opaque_closure || module_in_worklist(m->module);
-        if (!internal) {
-            // flag this in the backref table as special
-            uintptr_t *bp = (uintptr_t*)ptrhash_bp(&backref_table, v);
-            assert(*bp != (uintptr_t)HT_NOTFOUND);
-            *bp |= 1;
-        }
-        jl_serialize_value(s, (jl_value_t*)m->sig);
-        jl_serialize_value(s, (jl_value_t*)m->module);
-        write_uint8(s->s, internal);
-        if (!internal)
-            return;
-        jl_serialize_value(s, m->specializations);
-        jl_serialize_value(s, m->speckeyset);
-        jl_serialize_value(s, (jl_value_t*)m->name);
-        jl_serialize_value(s, (jl_value_t*)m->file);
-        write_int32(s->s, m->line);
-        write_int32(s->s, m->called);
-        write_int32(s->s, m->nargs);
-        write_int32(s->s, m->nospecialize);
-        write_int32(s->s, m->nkw);
-        write_int8(s->s, m->isva);
-        write_int8(s->s, m->pure);
-        write_int8(s->s, m->is_for_opaque_closure);
-        write_int8(s->s, m->aggressive_constprop);
-        jl_serialize_value(s, (jl_value_t*)m->slot_syms);
-        jl_serialize_value(s, (jl_value_t*)m->roots);
-        jl_serialize_value(s, (jl_value_t*)m->ccallable);
-        jl_serialize_value(s, (jl_value_t*)m->source);
-        jl_serialize_value(s, (jl_value_t*)m->unspecialized);
-        jl_serialize_value(s, (jl_value_t*)m->generator);
-        jl_serialize_value(s, (jl_value_t*)m->invokes);
-        jl_serialize_value(s, (jl_value_t*)m->recursion_relation);
-    }
-    else if (jl_is_method_instance(v)) {
-        jl_method_instance_t *mi = (jl_method_instance_t*)v;
-        if (jl_is_method(mi->def.value) && mi->def.method->is_for_opaque_closure) {
-            jl_error("unimplemented: serialization of MethodInstances for OpaqueClosure");
-        }
-        write_uint8(s->s, TAG_METHOD_INSTANCE);
-        int internal = 0;
-        if (!jl_is_method(mi->def.method))
-            internal = 1;
-        else if (module_in_worklist(mi->def.method->module))
-            internal = 2;
-        write_uint8(s->s, internal);
-        if (!internal) {
-            // also flag this in the backref table as special
-            uintptr_t *bp = (uintptr_t*)ptrhash_bp(&backref_table, v);
-            assert(*bp != (uintptr_t)HT_NOTFOUND);
-            *bp |= 1;
-        }
-        if (internal == 1)
-            jl_serialize_value(s, (jl_value_t*)mi->uninferred);
-        jl_serialize_value(s, (jl_value_t*)mi->specTypes);
-        jl_serialize_value(s, mi->def.value);
-        if (!internal)
-            return;
-        jl_serialize_value(s, (jl_value_t*)mi->sparam_vals);
-        jl_array_t *backedges = mi->backedges;
-        if (backedges) {
-            // filter backedges to only contain pointers
-            // to items that we will actually store (internal == 2)
-            size_t ins, i, l = jl_array_len(backedges);
-            jl_method_instance_t **b_edges = (jl_method_instance_t**)jl_array_data(backedges);
-            for (ins = i = 0; i < l; i++) {
-                jl_method_instance_t *backedge = b_edges[i];
-                if (module_in_worklist(backedge->def.method->module)) {
-                    b_edges[ins++] = backedge;
-                }
-            }
-            if (ins != l)
-                jl_array_del_end(backedges, l - ins);
-            if (ins == 0)
-                backedges = NULL;
-        }
-        jl_serialize_value(s, (jl_value_t*)backedges);
-        jl_serialize_value(s, (jl_value_t*)NULL); //callbacks
-        jl_serialize_code_instance(s, mi->cache, 1);
-    }
-    else if (jl_is_code_instance(v)) {
-        jl_serialize_code_instance(s, (jl_code_instance_t*)v, 0);
-    }
-    else if (jl_typeis(v, jl_module_type)) {
-        jl_serialize_module(s, (jl_module_t*)v);
-    }
-    else if (jl_typeis(v, jl_task_type)) {
-        jl_error("Task cannot be serialized");
-    }
-    else if (jl_typeis(v, jl_opaque_closure_type)) {
-        jl_error("Live opaque closures cannot be serialized");
-    }
-    else if (jl_typeis(v, jl_string_type)) {
-        write_uint8(s->s, TAG_STRING);
-        write_int32(s->s, jl_string_len(v));
-        ios_write(s->s, jl_string_data(v), jl_string_len(v));
-    }
-    else if (jl_typeis(v, jl_int64_type)) {
-        void *data = jl_data_ptr(v);
-        if (*(int64_t*)data >= INT16_MIN && *(int64_t*)data <= INT16_MAX) {
-            write_uint8(s->s, TAG_SHORTER_INT64);
-            write_uint16(s->s, (uint16_t)*(int64_t*)data);
-        }
-        else if (*(int64_t*)data >= S32_MIN && *(int64_t*)data <= S32_MAX) {
-            write_uint8(s->s, TAG_SHORT_INT64);
-            write_int32(s->s, (int32_t)*(int64_t*)data);
-        }
-        else {
-            write_uint8(s->s, TAG_INT64);
-            write_int64(s->s, *(int64_t*)data);
-        }
-    }
-    else if (jl_typeis(v, jl_int32_type)) {
-        void *data = jl_data_ptr(v);
-        if (*(int32_t*)data >= INT16_MIN && *(int32_t*)data <= INT16_MAX) {
-            write_uint8(s->s, TAG_SHORT_INT32);
-            write_uint16(s->s, (uint16_t)*(int32_t*)data);
-        }
-        else {
-            write_uint8(s->s, TAG_INT32);
-            write_int32(s->s, *(int32_t*)data);
-        }
-    }
-    else if (jl_typeis(v, jl_uint8_type)) {
-        write_uint8(s->s, TAG_UINT8);
-        write_int8(s->s, *(int8_t*)jl_data_ptr(v));
-    }
-    else if (jl_is_cpointer(v) && jl_unbox_voidpointer(v) == NULL) {
-        write_uint8(s->s, TAG_CNULL);
-        jl_serialize_value(s, jl_typeof(v));
-        return;
-    }
-    else if (jl_bigint_type && jl_typeis(v, jl_bigint_type)) {
-        write_uint8(s->s, TAG_SHORT_GENERAL);
-        write_uint8(s->s, jl_datatype_size(jl_bigint_type));
-        jl_serialize_value(s, jl_bigint_type);
-        jl_value_t *sizefield = jl_get_nth_field(v, 1);
-        jl_serialize_value(s, sizefield);
-        void *data = jl_unbox_voidpointer(jl_get_nth_field(v, 2));
-        int32_t sz = jl_unbox_int32(sizefield);
-        size_t nb = (sz == 0 ? 1 : (sz < 0 ? -sz : sz)) * gmp_limb_size;
-        ios_write(s->s, (char*)data, nb);
-    }
-    else {
-        jl_datatype_t *t = (jl_datatype_t*)jl_typeof(v);
-        if (v == t->instance) {
-            if (!type_in_worklist(t)) {
-                // also flag this in the backref table as special
-                // if it might not be unique (is external)
-                uintptr_t *bp = (uintptr_t*)ptrhash_bp(&backref_table, v);
-                assert(*bp != (uintptr_t)HT_NOTFOUND);
-                *bp |= 1;
-            }
-            write_uint8(s->s, TAG_SINGLETON);
-            jl_serialize_value(s, t);
-            return;
-        }
-        assert(!t->instance && "detected singleton construction corruption");
-
-        if (t == jl_typename_type) {
-            void *bttag = ptrhash_get(&ser_tag, ((jl_typename_t*)t)->wrapper);
-            if (bttag != HT_NOTFOUND) {
-                write_uint8(s->s, TAG_BITYPENAME);
-                write_uint8(s->s, (uint8_t)(intptr_t)bttag);
-                return;
-            }
-        }
-        if (t->size <= 255) {
-            write_uint8(s->s, TAG_SHORT_GENERAL);
-            write_uint8(s->s, t->size);
-        }
-        else {
-            write_uint8(s->s, TAG_GENERAL);
-            write_int32(s->s, t->size);
-        }
-        jl_serialize_value(s, t);
-        if (t == jl_typename_type) {
-            jl_typename_t *tn = (jl_typename_t*)v;
-            int internal = module_in_worklist(tn->module);
-            write_uint8(s->s, internal);
-            jl_serialize_value(s, tn->module);
-            jl_serialize_value(s, tn->name);
-            if (internal) {
-                jl_serialize_value(s, tn->names);
-                jl_serialize_value(s, tn->wrapper);
-                jl_serialize_value(s, tn->mt);
-                ios_write(s->s, (char*)&tn->hash, sizeof(tn->hash));
-            }
-            return;
-        }
-
-        char *data = (char*)jl_data_ptr(v);
-        size_t i, j, np = t->layout->npointers;
-        uint32_t nf = t->layout->nfields;
-        char *last = data;
-        for (i = 0, j = 0; i < nf+1; i++) {
-            char *ptr = data + (i < nf ? jl_field_offset(t, i) : jl_datatype_size(t));
-            if (j < np) {
-                char *prevptr = (char*)&((jl_value_t**)data)[jl_ptr_offset(t, j)];
-                while (ptr > prevptr) {
-                    // previous field contained pointers; write them and their interleaved data
-                    if (prevptr > last)
-                        ios_write(s->s, last, prevptr - last);
-                    jl_value_t *e = *(jl_value_t**)prevptr;
-                    JL_GC_PROMISE_ROOTED(e);
-                    if (t->mutabl && e && jl_field_isptr(t, i - 1) && jl_is_cpointer(e) &&
-                        jl_unbox_voidpointer(e) != (void*)-1 && jl_unbox_voidpointer(e) != NULL)
-                        // reset Ptr fields to C_NULL (but keep MAP_FAILED / INVALID_HANDLE)
-                        jl_serialize_cnull(s, jl_typeof(e));
-                    else
-                        jl_serialize_value(s, e);
-                    last = prevptr + sizeof(jl_value_t*);
-                    j++;
-                    if (j < np)
-                        prevptr = (char*)&((jl_value_t**)data)[jl_ptr_offset(t, j)];
-                    else
+        } else if (flags & PERL_PV_ESCAPE_NOBACKSLASH) {
+            chsize = 1;            
+        } else {         
+            if ( (c == dq) || (c == esc) || !isPRINT(c) ) {
+                chsize = 2;
+                switch (c) {
+                
+                case '\\' : /* FALLTHROUGH */
+                case '%'  : if ( c == esc )  {
+                                octbuf[1] = esc;  
+                            } else {
+                                chsize = 1;
+                            }
+                            break;
+                case '\v' : octbuf[1] = 'v';  break;
+                case '\t' : octbuf[1] = 't';  break;
+                case '\r' : octbuf[1] = 'r';  break;
+                case '\n' : octbuf[1] = 'n';  break;
+                case '\f' : octbuf[1] = 'f';  break;
+                case '"'  : 
+                        if ( dq == '"' ) 
+                                octbuf[1] = '"';
+                        else 
+                            chsize = 1;
                         break;
+                default:
+                    if ( (flags & PERL_PV_ESCAPE_DWIM) && c != '\0' ) {
+                        chsize = my_snprintf( octbuf, PV_ESCAPE_OCTBUFSIZE,
+                                      isuni ? "%cx{%02" UVxf "}" : "%cx%02" UVxf,
+                                      esc, u);
+                    }
+                    else if ((pv+readsize < end) && isDIGIT((U8)*(pv+readsize)))
+                        chsize = my_snprintf( octbuf, PV_ESCAPE_OCTBUFSIZE,
+                                                  "%c%03o", esc, c);
+                    else
+                        chsize = my_snprintf( octbuf, PV_ESCAPE_OCTBUFSIZE,
+                                                  "%c%o", esc, c);
                 }
+            } else {
+                chsize = 1;
             }
-            if (i == nf)
+        }
+        if ( max && (wrote + chsize > max) ) {
+            break;
+        } else if (chsize > 1) {
+            if (dsv)
+                sv_catpvn(dsv, octbuf, chsize);
+            wrote += chsize;
+        } else {
+            /* If PERL_PV_ESCAPE_NOBACKSLASH is set then non-ASCII bytes
+               can be appended raw to the dsv. If dsv happens to be
+               UTF-8 then we need catpvf to upgrade them for us.
+               Or add a new API call sv_catpvc(). Think about that name, and
+               how to keep it clear that it's unlike the s of catpvs, which is
+               really an array of octets, not a string.  */
+            if (dsv)
+                Perl_sv_catpvf( aTHX_ dsv, "%c", c);
+            wrote++;
+        }
+        if ( flags & PERL_PV_ESCAPE_FIRSTCHAR ) 
+            break;
+    }
+    if (escaped != NULL)
+        *escaped= pv - str;
+    return dsv ? SvPVX(dsv) : NULL;
+}
+/*
+=for apidoc pv_pretty
+
+Converts a string into something presentable, handling escaping via
+C<pv_escape()> and supporting quoting and ellipses.
+
+If the C<PERL_PV_PRETTY_QUOTE> flag is set then the result will be
+double quoted with any double quotes in the string escaped.  Otherwise
+if the C<PERL_PV_PRETTY_LTGT> flag is set then the result be wrapped in
+angle brackets. 
+
+If the C<PERL_PV_PRETTY_ELLIPSES> flag is set and not all characters in
+string were output then an ellipsis C<...> will be appended to the
+string.  Note that this happens AFTER it has been quoted.
+
+If C<start_color> is non-null then it will be inserted after the opening
+quote (if there is one) but before the escaped text.  If C<end_color>
+is non-null then it will be inserted after the escaped text but before
+any quotes or ellipses.
+
+Returns a pointer to the prettified text as held by C<dsv>.
+
+=for apidoc Amnh||PERL_PV_PRETTY_QUOTE
+=for apidoc Amnh||PERL_PV_PRETTY_LTGT
+=for apidoc Amnh||PERL_PV_PRETTY_ELLIPSES
+
+=cut           
+*/
+
+char *
+Perl_pv_pretty( pTHX_ SV *dsv, char const * const str, const STRLEN count, 
+  const STRLEN max, char const * const start_color, char const * const end_color, 
+  const U32 flags ) 
+{
+    const U8 *quotes = (U8*)((flags & PERL_PV_PRETTY_QUOTE) ? "\"\"" :
+                             (flags & PERL_PV_PRETTY_LTGT)  ? "<>" : NULL);
+    STRLEN escaped;
+    STRLEN max_adjust= 0;
+    STRLEN orig_cur;
+ 
+    PERL_ARGS_ASSERT_PV_PRETTY;
+   
+    if (!(flags & PERL_PV_PRETTY_NOCLEAR)) {
+        /* This won't alter the UTF-8 flag */
+        SvPVCLEAR(dsv);
+    }
+    orig_cur= SvCUR(dsv);
+
+    if ( quotes )
+        Perl_sv_catpvf(aTHX_ dsv, "%c", quotes[0]);
+        
+    if ( start_color != NULL ) 
+        sv_catpv(dsv, start_color);
+
+    if ((flags & PERL_PV_PRETTY_EXACTSIZE)) {
+        if (quotes)
+            max_adjust += 2;
+        assert(max > max_adjust);
+        pv_escape( NULL, str, count, max - max_adjust, &escaped, flags );
+        if ( (flags & PERL_PV_PRETTY_ELLIPSES) && ( escaped < count ) )
+            max_adjust += 3;
+        assert(max > max_adjust);
+    }
+
+    pv_escape( dsv, str, count, max - max_adjust, &escaped, flags | PERL_PV_ESCAPE_NOCLEAR );
+
+    if ( end_color != NULL ) 
+        sv_catpv(dsv, end_color);
+
+    if ( quotes )
+        Perl_sv_catpvf(aTHX_ dsv, "%c", quotes[1]);
+    
+    if ( (flags & PERL_PV_PRETTY_ELLIPSES) && ( escaped < count ) )
+            sv_catpvs(dsv, "...");
+
+    if ((flags & PERL_PV_PRETTY_EXACTSIZE)) {
+        while( SvCUR(dsv) - orig_cur < max )
+            sv_catpvs(dsv," ");
+    }
+ 
+    return SvPVX(dsv);
+}
+
+/*
+=for apidoc pv_display
+
+Similar to
+
+  pv_escape(dsv,pv,cur,pvlim,PERL_PV_ESCAPE_QUOTE);
+
+except that an additional "\0" will be appended to the string when
+len > cur and pv[cur] is "\0".
+
+Note that the final string may be up to 7 chars longer than pvlim.
+
+=cut
+*/
+
+char *
+Perl_pv_display(pTHX_ SV *dsv, const char *pv, STRLEN cur, STRLEN len, STRLEN pvlim)
+{
+    PERL_ARGS_ASSERT_PV_DISPLAY;
+
+    pv_pretty( dsv, pv, cur, pvlim, NULL, NULL, PERL_PV_PRETTY_DUMP);
+    if (len > cur && pv[cur] == '\0')
+            sv_catpvs( dsv, "\\0");
+    return SvPVX(dsv);
+}
+
+char *
+Perl_sv_peek(pTHX_ SV *sv)
+{
+    SV * const t = sv_newmortal();
+    int unref = 0;
+    U32 type;
+
+    SvPVCLEAR(t);
+  retry:
+    if (!sv) {
+        sv_catpvs(t, "VOID");
+        goto finish;
+    }
+    else if (sv == (const SV *)0x55555555 || ((char)SvTYPE(sv)) == 'U') {
+        /* detect data corruption under memory poisoning */
+        sv_catpvs(t, "WILD");
+        goto finish;
+    }
+    else if (  sv == &PL_sv_undef || sv == &PL_sv_no || sv == &PL_sv_yes
+            || sv == &PL_sv_zero || sv == &PL_sv_placeholder)
+    {
+        if (sv == &PL_sv_undef) {
+            sv_catpvs(t, "SV_UNDEF");
+            if (!(SvFLAGS(sv) & (SVf_OK|SVf_OOK|SVs_OBJECT|
+                                 SVs_GMG|SVs_SMG|SVs_RMG)) &&
+                SvREADONLY(sv))
+                goto finish;
+        }
+        else if (sv == &PL_sv_no) {
+            sv_catpvs(t, "SV_NO");
+            if (!(SvFLAGS(sv) & (SVf_ROK|SVf_OOK|SVs_OBJECT|
+                                 SVs_GMG|SVs_SMG|SVs_RMG)) &&
+                !(~SvFLAGS(sv) & (SVf_POK|SVf_NOK|SVf_READONLY|
+                                  SVp_POK|SVp_NOK)) &&
+                SvCUR(sv) == 0 &&
+                SvNVX(sv) == 0.0)
+                goto finish;
+        }
+        else if (sv == &PL_sv_yes) {
+            sv_catpvs(t, "SV_YES");
+            if (!(SvFLAGS(sv) & (SVf_ROK|SVf_OOK|SVs_OBJECT|
+                                 SVs_GMG|SVs_SMG|SVs_RMG)) &&
+                !(~SvFLAGS(sv) & (SVf_POK|SVf_NOK|SVf_READONLY|
+                                  SVp_POK|SVp_NOK)) &&
+                SvCUR(sv) == 1 &&
+                SvPVX_const(sv) && *SvPVX_const(sv) == '1' &&
+                SvNVX(sv) == 1.0)
+                goto finish;
+        }
+        else if (sv == &PL_sv_zero) {
+            sv_catpvs(t, "SV_ZERO");
+            if (!(SvFLAGS(sv) & (SVf_ROK|SVf_OOK|SVs_OBJECT|
+                                 SVs_GMG|SVs_SMG|SVs_RMG)) &&
+                !(~SvFLAGS(sv) & (SVf_POK|SVf_NOK|SVf_READONLY|
+                                  SVp_POK|SVp_NOK)) &&
+                SvCUR(sv) == 1 &&
+                SvPVX_const(sv) && *SvPVX_const(sv) == '0' &&
+                SvNVX(sv) == 0.0)
+                goto finish;
+        }
+        else {
+            sv_catpvs(t, "SV_PLACEHOLDER");
+            if (!(SvFLAGS(sv) & (SVf_OK|SVf_OOK|SVs_OBJECT|
+                                 SVs_GMG|SVs_SMG|SVs_RMG)) &&
+                SvREADONLY(sv))
+                goto finish;
+        }
+        sv_catpvs(t, ":");
+    }
+    else if (SvREFCNT(sv) == 0) {
+        sv_catpvs(t, "(");
+        unref++;
+    }
+    else if (DEBUG_R_TEST_) {
+        int is_tmp = 0;
+        SSize_t ix;
+        /* is this SV on the tmps stack? */
+        for (ix=PL_tmps_ix; ix>=0; ix--) {
+            if (PL_tmps_stack[ix] == sv) {
+                is_tmp = 1;
                 break;
-            if (t->mutabl && jl_is_cpointer_type(jl_field_type(t, i)) && *(void**)ptr != (void*)-1) {
-                if (ptr > last)
-                    ios_write(s->s, last, ptr - last);
-                char *n = NULL;
-                ios_write(s->s, (char*)&n, sizeof(n));
-                last = ptr + sizeof(n);
             }
         }
-        char *ptr = data + jl_datatype_size(t);
-        if (ptr > last)
-            ios_write(s->s, last, ptr - last);
-    }
-}
-
-static void jl_collect_missing_backedges_to_mod(jl_methtable_t *mt)
-{
-    jl_array_t *backedges = mt->backedges;
-    if (backedges) {
-        size_t i, l = jl_array_len(backedges);
-        for (i = 1; i < l; i += 2) {
-            jl_method_instance_t *caller = (jl_method_instance_t*)jl_array_ptr_ref(backedges, i);
-            jl_value_t *missing_callee = jl_array_ptr_ref(backedges, i - 1);
-            jl_array_t **edges = (jl_array_t**)ptrhash_bp(&edges_map, (void*)caller);
-            if (*edges == HT_NOTFOUND)
-                *edges = jl_alloc_vec_any(0);
-            jl_array_ptr_1d_push(*edges, missing_callee);
+        if (is_tmp || SvREFCNT(sv) > 1) {
+            Perl_sv_catpvf(aTHX_ t, "<");
+            if (SvREFCNT(sv) > 1)
+                Perl_sv_catpvf(aTHX_ t, "%" UVuf, (UV)SvREFCNT(sv));
+            if (is_tmp)
+                Perl_sv_catpvf(aTHX_ t, "%s", SvTEMP(t) ? "T" : "t");
+            Perl_sv_catpvf(aTHX_ t, ">");
         }
     }
-}
 
-// the intent of this function is to invert the backedges tree
-// for anything that points to a method not part of the worklist
-static void collect_backedges(jl_method_instance_t *callee) JL_GC_DISABLED
-{
-    jl_array_t *backedges = callee->backedges;
-    if (backedges) {
-        size_t i, l = jl_array_len(backedges);
-        for (i = 0; i < l; i++) {
-            jl_method_instance_t *caller = (jl_method_instance_t*)jl_array_ptr_ref(backedges, i);
-            jl_array_t **edges = (jl_array_t**)ptrhash_bp(&edges_map, caller);
-            if (*edges == HT_NOTFOUND)
-                *edges = jl_alloc_vec_any(0);
-            jl_array_ptr_1d_push(*edges, (jl_value_t*)callee);
+    if (SvROK(sv)) {
+        sv_catpvs(t, "\\");
+        if (SvCUR(t) + unref > 10) {
+            SvCUR_set(t, unref + 3);
+            *SvEND(t) = '\0';
+            sv_catpvs(t, "...");
+            goto finish;
+        }
+        sv = SvRV(sv);
+        goto retry;
+    }
+    type = SvTYPE(sv);
+    if (type == SVt_PVCV) {
+        SV * const tmp = newSVpvs_flags("", SVs_TEMP);
+        GV* gvcv = CvGV(sv);
+        Perl_sv_catpvf(aTHX_ t, "CV(%s)", gvcv
+                       ? generic_pv_escape( tmp, GvNAME(gvcv), GvNAMELEN(gvcv), GvNAMEUTF8(gvcv))
+                       : "");
+        goto finish;
+    } else if (type < SVt_LAST) {
+        sv_catpv(t, svshorttypenames[type]);
+
+        if (type == SVt_NULL)
+            goto finish;
+    } else {
+        sv_catpvs(t, "FREED");
+        goto finish;
+    }
+
+    if (SvPOKp(sv)) {
+        if (!SvPVX_const(sv))
+            sv_catpvs(t, "(null)");
+        else {
+            SV * const tmp = newSVpvs("");
+            sv_catpvs(t, "(");
+            if (SvOOK(sv)) {
+                STRLEN delta;
+                SvOOK_offset(sv, delta);
+                Perl_sv_catpvf(aTHX_ t, "[%s]", pv_display(tmp, SvPVX_const(sv)-delta, delta, 0, 127));
+            }
+            Perl_sv_catpvf(aTHX_ t, "%s)", pv_display(tmp, SvPVX_const(sv), SvCUR(sv), SvLEN(sv), 127));
+            if (SvUTF8(sv))
+                Perl_sv_catpvf(aTHX_ t, " [UTF8 \"%s\"]",
+                               sv_uni_display(tmp, sv, 6 * SvCUR(sv),
+                                              UNI_DISPLAY_QQ));
+            SvREFCNT_dec_NN(tmp);
         }
     }
-}
-
-
-static int jl_collect_methcache_from_mod(jl_typemap_entry_t *ml, void *closure) JL_GC_DISABLED
-{
-    jl_array_t *s = (jl_array_t*)closure;
-    jl_method_t *m = ml->func.method;
-    if (module_in_worklist(m->module)) {
-        jl_array_ptr_1d_push(s, (jl_value_t*)m);
-        jl_array_ptr_1d_push(s, (jl_value_t*)ml->simplesig);
+    else if (SvNOKp(sv)) {
+        DECLARATION_FOR_LC_NUMERIC_MANIPULATION;
+        STORE_LC_NUMERIC_SET_STANDARD();
+        Perl_sv_catpvf(aTHX_ t, "(%" NVgf ")",SvNVX(sv));
+        RESTORE_LC_NUMERIC();
     }
-    else {
-        jl_svec_t *specializations = m->specializations;
-        size_t i, l = jl_svec_len(specializations);
-        for (i = 0; i < l; i++) {
-            jl_method_instance_t *callee = (jl_method_instance_t*)jl_svecref(specializations, i);
-            if (callee != NULL)
-                collect_backedges(callee);
-        }
+    else if (SvIOKp(sv)) {
+        if (SvIsUV(sv))
+            Perl_sv_catpvf(aTHX_ t, "(%" UVuf ")", (UV)SvUVX(sv));
+        else
+            Perl_sv_catpvf(aTHX_ t, "(%" IVdf ")", (IV)SvIVX(sv));
     }
-    return 1;
+    else
+        sv_catpvs(t, "()");
+
+  finish:
+    while (unref--)
+        sv_catpvs(t, ")");
+    if (TAINTING_get && sv && SvTAINTED(sv))
+        sv_catpvs(t, " [tainted]");
+    return SvPV_nolen(t);
 }
 
-static void jl_collect_methtable_from_mod(jl_array_t *s, jl_methtable_t *mt) JL_GC_DISABLED
+void
+Perl_dump_indent(pTHX_ I32 level, PerlIO *file, const char* pat, ...)
 {
-    jl_typemap_visitor(mt->defs, jl_collect_methcache_from_mod, (void*)s);
+    va_list args;
+    PERL_ARGS_ASSERT_DUMP_INDENT;
+    va_start(args, pat);
+    dump_vindent(level, file, pat, &args);
+    va_end(args);
 }
 
-static void jl_collect_lambdas_from_mod(jl_array_t *s, jl_module_t *m) JL_GC_DISABLED
+void
+Perl_dump_vindent(pTHX_ I32 level, PerlIO *file, const char* pat, va_list *args)
 {
-    if (module_in_worklist(m))
+    PERL_ARGS_ASSERT_DUMP_VINDENT;
+    PerlIO_printf(file, "%*s", (int)(level*PL_dumpindent), "");
+    PerlIO_vprintf(file, pat, *args);
+}
+
+
+/* Like Perl_dump_indent(), but specifically for ops: adds a vertical bar
+ * for each indent level as appropriate.
+ *
+ * bar contains bits indicating which indent columns should have a
+ * vertical bar displayed. Bit 0 is the RH-most column. If there are more
+ * levels than bits in bar, then the first few indents are displayed
+ * without a bar.
+ *
+ * The start of a new op is signalled by passing a value for level which
+ * has been negated and offset by 1 (so that level 0 is passed as -1 and
+ * can thus be distinguished from -0); in this case, emit a suitably
+ * indented blank line, then on the next line, display the op's sequence
+ * number, and make the final indent an '+----'.
+ *
+ * e.g.
+ *
+ *      |   FOO       # level = 1,   bar = 0b1
+ *      |   |         # level =-2-1, bar = 0b11
+ * 1234 |   +---BAR
+ *      |       BAZ   # level = 2,   bar = 0b10
+ */
+
+static void
+S_opdump_indent(pTHX_ const OP *o, I32 level, UV bar, PerlIO *file,
+                const char* pat, ...)
+{
+    va_list args;
+    I32 i;
+    bool newop = (level < 0);
+
+    va_start(args, pat);
+
+    /* start displaying a new op? */
+    if (newop) {
+        UV seq = sequence_num(o);
+
+        level = -level - 1;
+
+        /* output preceding blank line */
+        PerlIO_puts(file, "     ");
+        for (i = level-1; i >= 0; i--)
+            PerlIO_puts(file,  (   i == 0
+                                || (i < UVSIZE*8 && (bar & ((UV)1 << i)))
+                               )
+                                    ?  "|   " : "    ");
+        PerlIO_puts(file, "\n");
+
+        /* output sequence number */
+        if (seq)
+            PerlIO_printf(file, "%-4" UVuf " ", seq);
+        else
+            PerlIO_puts(file, "???? ");
+
+    }
+    else
+        PerlIO_printf(file, "     ");
+
+    for (i = level-1; i >= 0; i--)
+            PerlIO_puts(file,
+                  (i == 0 && newop) ? "+--"
+                : (bar & (1 << i))  ? "|   "
+                :                     "    ");
+    PerlIO_vprintf(file, pat, args);
+    va_end(args);
+}
+
+
+/* display a link field (e.g. op_next) in the format
+ *     ====> sequence_number [opname 0x123456]
+ */
+
+static void
+S_opdump_link(pTHX_ const OP *base, const OP *o, PerlIO *file)
+{
+    PerlIO_puts(file, " ===> ");
+    if (o == base)
+        PerlIO_puts(file, "[SELF]\n");
+    else if (o)
+        PerlIO_printf(file, "%" UVuf " [%s 0x%" UVxf "]\n",
+            sequence_num(o), OP_NAME(o), PTR2UV(o));
+    else
+        PerlIO_puts(file, "[0x0]\n");
+}
+
+/*
+=for apidoc_section $debugging
+=for apidoc dump_all
+
+Dumps the entire optree of the current program starting at C<PL_main_root> to 
+C<STDERR>.  Also dumps the optrees for all visible subroutines in
+C<PL_defstash>.
+
+=cut
+*/
+
+void
+Perl_dump_all(pTHX)
+{
+    dump_all_perl(FALSE);
+}
+
+void
+Perl_dump_all_perl(pTHX_ bool justperl)
+{
+    PerlIO_setlinebuf(Perl_debug_log);
+    if (PL_main_root)
+        op_dump(PL_main_root);
+    dump_packsubs_perl(PL_defstash, justperl);
+}
+
+/*
+=for apidoc dump_packsubs
+
+Dumps the optrees for all visible subroutines in C<stash>.
+
+=cut
+*/
+
+void
+Perl_dump_packsubs(pTHX_ const HV *stash)
+{
+    PERL_ARGS_ASSERT_DUMP_PACKSUBS;
+    dump_packsubs_perl(stash, FALSE);
+}
+
+void
+Perl_dump_packsubs_perl(pTHX_ const HV *stash, bool justperl)
+{
+    I32	i;
+
+    PERL_ARGS_ASSERT_DUMP_PACKSUBS_PERL;
+
+    if (!HvARRAY(stash))
         return;
-    size_t i;
-    void **table = m->bindings.table;
-    for (i = 1; i < m->bindings.size; i += 2) {
-        if (table[i] != HT_NOTFOUND) {
-            jl_binding_t *b = (jl_binding_t*)table[i];
-            if (b->owner == m && b->value && b->constp) {
-                jl_value_t *bv = jl_unwrap_unionall(b->value);
-                if (jl_is_datatype(bv)) {
-                    jl_typename_t *tn = ((jl_datatype_t*)bv)->name;
-                    if (tn->module == m && tn->name == b->name && tn->wrapper == b->value) {
-                        jl_methtable_t *mt = tn->mt;
-                        if (mt != NULL &&
-                                (jl_value_t*)mt != jl_nothing &&
-                                (mt != jl_type_type_mt && mt != jl_nonfunction_mt)) {
-                            jl_collect_methtable_from_mod(s, mt);
-                            jl_collect_missing_backedges_to_mod(mt);
-                        }
-                    }
-                }
-                else if (jl_is_module(b->value)) {
-                    jl_module_t *child = (jl_module_t*)b->value;
-                    if (child != m && child->parent == m && child->name == b->name) {
-                        // this is the original/primary binding for the submodule
-                        jl_collect_lambdas_from_mod(s, (jl_module_t*)b->value);
-                    }
-                }
+    for (i = 0; i <= (I32) HvMAX(stash); i++) {
+        const HE *entry;
+        for (entry = HvARRAY(stash)[i]; entry; entry = HeNEXT(entry)) {
+            GV * gv = (GV *)HeVAL(entry);
+            if (SvROK(gv) && SvTYPE(SvRV(gv)) == SVt_PVCV)
+                /* unfake a fake GV */
+                (void)CvGV(SvRV(gv));
+            if (SvTYPE(gv) != SVt_PVGV || !GvGP(gv))
+                continue;
+            if (GvCVu(gv))
+                dump_sub_perl(gv, justperl);
+            if (GvFORM(gv))
+                dump_form(gv);
+            if (HeKEY(entry)[HeKLEN(entry)-1] == ':') {
+                const HV * const hv = GvHV(gv);
+                if (hv && (hv != PL_defstash))
+                    dump_packsubs_perl(hv, justperl); /* nested package */
             }
         }
     }
 }
 
-// flatten the backedge map reachable from caller into callees
-static void jl_collect_backedges_to(jl_method_instance_t *caller, htable_t *all_callees) JL_GC_DISABLED
+void
+Perl_dump_sub(pTHX_ const GV *gv)
 {
-    jl_array_t **pcallees = (jl_array_t**)ptrhash_bp(&edges_map, (void*)caller),
-                *callees = *pcallees;
-    if (callees != HT_NOTFOUND) {
-        *pcallees = (jl_array_t*) HT_NOTFOUND;
-        size_t i, l = jl_array_len(callees);
-        for (i = 0; i < l; i++) {
-            jl_value_t *c = jl_array_ptr_ref(callees, i);
-            ptrhash_put(all_callees, c, c);
-            if (jl_is_method_instance(c)) {
-                jl_collect_backedges_to((jl_method_instance_t*)c, all_callees);
-            }
+    PERL_ARGS_ASSERT_DUMP_SUB;
+    dump_sub_perl(gv, FALSE);
+}
+
+void
+Perl_dump_sub_perl(pTHX_ const GV *gv, bool justperl)
+{
+    CV *cv;
+
+    PERL_ARGS_ASSERT_DUMP_SUB_PERL;
+
+    cv = isGV_with_GP(gv) ? GvCV(gv) :
+            (assert(SvROK((SV*)gv)), (CV*)SvRV((SV*)gv));
+    if (justperl && (CvISXSUB(cv) || !CvROOT(cv)))
+        return;
+
+    if (isGV_with_GP(gv)) {
+        SV * const namesv = newSVpvs_flags("", SVs_TEMP);
+        SV *escsv = newSVpvs_flags("", SVs_TEMP);
+        const char *namepv;
+        STRLEN namelen;
+        gv_fullname3(namesv, gv, NULL);
+        namepv = SvPV_const(namesv, namelen);
+        Perl_dump_indent(aTHX_ 0, Perl_debug_log, "\nSUB %s = ",
+                     generic_pv_escape(escsv, namepv, namelen, SvUTF8(namesv)));
+    } else {
+        Perl_dump_indent(aTHX_ 0, Perl_debug_log, "\nSUB = ");
+    }
+    if (CvISXSUB(cv))
+        Perl_dump_indent(aTHX_ 0, Perl_debug_log, "(xsub 0x%" UVxf " %d)\n",
+            PTR2UV(CvXSUB(cv)),
+            (int)CvXSUBANY(cv).any_i32);
+    else if (CvROOT(cv))
+        op_dump(CvROOT(cv));
+    else
+        Perl_dump_indent(aTHX_ 0, Perl_debug_log, "<undef>\n");
+}
+
+void
+Perl_dump_form(pTHX_ const GV *gv)
+{
+    SV * const sv = sv_newmortal();
+
+    PERL_ARGS_ASSERT_DUMP_FORM;
+
+    gv_fullname3(sv, gv, NULL);
+    Perl_dump_indent(aTHX_ 0, Perl_debug_log, "\nFORMAT %s = ", SvPVX_const(sv));
+    if (CvROOT(GvFORM(gv)))
+        op_dump(CvROOT(GvFORM(gv)));
+    else
+        Perl_dump_indent(aTHX_ 0, Perl_debug_log, "<undef>\n");
+}
+
+void
+Perl_dump_eval(pTHX)
+{
+    op_dump(PL_eval_root);
+}
+
+
+/* returns a temp SV displaying the name of a GV. Handles the case where
+ * a GV is in fact a ref to a CV */
+
+static SV *
+S_gv_display(pTHX_ GV *gv)
+{
+    SV * const name = newSVpvs_flags("", SVs_TEMP);
+    if (gv) {
+        SV * const raw = newSVpvs_flags("", SVs_TEMP);
+        STRLEN len;
+        const char * rawpv;
+
+        if (isGV_with_GP(gv))
+            gv_fullname3(raw, gv, NULL);
+        else {
+            assert(SvROK(gv));
+            assert(SvTYPE(SvRV(gv)) == SVt_PVCV);
+            Perl_sv_catpvf(aTHX_ raw, "cv ref: %s",
+                    SvPV_nolen_const(cv_name((CV *)SvRV(gv), name, 0)));
         }
+        rawpv = SvPV_const(raw, len);
+        generic_pv_escape(name, rawpv, len, SvUTF8(raw));
+    }
+    else
+        sv_catpvs(name, "(NULL)");
+
+    return name;
+}
+
+
+
+/* forward decl */
+static void
+S_do_op_dump_bar(pTHX_ I32 level, UV bar, PerlIO *file, const OP *o);
+
+
+static void
+S_do_pmop_dump_bar(pTHX_ I32 level, UV bar, PerlIO *file, const PMOP *pm)
+{
+    UV kidbar;
+
+    if (!pm)
+        return;
+
+    kidbar = ((bar << 1) | cBOOL(pm->op_flags & OPf_KIDS)) << 1;
+
+    if (PM_GETRE(pm)) {
+        char ch = (pm->op_pmflags & PMf_ONCE) ? '?' : '/';
+        S_opdump_indent(aTHX_ (OP*)pm, level, bar, file, "PMf_PRE %c%.*s%c\n",
+             ch,(int)RX_PRELEN(PM_GETRE(pm)), RX_PRECOMP(PM_GETRE(pm)), ch);
+    }
+    else
+        S_opdump_indent(aTHX_ (OP*)pm, level, bar, file, "PMf_PRE (RUNTIME)\n");
+
+    if (pm->op_pmflags || PM_GETRE(pm)) {
+        SV * const tmpsv = pm_description(pm);
+        S_opdump_indent(aTHX_ (OP*)pm, level, bar, file, "PMFLAGS = (%s)\n",
+                        SvCUR(tmpsv) ? SvPVX_const(tmpsv) + 1 : "");
+        SvREFCNT_dec_NN(tmpsv);
+    }
+
+    if (pm->op_type == OP_SPLIT)
+        S_opdump_indent(aTHX_ (OP*)pm, level, bar, file,
+                    "TARGOFF/GV = 0x%" UVxf "\n",
+                    PTR2UV(pm->op_pmreplrootu.op_pmtargetgv));
+    else {
+        if (pm->op_pmreplrootu.op_pmreplroot) {
+            S_opdump_indent(aTHX_ (OP*)pm, level, bar, file, "PMf_REPL =\n");
+            S_do_op_dump_bar(aTHX_ level + 2,
+                (kidbar|cBOOL(OpHAS_SIBLING(pm->op_pmreplrootu.op_pmreplroot))),
+                file, pm->op_pmreplrootu.op_pmreplroot);
+        }
+    }
+
+    if (pm->op_code_list) {
+        if (pm->op_pmflags & PMf_CODELIST_PRIVATE) {
+            S_opdump_indent(aTHX_ (OP*)pm, level, bar, file, "CODE_LIST =\n");
+            S_do_op_dump_bar(aTHX_ level + 2,
+                            (kidbar | cBOOL(OpHAS_SIBLING(pm->op_code_list))),
+                            file, pm->op_code_list);
+        }
+        else
+            S_opdump_indent(aTHX_ (OP*)pm, level, bar, file,
+                        "CODE_LIST = 0x%" UVxf "\n", PTR2UV(pm->op_code_list));
     }
 }
 
-static void jl_collect_backedges(jl_array_t *s, jl_array_t *t)
+
+void
+Perl_do_pmop_dump(pTHX_ I32 level, PerlIO *file, const PMOP *pm)
 {
-    htable_t all_targets;
-    htable_t all_callees;
-    htable_new(&all_targets, 0);
-    htable_new(&all_callees, 0);
-    size_t i;
-    void **table = edges_map.table;
-    for (i = 0; i < edges_map.size; i += 2) {
-        jl_method_instance_t *caller = (jl_method_instance_t*)table[i];
-        jl_array_t *callees = (jl_array_t*)table[i + 1];
-        if (callees != HT_NOTFOUND && module_in_worklist(caller->def.method->module)) {
-            size_t i, l = jl_array_len(callees);
-            for (i = 0; i < l; i++) {
-                jl_value_t *c = jl_array_ptr_ref(callees, i);
-                ptrhash_put(&all_callees, c, c);
-                if (jl_is_method_instance(c)) {
-                    jl_collect_backedges_to((jl_method_instance_t*)c, &all_callees);
+    PERL_ARGS_ASSERT_DO_PMOP_DUMP;
+    S_do_pmop_dump_bar(aTHX_ level, 0, file, pm);
+}
+
+
+const struct flag_to_name pmflags_flags_names[] = {
+    {PMf_CONST, ",CONST"},
+    {PMf_KEEP, ",KEEP"},
+    {PMf_GLOBAL, ",GLOBAL"},
+    {PMf_CONTINUE, ",CONTINUE"},
+    {PMf_RETAINT, ",RETAINT"},
+    {PMf_EVAL, ",EVAL"},
+    {PMf_NONDESTRUCT, ",NONDESTRUCT"},
+    {PMf_HAS_CV, ",HAS_CV"},
+    {PMf_CODELIST_PRIVATE, ",CODELIST_PRIVATE"},
+    {PMf_IS_QR, ",IS_QR"}
+};
+
+static SV *
+S_pm_description(pTHX_ const PMOP *pm)
+{
+    SV * const desc = newSVpvs("");
+    const REGEXP * const regex = PM_GETRE(pm);
+    const U32 pmflags = pm->op_pmflags;
+
+    PERL_ARGS_ASSERT_PM_DESCRIPTION;
+
+    if (pmflags & PMf_ONCE)
+        sv_catpvs(desc, ",ONCE");
+#ifdef USE_ITHREADS
+    if (SvREADONLY(PL_regex_pad[pm->op_pmoffset]))
+        sv_catpvs(desc, ":USED");
+#else
+    if (pmflags & PMf_USED)
+        sv_catpvs(desc, ":USED");
+#endif
+
+    if (regex) {
+        if (RX_ISTAINTED(regex))
+            sv_catpvs(desc, ",TAINTED");
+        if (RX_CHECK_SUBSTR(regex)) {
+            if (!(RX_INTFLAGS(regex) & PREGf_NOSCAN))
+                sv_catpvs(desc, ",SCANFIRST");
+            if (RX_EXTFLAGS(regex) & RXf_CHECK_ALL)
+                sv_catpvs(desc, ",ALL");
+        }
+        if (RX_EXTFLAGS(regex) & RXf_START_ONLY)
+            sv_catpvs(desc, ",START_ONLY");
+        if (RX_EXTFLAGS(regex) & RXf_SKIPWHITE)
+            sv_catpvs(desc, ",SKIPWHITE");
+        if (RX_EXTFLAGS(regex) & RXf_WHITE)
+            sv_catpvs(desc, ",WHITE");
+        if (RX_EXTFLAGS(regex) & RXf_NULL)
+            sv_catpvs(desc, ",NULL");
+    }
+
+    append_flags(desc, pmflags, pmflags_flags_names);
+    return desc;
+}
+
+void
+Perl_pmop_dump(pTHX_ PMOP *pm)
+{
+    do_pmop_dump(0, Perl_debug_log, pm);
+}
+
+/* Return a unique integer to represent the address of op o.
+ * If it already exists in PL_op_sequence, just return it;
+ * otherwise add it.
+ *  *** Note that this isn't thread-safe */
+
+STATIC UV
+S_sequence_num(pTHX_ const OP *o)
+{
+    SV     *op,
+          **seq;
+    const char *key;
+    STRLEN  len;
+    if (!o)
+        return 0;
+    op = newSVuv(PTR2UV(o));
+    sv_2mortal(op);
+    key = SvPV_const(op, len);
+    if (!PL_op_sequence)
+        PL_op_sequence = newHV();
+    seq = hv_fetch(PL_op_sequence, key, len, 0);
+    if (seq)
+        return SvUV(*seq);
+    (void)hv_store(PL_op_sequence, key, len, newSVuv(++PL_op_seq), 0);
+    return PL_op_seq;
+}
+
+
+
+
+
+const struct flag_to_name op_flags_names[] = {
+    {OPf_KIDS, ",KIDS"},
+    {OPf_PARENS, ",PARENS"},
+    {OPf_REF, ",REF"},
+    {OPf_MOD, ",MOD"},
+    {OPf_STACKED, ",STACKED"},
+    {OPf_SPECIAL, ",SPECIAL"}
+};
+
+
+/* indexed by enum OPclass */
+const char * const op_class_names[] = {
+    "NULL",
+    "OP",
+    "UNOP",
+    "BINOP",
+    "LOGOP",
+    "LISTOP",
+    "PMOP",
+    "SVOP",
+    "PADOP",
+    "PVOP",
+    "LOOP",
+    "COP",
+    "METHOP",
+    "UNOP_AUX",
+};
+
+
+/* dump an op and any children. level indicates the initial indent.
+ * The bits of bar indicate which indents should receive a vertical bar.
+ * For example if level == 5 and bar == 0b01101, then the indent prefix
+ * emitted will be (not including the <>'s):
+ *
+ *   <    |   |       |   >
+ *    55554444333322221111
+ *
+ * For heavily nested output, the level may exceed the number of bits
+ * in bar; in this case the first few columns in the output will simply
+ * not have a bar, which is harmless.
+ */
+
+static void
+S_do_op_dump_bar(pTHX_ I32 level, UV bar, PerlIO *file, const OP *o)
+{
+    const OPCODE optype = o->op_type;
+
+    PERL_ARGS_ASSERT_DO_OP_DUMP;
+
+    /* print op header line */
+
+    S_opdump_indent(aTHX_ o, -level-1, bar, file, "%s", OP_NAME(o));
+
+    if (optype == OP_NULL && o->op_targ)
+        PerlIO_printf(file, " (ex-%s)",PL_op_name[o->op_targ]);
+
+    PerlIO_printf(file, " %s(0x%" UVxf ")",
+                    op_class_names[op_class(o)], PTR2UV(o));
+    S_opdump_link(aTHX_ o, o->op_next, file);
+
+    /* print op common fields */
+
+    if (level == 0) {
+        S_opdump_indent(aTHX_ o, level, bar, file, "PARENT");
+        S_opdump_link(aTHX_ o, op_parent((OP*)o), file);
+    }
+    else if (!OpHAS_SIBLING(o)) {
+        bool ok = TRUE;
+        OP *p = o->op_sibparent;
+        if (!p || !(p->op_flags & OPf_KIDS))
+            ok = FALSE;
+        else {
+            OP *kid = cUNOPx(p)->op_first;
+            while (kid != o) {
+                kid = OpSIBLING(kid);
+                if (!kid) {
+                    ok = FALSE;
+                    break;
                 }
             }
-            callees = jl_alloc_array_1d(jl_array_int32_type, 0);
-            void **pc = all_callees.table;
-            size_t j;
-            int valid = 1;
-            for (j = 0; valid && j < all_callees.size; j += 2) {
-                if (pc[j + 1] != HT_NOTFOUND) {
-                    jl_value_t *callee = (jl_value_t*)pc[j];
-                    void *target = ptrhash_get(&all_targets, (void*)callee);
-                    if (target == HT_NOTFOUND) {
-                        jl_method_instance_t *callee_mi = (jl_method_instance_t*)callee;
-                        jl_value_t *sig;
-                        if (jl_is_method_instance(callee)) {
-                            sig = callee_mi->specTypes;
-                        }
-                        else {
-                            sig = callee;
-                        }
-                        size_t min_valid = 0;
-                        size_t max_valid = ~(size_t)0;
-                        int ambig = 0;
-                        jl_value_t *matches = jl_matching_methods((jl_tupletype_t*)sig, -1, 0, jl_world_counter, &min_valid, &max_valid, &ambig);
-                        if (matches == jl_false) {
-                            valid = 0;
+        }
+        if (!ok) {
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "*** WILD PARENT 0x%p\n", p);
+        }
+    }
+
+    if (o->op_targ && optype != OP_NULL)
+            S_opdump_indent(aTHX_ o, level, bar, file, "TARG = %ld\n",
+                (long)o->op_targ);
+
+    if (o->op_flags || o->op_slabbed || o->op_savefree || o->op_static) {
+        SV * const tmpsv = newSVpvs("");
+        switch (o->op_flags & OPf_WANT) {
+        case OPf_WANT_VOID:
+            sv_catpvs(tmpsv, ",VOID");
+            break;
+        case OPf_WANT_SCALAR:
+            sv_catpvs(tmpsv, ",SCALAR");
+            break;
+        case OPf_WANT_LIST:
+            sv_catpvs(tmpsv, ",LIST");
+            break;
+        default:
+            sv_catpvs(tmpsv, ",UNKNOWN");
+            break;
+        }
+        append_flags(tmpsv, o->op_flags, op_flags_names);
+        if (o->op_slabbed)  sv_catpvs(tmpsv, ",SLABBED");
+        if (o->op_savefree) sv_catpvs(tmpsv, ",SAVEFREE");
+        if (o->op_static)   sv_catpvs(tmpsv, ",STATIC");
+        if (o->op_folded)   sv_catpvs(tmpsv, ",FOLDED");
+        if (o->op_moresib)  sv_catpvs(tmpsv, ",MORESIB");
+        S_opdump_indent(aTHX_ o, level, bar, file, "FLAGS = (%s)\n",
+                         SvCUR(tmpsv) ? SvPVX_const(tmpsv) + 1 : "");
+    }
+
+    if (o->op_private) {
+        U16 oppriv = o->op_private;
+        I16 op_ix = PL_op_private_bitdef_ix[o->op_type];
+        SV * tmpsv = NULL;
+
+        if (op_ix != -1) {
+            U16 stop = 0;
+            tmpsv = newSVpvs("");
+            for (; !stop; op_ix++) {
+                U16 entry = PL_op_private_bitdefs[op_ix];
+                U16 bit = (entry >> 2) & 7;
+                U16 ix = entry >> 5;
+
+                stop = (entry & 1);
+
+                if (entry & 2) {
+                    /* bitfield */
+                    I16 const *p = &PL_op_private_bitfields[ix];
+                    U16 bitmin = (U16) *p++;
+                    I16 label = *p++;
+                    I16 enum_label;
+                    U16 mask = 0;
+                    U16 i;
+                    U16 val;
+
+                    for (i = bitmin; i<= bit; i++)
+                        mask |= (1<<i);
+                    bit = bitmin;
+                    val = (oppriv & mask);
+
+                    if (   label != -1
+                        && PL_op_private_labels[label] == '-'
+                        && PL_op_private_labels[label+1] == '\0'
+                    )
+                        /* display as raw number */
+                        continue;
+
+                    oppriv -= val;
+                    val >>= bit;
+                    enum_label = -1;
+                    while (*p != -1) {
+                        if (val == *p++) {
+                            enum_label = *p;
                             break;
                         }
-                        size_t k;
-                        for (k = 0; k < jl_array_len(matches); k++) {
-                            jl_method_match_t *match = (jl_method_match_t *)jl_array_ptr_ref(matches, k);
-                            jl_array_ptr_set(matches, k, match->method);
-                        }
-                        jl_array_ptr_1d_push(t, callee);
-                        jl_array_ptr_1d_push(t, matches);
-                        target = (char*)HT_NOTFOUND + jl_array_len(t) / 2;
-                        ptrhash_put(&all_targets, (void*)callee, target);
+                        p++;
                     }
-                    jl_array_grow_end(callees, 1);
-                    ((int32_t*)jl_array_data(callees))[jl_array_len(callees) - 1] = (char*)target - (char*)HT_NOTFOUND - 1;
-                }
-            }
-            htable_reset(&all_callees, 100);
-            if (valid) {
-                jl_array_ptr_1d_push(s, (jl_value_t*)caller);
-                jl_array_ptr_1d_push(s, (jl_value_t*)callees);
-            }
-        }
-    }
-    htable_free(&all_targets);
-    htable_free(&all_callees);
-}
+                    if (val == 0 && enum_label == -1)
+                        /* don't display anonymous zero values */
+                        continue;
 
-// serialize information about all loaded modules
-static void write_mod_list(ios_t *s, jl_array_t *a)
-{
-    size_t i;
-    size_t len = jl_array_len(a);
-    for (i = 0; i < len; i++) {
-        jl_module_t *m = (jl_module_t*)jl_array_ptr_ref(a, i);
-        assert(jl_is_module(m));
-        if (!module_in_worklist(m)) {
-            const char *modname = jl_symbol_name(m->name);
-            size_t l = strlen(modname);
-            write_int32(s, l);
-            ios_write(s, modname, l);
-            write_uint64(s, m->uuid.hi);
-            write_uint64(s, m->uuid.lo);
-            write_uint64(s, m->build_id);
-        }
-    }
-    write_int32(s, 0);
-}
-
-// "magic" string and version header of .ji file
-static const int JI_FORMAT_VERSION = 11;
-static const char JI_MAGIC[] = "\373jli\r\n\032\n"; // based on PNG signature
-static const uint16_t BOM = 0xFEFF; // byte-order marker
-static void write_header(ios_t *s)
-{
-    ios_write(s, JI_MAGIC, strlen(JI_MAGIC));
-    write_uint16(s, JI_FORMAT_VERSION);
-    ios_write(s, (char *) &BOM, 2);
-    write_uint8(s, sizeof(void*));
-    ios_write(s, JL_BUILD_UNAME, strlen(JL_BUILD_UNAME)+1);
-    ios_write(s, JL_BUILD_ARCH, strlen(JL_BUILD_ARCH)+1);
-    ios_write(s, JULIA_VERSION_STRING, strlen(JULIA_VERSION_STRING)+1);
-    const char *branch = jl_git_branch(), *commit = jl_git_commit();
-    ios_write(s, branch, strlen(branch)+1);
-    ios_write(s, commit, strlen(commit)+1);
-}
-
-// serialize information about the result of deserializing this file
-static void write_work_list(ios_t *s)
-{
-    int i, l = jl_array_len(serializer_worklist);
-    for (i = 0; i < l; i++) {
-        jl_module_t *workmod = (jl_module_t*)jl_array_ptr_ref(serializer_worklist, i);
-        if (workmod->parent == jl_main_module || workmod->parent == workmod) {
-            size_t l = strlen(jl_symbol_name(workmod->name));
-            write_int32(s, l);
-            ios_write(s, jl_symbol_name(workmod->name), l);
-            write_uint64(s, workmod->uuid.hi);
-            write_uint64(s, workmod->uuid.lo);
-            write_uint64(s, workmod->build_id);
-        }
-    }
-    write_int32(s, 0);
-}
-
-static void write_module_path(ios_t *s, jl_module_t *depmod) JL_NOTSAFEPOINT
-{
-    if (depmod->parent == jl_main_module || depmod->parent == depmod)
-        return;
-    const char *mname = jl_symbol_name(depmod->name);
-    size_t slen = strlen(mname);
-    write_module_path(s, depmod->parent);
-    write_int32(s, slen);
-    ios_write(s, mname, slen);
-}
-
-// serialize the global _require_dependencies array of pathnames that
-// are include dependencies
-static int64_t write_dependency_list(ios_t *s, jl_array_t **udepsp, jl_array_t *mod_array)
-{
-    int64_t initial_pos = 0;
-    int64_t pos = 0;
-    static jl_array_t *deps = NULL;
-    if (!deps)
-        deps = (jl_array_t*)jl_get_global(jl_base_module, jl_symbol("_require_dependencies"));
-
-    // unique(deps) to eliminate duplicates while preserving order:
-    // we preserve order so that the topmost included .jl file comes first
-    static jl_value_t *unique_func = NULL;
-    if (!unique_func)
-        unique_func = jl_get_global(jl_base_module, jl_symbol("unique"));
-    jl_value_t *uniqargs[2] = {unique_func, (jl_value_t*)deps};
-    size_t last_age = jl_get_ptls_states()->world_age;
-    jl_get_ptls_states()->world_age = jl_world_counter;
-    jl_array_t *udeps = (*udepsp = deps && unique_func ? (jl_array_t*)jl_apply(uniqargs, 2) : NULL);
-    jl_get_ptls_states()->world_age = last_age;
-
-    // write a placeholder for total size so that we can quickly seek past all of the
-    // dependencies if we don't need them
-    initial_pos = ios_pos(s);
-    write_uint64(s, 0);
-    if (udeps) {
-        size_t i, l = jl_array_len(udeps);
-        for (i = 0; i < l; i++) {
-            jl_value_t *deptuple = jl_array_ptr_ref(udeps, i);
-            jl_value_t *dep = jl_fieldref(deptuple, 1);              // file abspath
-            size_t slen = jl_string_len(dep);
-            write_int32(s, slen);
-            ios_write(s, jl_string_data(dep), slen);
-            write_float64(s, jl_unbox_float64(jl_fieldref(deptuple, 2)));  // mtime
-            jl_module_t *depmod = (jl_module_t*)jl_fieldref(deptuple, 0);  // evaluating module
-            jl_module_t *depmod_top = depmod;
-            while (depmod_top->parent != jl_main_module && depmod_top->parent != depmod_top)
-                depmod_top = depmod_top->parent;
-            unsigned provides = 0;
-            size_t j, lj = jl_array_len(serializer_worklist);
-            for (j = 0; j < lj; j++) {
-                jl_module_t *workmod = (jl_module_t*)jl_array_ptr_ref(serializer_worklist, j);
-                if (workmod->parent == jl_main_module || workmod->parent == workmod) {
-                    ++provides;
-                    if (workmod == depmod_top) {
-                        write_int32(s, provides);
-                        write_module_path(s, depmod);
-                        break;
+                    sv_catpvs(tmpsv, ",");
+                    if (label != -1) {
+                        sv_catpv(tmpsv, &PL_op_private_labels[label]);
+                        sv_catpvs(tmpsv, "=");
                     }
-                }
-            }
-            write_int32(s, 0);
-        }
-        write_int32(s, 0); // terminator, for ease of reading
+                    if (enum_label == -1)
+                        Perl_sv_catpvf(aTHX_ tmpsv, "0x%" UVxf, (UV)val);
+                    else
+                        sv_catpv(tmpsv, &PL_op_private_labels[enum_label]);
 
-        // Calculate Preferences hash for current package.
-        jl_value_t *prefs_hash = NULL;
-        jl_value_t *prefs_list = NULL;
-        JL_GC_PUSH1(&prefs_list);
-        if (jl_base_module) {
-            // Toplevel module is the module we're currently compiling, use it to get our preferences hash
-            jl_value_t * toplevel = (jl_value_t*)jl_get_global(jl_base_module, jl_symbol("__toplevel__"));
-            jl_value_t * prefs_hash_func = jl_get_global(jl_base_module, jl_symbol("get_preferences_hash"));
-            jl_value_t * get_compiletime_prefs_func = jl_get_global(jl_base_module, jl_symbol("get_compiletime_preferences"));
-
-            if (toplevel && prefs_hash_func && get_compiletime_prefs_func) {
-                // Temporary invoke in newest world age
-                size_t last_age = jl_get_ptls_states()->world_age;
-                jl_get_ptls_states()->world_age = jl_world_counter;
-
-                // call get_compiletime_prefs(__toplevel__)
-                jl_value_t *args[3] = {get_compiletime_prefs_func, (jl_value_t*)toplevel, NULL};
-                prefs_list = (jl_value_t*)jl_apply(args, 2);
-
-                // Call get_preferences_hash(__toplevel__, prefs_list)
-                args[0] = prefs_hash_func;
-                args[2] = prefs_list;
-                prefs_hash = (jl_value_t*)jl_apply(args, 3);
-
-                // Reset world age to normal
-                jl_get_ptls_states()->world_age = last_age;
-            }
-        }
-
-        // If we successfully got the preferences, write it out, otherwise write `0` for this `.ji` file.
-        if (prefs_hash != NULL && prefs_list != NULL) {
-            size_t i, l = jl_array_len(prefs_list);
-            for (i = 0; i < l; i++) {
-                jl_value_t *pref_name = jl_array_ptr_ref(prefs_list, i);
-                size_t slen = jl_string_len(pref_name);
-                write_int32(s, slen);
-                ios_write(s, jl_string_data(pref_name), slen);
-            }
-            write_int32(s, 0); // terminator
-            write_uint64(s, jl_unbox_uint64(prefs_hash));
-        } else {
-            // This is an error path, but let's at least generate a valid `.ji` file.
-            // We declare an empty list of preference names, followed by a zero-hash.
-            // The zero-hash is not what would be generated for an empty set of preferences,
-            // and so this `.ji` file will be invalidated by a future non-erroring pass
-            // through this function.
-            write_int32(s, 0);
-            write_uint64(s, 0);
-        }
-        JL_GC_POP(); // for prefs_list
-
-        // write a dummy file position to indicate the beginning of the source-text
-        pos = ios_pos(s);
-        ios_seek(s, initial_pos);
-        write_uint64(s, pos - initial_pos);
-        ios_seek(s, pos);
-        write_int64(s, 0);
-    }
-    return pos;
-}
-
-// --- deserialize ---
-
-static jl_value_t *jl_deserialize_value(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED;
-
-static jl_value_t *jl_deserialize_datatype(jl_serializer_state *s, int pos, jl_value_t **loc) JL_GC_DISABLED
-{
-    assert(pos == backref_list.len - 1 && "nothing should have been deserialized since assigning pos");
-    int tag = read_uint8(s->s);
-    if (tag == 6 || tag == 7) {
-        jl_typename_t *name = (jl_typename_t*)jl_deserialize_value(s, NULL);
-        jl_value_t *dtv = name->wrapper;
-        jl_svec_t *parameters = (jl_svec_t*)jl_deserialize_value(s, NULL);
-        dtv = jl_apply_type(dtv, jl_svec_data(parameters), jl_svec_len(parameters));
-        backref_list.items[pos] = dtv;
-        return dtv;
-    }
-    if (tag == 9) {
-        jl_datatype_t *primarydt = (jl_datatype_t*)jl_deserialize_value(s, NULL);
-        jl_value_t *dtv = jl_typeof(jl_get_kwsorter((jl_value_t*)primarydt));
-        backref_list.items[pos] = dtv;
-        return dtv;
-    }
-    if (!(tag == 0 || tag == 5 || tag == 10 || tag == 11 || tag == 12)) {
-        assert(0 && "corrupt deserialization state");
-        abort();
-    }
-    jl_datatype_t *dt = jl_new_uninitialized_datatype();
-    backref_list.items[pos] = dt;
-    if (loc != NULL && loc != HT_NOTFOUND)
-        *loc = (jl_value_t*)dt;
-    size_t size = read_int32(s->s);
-    uint8_t flags = read_uint8(s->s);
-    uint8_t memflags = read_uint8(s->s);
-    dt->size = size;
-    dt->abstract = flags & 1;
-    dt->mutabl = (flags >> 1) & 1;
-    int has_layout = (flags >> 2) & 1;
-    int has_instance = (flags >> 3) & 1;
-    dt->hasfreetypevars = memflags & 1;
-    dt->isconcretetype = (memflags >> 1) & 1;
-    dt->isdispatchtuple = (memflags >> 2) & 1;
-    dt->isbitstype = (memflags >> 3) & 1;
-    dt->zeroinit = (memflags >> 4) & 1;
-    dt->isinlinealloc = (memflags >> 5) & 1;
-    dt->has_concrete_subtype = (memflags >> 6) & 1;
-    dt->cached_by_hash = (memflags >> 7) & 1;
-    if (!dt->abstract)
-        dt->ninitialized = read_uint16(s->s);
-    else
-        dt->ninitialized = 0;
-    dt->hash = read_int32(s->s);
-
-    if (has_layout) {
-        uint8_t layout = read_uint8(s->s);
-        if (layout == 1) {
-            dt->layout = ((jl_datatype_t*)jl_unwrap_unionall((jl_value_t*)jl_array_type))->layout;
-        }
-        else if (layout == 2) {
-            dt->layout = jl_nothing_type->layout;
-        }
-        else if (layout == 3) {
-            dt->layout = ((jl_datatype_t*)jl_unwrap_unionall((jl_value_t*)jl_pointer_type))->layout;
-        }
-        else {
-            assert(layout == 0);
-            jl_datatype_layout_t buffer;
-            ios_readall(s->s, (char*)&buffer, sizeof(buffer));
-            uint32_t nf = buffer.nfields;
-            uint32_t np = buffer.npointers;
-            uint8_t fielddesc_type = buffer.fielddesc_type;
-            size_t fielddesc_size = nf > 0 ? jl_fielddesc_size(fielddesc_type) : 0;
-            size_t fldsize = nf * fielddesc_size;
-            if (buffer.first_ptr != -1)
-                fldsize += np << fielddesc_type;
-            jl_datatype_layout_t *layout = (jl_datatype_layout_t*)jl_gc_perm_alloc(
-                    sizeof(jl_datatype_layout_t) + fldsize,
-                    0, 4, 0);
-            *layout = buffer;
-            ios_readall(s->s, (char*)(layout + 1), fldsize);
-            dt->layout = layout;
-        }
-    }
-
-    if (tag == 10 || tag == 11 || tag == 12) {
-        assert(pos > 0);
-        arraylist_push(&flagref_list, loc == HT_NOTFOUND ? NULL : loc);
-        arraylist_push(&flagref_list, (void*)(uintptr_t)pos);
-        ptrhash_put(&uniquing_table, dt, NULL);
-    }
-
-    if (has_instance) {
-        assert(dt->isconcretetype && "there shouldn't be an instance on an abstract type");
-        dt->instance = jl_deserialize_value(s, &dt->instance);
-        jl_gc_wb(dt, dt->instance);
-    }
-    dt->name = (jl_typename_t*)jl_deserialize_value(s, (jl_value_t**)&dt->name);
-    jl_gc_wb(dt, dt->name);
-    dt->names = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&dt->names);
-    jl_gc_wb(dt, dt->names);
-    dt->parameters = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&dt->parameters);
-    jl_gc_wb(dt, dt->parameters);
-    dt->super = (jl_datatype_t*)jl_deserialize_value(s, (jl_value_t**)&dt->super);
-    jl_gc_wb(dt, dt->super);
-    dt->types = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&dt->types);
-    if (dt->types) jl_gc_wb(dt, dt->types);
-
-    return (jl_value_t*)dt;
-}
-
-static jl_value_t *jl_deserialize_value_svec(jl_serializer_state *s, uint8_t tag, jl_value_t **loc) JL_GC_DISABLED
-{
-    size_t i, len;
-    if (tag == TAG_SVEC)
-        len = read_uint8(s->s);
-    else
-        len = read_int32(s->s);
-    jl_svec_t *sv = jl_alloc_svec(len);
-    if (loc != NULL)
-        *loc = (jl_value_t*)sv;
-    arraylist_push(&backref_list, (jl_value_t*)sv);
-    jl_value_t **data = jl_svec_data(sv);
-    for (i = 0; i < len; i++) {
-        data[i] = jl_deserialize_value(s, &data[i]);
-    }
-    return (jl_value_t*)sv;
-}
-
-static jl_value_t *jl_deserialize_value_symbol(jl_serializer_state *s, uint8_t tag) JL_GC_DISABLED
-{
-    size_t len;
-    if (tag == TAG_SYMBOL)
-        len = read_uint8(s->s);
-    else
-        len = read_int32(s->s);
-    char *name = (char*)(len >= 256 ? malloc_s(len + 1) : alloca(len + 1));
-    ios_readall(s->s, name, len);
-    name[len] = '\0';
-    jl_value_t *sym = (jl_value_t*)jl_symbol(name);
-    if (len >= 256)
-        free(name);
-    arraylist_push(&backref_list, sym);
-    return sym;
-}
-
-static jl_value_t *jl_deserialize_value_array(jl_serializer_state *s, uint8_t tag) JL_GC_DISABLED
-{
-    int16_t i, ndims;
-    int isptr, isunion, hasptr, elsize;
-    if (tag == TAG_ARRAY1D) {
-        ndims = 1;
-        elsize = read_uint8(s->s);
-        isptr = (elsize >> 7) & 1;
-        hasptr = (elsize >> 6) & 1;
-        isunion = (elsize >> 5) & 1;
-        elsize = elsize & 0x1f;
-    }
-    else {
-        ndims = read_uint16(s->s);
-        elsize = read_uint16(s->s);
-        isptr = (elsize >> 15) & 1;
-        hasptr = (elsize >> 14) & 1;
-        isunion = (elsize >> 13) & 1;
-        elsize = elsize & 0x1fff;
-    }
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, NULL);
-    size_t *dims = (size_t*)alloca(ndims * sizeof(size_t));
-    for (i = 0; i < ndims; i++) {
-        dims[i] = jl_unbox_long(jl_deserialize_value(s, NULL));
-    }
-    jl_array_t *a = jl_new_array_for_deserialization(
-            (jl_value_t*)NULL, ndims, dims, !isptr, hasptr, isunion, elsize);
-    backref_list.items[pos] = a;
-    jl_value_t *aty = jl_deserialize_value(s, &jl_astaggedvalue(a)->type);
-    jl_set_typeof(a, aty);
-    if (a->flags.ptrarray) {
-        jl_value_t **data = (jl_value_t**)jl_array_data(a);
-        size_t i, numel = jl_array_len(a);
-        for (i = 0; i < numel; i++) {
-            data[i] = jl_deserialize_value(s, &data[i]);
-            //if (data[i]) // not needed because `a` is new (gc is disabled)
-            //    jl_gc_wb(a, data[i]);
-        }
-        assert(jl_astaggedvalue(a)->bits.gc == GC_CLEAN); // gc is disabled
-    }
-    else if (a->flags.hasptr) {
-        size_t i, numel = jl_array_len(a);
-        char *data = (char*)jl_array_data(a);
-        uint16_t elsz = a->elsize;
-        jl_datatype_t *et = (jl_datatype_t*)jl_tparam0(jl_typeof(a));
-        size_t j, np = et->layout->npointers;
-        for (i = 0; i < numel; i++) {
-            char *start = data;
-            for (j = 0; j < np; j++) {
-                uint32_t ptr = jl_ptr_offset(et, j);
-                jl_value_t **fld = &((jl_value_t**)data)[ptr];
-                if ((char*)fld != start)
-                    ios_readall(s->s, start, (const char*)fld - start);
-                *fld = jl_deserialize_value(s, fld);
-                //if (*fld) // not needed because `a` is new (gc is disabled)
-                //    jl_gc_wb(a, *fld);
-                start = (char*)&fld[1];
-            }
-            data += elsz;
-            if (data != start)
-                ios_readall(s->s, start, data - start);
-        }
-        assert(jl_astaggedvalue(a)->bits.gc == GC_CLEAN); // gc is disabled
-    }
-    else {
-        size_t extra = jl_array_isbitsunion(a) ? jl_array_len(a) : 0;
-        size_t tot = jl_array_len(a) * a->elsize + extra;
-        ios_readall(s->s, (char*)jl_array_data(a), tot);
-    }
-    return (jl_value_t*)a;
-}
-
-static jl_value_t *jl_deserialize_value_method(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED
-{
-    jl_method_t *m =
-        (jl_method_t*)jl_gc_alloc(s->ptls, sizeof(jl_method_t),
-                                  jl_method_type);
-    memset(m, 0, sizeof(jl_method_t));
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, m);
-    m->sig = (jl_value_t*)jl_deserialize_value(s, (jl_value_t**)&m->sig);
-    jl_gc_wb(m, m->sig);
-    m->module = (jl_module_t*)jl_deserialize_value(s, (jl_value_t**)&m->module);
-    jl_gc_wb(m, m->module);
-    int internal = read_uint8(s->s);
-    if (!internal) {
-        assert(loc != NULL && loc != HT_NOTFOUND);
-        arraylist_push(&flagref_list, loc);
-        arraylist_push(&flagref_list, (void*)pos);
-        return (jl_value_t*)m;
-    }
-    m->specializations = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&m->specializations);
-    jl_gc_wb(m, m->specializations);
-    m->speckeyset = (jl_array_t*)jl_deserialize_value(s, (jl_value_t**)&m->speckeyset);
-    jl_gc_wb(m, m->speckeyset);
-    m->name = (jl_sym_t*)jl_deserialize_value(s, NULL);
-    jl_gc_wb(m, m->name);
-    m->file = (jl_sym_t*)jl_deserialize_value(s, NULL);
-    m->line = read_int32(s->s);
-    m->primary_world = jl_world_counter;
-    m->deleted_world = ~(size_t)0;
-    m->called = read_int32(s->s);
-    m->nargs = read_int32(s->s);
-    m->nospecialize = read_int32(s->s);
-    m->nkw = read_int32(s->s);
-    m->isva = read_int8(s->s);
-    m->pure = read_int8(s->s);
-    m->is_for_opaque_closure = read_int8(s->s);
-    m->aggressive_constprop = read_int8(s->s);
-    m->slot_syms = jl_deserialize_value(s, (jl_value_t**)&m->slot_syms);
-    jl_gc_wb(m, m->slot_syms);
-    m->roots = (jl_array_t*)jl_deserialize_value(s, (jl_value_t**)&m->roots);
-    if (m->roots)
-        jl_gc_wb(m, m->roots);
-    m->ccallable = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&m->ccallable);
-    if (m->ccallable) {
-        jl_gc_wb(m, m->ccallable);
-        arraylist_push(&ccallable_list, m->ccallable);
-    }
-    m->source = jl_deserialize_value(s, &m->source);
-    if (m->source)
-        jl_gc_wb(m, m->source);
-    m->unspecialized = (jl_method_instance_t*)jl_deserialize_value(s, (jl_value_t**)&m->unspecialized);
-    if (m->unspecialized)
-        jl_gc_wb(m, m->unspecialized);
-    m->generator = jl_deserialize_value(s, (jl_value_t**)&m->generator);
-    if (m->generator)
-        jl_gc_wb(m, m->generator);
-    m->invokes = jl_deserialize_value(s, (jl_value_t**)&m->invokes);
-    jl_gc_wb(m, m->invokes);
-    m->recursion_relation = jl_deserialize_value(s, (jl_value_t**)&m->recursion_relation);
-    if (m->recursion_relation)
-        jl_gc_wb(m, m->recursion_relation);
-    JL_MUTEX_INIT(&m->writelock);
-    return (jl_value_t*)m;
-}
-
-static jl_value_t *jl_deserialize_value_method_instance(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED
-{
-    jl_method_instance_t *mi =
-        (jl_method_instance_t*)jl_gc_alloc(s->ptls, sizeof(jl_method_instance_t),
-                                       jl_method_instance_type);
-    memset(mi, 0, sizeof(jl_method_instance_t));
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, mi);
-    int internal = read_uint8(s->s);
-    mi->specTypes = (jl_value_t*)jl_deserialize_value(s, (jl_value_t**)&mi->specTypes);
-    jl_gc_wb(mi, mi->specTypes);
-    mi->def.value = jl_deserialize_value(s, &mi->def.value);
-    jl_gc_wb(mi, mi->def.value);
-
-    if (!internal) {
-        assert(loc != NULL && loc != HT_NOTFOUND);
-        arraylist_push(&flagref_list, loc);
-        arraylist_push(&flagref_list, (void*)pos);
-        return (jl_value_t*)mi;
-    }
-
-    if (internal == 1) {
-        mi->uninferred = jl_deserialize_value(s, &mi->uninferred);
-        jl_gc_wb(mi, mi->uninferred);
-    }
-    mi->sparam_vals = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&mi->sparam_vals);
-    jl_gc_wb(mi, mi->sparam_vals);
-    mi->backedges = (jl_array_t*)jl_deserialize_value(s, (jl_value_t**)&mi->backedges);
-    if (mi->backedges)
-        jl_gc_wb(mi, mi->backedges);
-    mi->callbacks = (jl_array_t*)jl_deserialize_value(s, (jl_value_t**)&mi->callbacks);
-    if (mi->callbacks)
-        jl_gc_wb(mi, mi->callbacks);
-    mi->cache = (jl_code_instance_t*)jl_deserialize_value(s, (jl_value_t**)&mi->cache);
-    if (mi->cache)
-        jl_gc_wb(mi, mi->cache);
-    return (jl_value_t*)mi;
-}
-
-static jl_value_t *jl_deserialize_value_code_instance(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED
-{
-    jl_code_instance_t *codeinst =
-        (jl_code_instance_t*)jl_gc_alloc(s->ptls, sizeof(jl_code_instance_t), jl_code_instance_type);
-    memset(codeinst, 0, sizeof(jl_code_instance_t));
-    arraylist_push(&backref_list, codeinst);
-    int flags = read_uint8(s->s);
-    int validate = (flags >> 0) & 3;
-    int constret = (flags >> 2) & 1;
-    codeinst->def = (jl_method_instance_t*)jl_deserialize_value(s, (jl_value_t**)&codeinst->def);
-    jl_gc_wb(codeinst, codeinst->def);
-    codeinst->inferred = jl_deserialize_value(s, &codeinst->inferred);
-    jl_gc_wb(codeinst, codeinst->inferred);
-    codeinst->rettype_const = jl_deserialize_value(s, &codeinst->rettype_const);
-    if (codeinst->rettype_const)
-        jl_gc_wb(codeinst, codeinst->rettype_const);
-    codeinst->rettype = jl_deserialize_value(s, &codeinst->rettype);
-    jl_gc_wb(codeinst, codeinst->rettype);
-    if (constret)
-        codeinst->invoke = jl_fptr_const_return;
-    if ((flags >> 3) & 1)
-        codeinst->precompile = 1;
-    codeinst->next = (jl_code_instance_t*)jl_deserialize_value(s, (jl_value_t**)&codeinst->next);
-    jl_gc_wb(codeinst, codeinst->next);
-    if (validate)
-        codeinst->min_world = jl_world_counter;
-    return (jl_value_t*)codeinst;
-}
-
-static jl_value_t *jl_deserialize_value_module(jl_serializer_state *s) JL_GC_DISABLED
-{
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, NULL);
-    jl_sym_t *mname = (jl_sym_t*)jl_deserialize_value(s, NULL);
-    int ref_only = read_uint8(s->s);
-    if (ref_only) {
-        jl_value_t *m_ref;
-        if (ref_only == 1)
-            m_ref = jl_get_global((jl_module_t*)jl_deserialize_value(s, NULL), mname);
-        else
-            m_ref = jl_array_ptr_ref(s->loaded_modules_array, read_int32(s->s));
-        backref_list.items[pos] = m_ref;
-        return m_ref;
-    }
-    jl_module_t *m = jl_new_module(mname);
-    backref_list.items[pos] = m;
-    m->parent = (jl_module_t*)jl_deserialize_value(s, (jl_value_t**)&m->parent);
-    jl_gc_wb(m, m->parent);
-
-    while (1) {
-        jl_sym_t *asname = (jl_sym_t*)jl_deserialize_value(s, NULL);
-        if (asname == NULL)
-            break;
-        jl_binding_t *b = jl_get_binding_wr(m, asname, 1);
-        b->name = (jl_sym_t*)jl_deserialize_value(s, (jl_value_t**)&b->name);
-        b->value = jl_deserialize_value(s, &b->value);
-        if (b->value != NULL) jl_gc_wb(m, b->value);
-        b->globalref = jl_deserialize_value(s, &b->globalref);
-        if (b->globalref != NULL) jl_gc_wb(m, b->globalref);
-        b->owner = (jl_module_t*)jl_deserialize_value(s, (jl_value_t**)&b->owner);
-        if (b->owner != NULL) jl_gc_wb(m, b->owner);
-        int8_t flags = read_int8(s->s);
-        b->deprecated = (flags>>3) & 1;
-        b->constp = (flags>>2) & 1;
-        b->exportp = (flags>>1) & 1;
-        b->imported = (flags) & 1;
-    }
-    size_t i = m->usings.len;
-    size_t ni = read_int32(s->s);
-    arraylist_grow(&m->usings, ni);
-    ni += i;
-    while (i < ni) {
-        m->usings.items[i] = jl_deserialize_value(s, (jl_value_t**)&m->usings.items[i]);
-        i++;
-    }
-    m->istopmod = read_uint8(s->s);
-    m->uuid.hi = read_uint64(s->s);
-    m->uuid.lo = read_uint64(s->s);
-    m->build_id = read_uint64(s->s);
-    m->counter = read_int32(s->s);
-    m->nospecialize = read_int32(s->s);
-    m->optlevel = read_int8(s->s);
-    m->compile = read_int8(s->s);
-    m->infer = read_int8(s->s);
-    m->primary_world = jl_world_counter;
-    return (jl_value_t*)m;
-}
-
-static jl_value_t *jl_deserialize_value_singleton(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED
-{
-    jl_value_t *v = (jl_value_t*)jl_gc_alloc(s->ptls, 0, NULL);
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, (void*)v);
-    // TODO: optimize the case where the value can easily be obtained
-    // from an external module (tag == 6) as dt->instance
-    assert(loc != HT_NOTFOUND);
-    // if loc == NULL, then the caller can't provide the address where the instance will be
-    // stored. this happens if a field might store a 0-size value, but the field itself is
-    // not 0 size, e.g. `::Union{Int,Nothing}`
-    if (loc != NULL) {
-        arraylist_push(&flagref_list, loc);
-        arraylist_push(&flagref_list, (void*)pos);
-    }
-    jl_datatype_t *dt = (jl_datatype_t*)jl_deserialize_value(s, (jl_value_t**)HT_NOTFOUND); // no loc, since if dt is replaced, then dt->instance would be also
-    jl_set_typeof(v, dt);
-    if (dt->instance == NULL)
-        return v;
-    return dt->instance;
-}
-
-static void jl_deserialize_struct(jl_serializer_state *s, jl_value_t *v) JL_GC_DISABLED
-{
-    jl_datatype_t *dt = (jl_datatype_t*)jl_typeof(v);
-    char *data = (char*)jl_data_ptr(v);
-    size_t i, np = dt->layout->npointers;
-    char *start = data;
-    for (i = 0; i < np; i++) {
-        uint32_t ptr = jl_ptr_offset(dt, i);
-        jl_value_t **fld = &((jl_value_t**)data)[ptr];
-        if ((char*)fld != start)
-            ios_readall(s->s, start, (const char*)fld - start);
-        *fld = jl_deserialize_value(s, fld);
-        //if (*fld)// a is new (gc is disabled)
-        //    jl_gc_wb(a, *fld);
-        start = (char*)&fld[1];
-    }
-    data += jl_datatype_size(dt);
-    if (data != start)
-        ios_readall(s->s, start, data - start);
-    if (dt == jl_typemap_entry_type) {
-        jl_typemap_entry_t *entry = (jl_typemap_entry_t*)v;
-        if (entry->max_world == ~(size_t)0) {
-            if (entry->min_world > 1) {
-                // update world validity to reflect current state of the counter
-                entry->min_world = jl_world_counter;
-            }
-        }
-        else {
-            // garbage entry - delete it :(
-            entry->min_world = 1;
-            entry->max_world = 0;
-        }
-    }
-}
-
-static jl_value_t *jl_deserialize_value_any(jl_serializer_state *s, uint8_t tag, jl_value_t **loc) JL_GC_DISABLED
-{
-    int32_t sz = (tag == TAG_SHORT_GENERAL ? read_uint8(s->s) : read_int32(s->s));
-    jl_value_t *v = jl_gc_alloc(s->ptls, sz, NULL);
-    jl_set_typeof(v, (void*)(intptr_t)0x50);
-    uintptr_t pos = backref_list.len;
-    arraylist_push(&backref_list, v);
-    jl_datatype_t *dt = (jl_datatype_t*)jl_deserialize_value(s, &jl_astaggedvalue(v)->type);
-    assert(sz != 0 || loc);
-    if (dt == jl_typename_type) {
-        int internal = read_uint8(s->s);
-        jl_typename_t *tn;
-        if (internal) {
-            tn = (jl_typename_t*)jl_gc_alloc(
-                    s->ptls, sizeof(jl_typename_t), jl_typename_type);
-            memset(tn, 0, sizeof(jl_typename_t));
-            tn->cache = jl_emptysvec; // the cache is refilled later (tag 5)
-            tn->linearcache = jl_emptysvec; // the cache is refilled later (tag 5)
-            tn->partial = NULL;
-            backref_list.items[pos] = tn;
-        }
-        jl_module_t *m = (jl_module_t*)jl_deserialize_value(s, NULL);
-        jl_sym_t *sym = (jl_sym_t*)jl_deserialize_value(s, NULL);
-        if (internal) {
-            tn->module = m;
-            tn->name = sym;
-            tn->names = (jl_svec_t*)jl_deserialize_value(s, (jl_value_t**)&tn->names);
-            jl_gc_wb(tn, tn->names);
-            tn->wrapper = jl_deserialize_value(s, &tn->wrapper);
-            jl_gc_wb(tn, tn->wrapper);
-            tn->mt = (jl_methtable_t*)jl_deserialize_value(s, (jl_value_t**)&tn->mt);
-            jl_gc_wb(tn, tn->mt);
-            ios_read(s->s, (char*)&tn->hash, sizeof(tn->hash));
-        }
-        else {
-            jl_datatype_t *dt = (jl_datatype_t*)jl_unwrap_unionall(jl_get_global(m, sym));
-            assert(jl_is_datatype(dt));
-            tn = dt->name;
-            backref_list.items[pos] = tn;
-        }
-        return (jl_value_t*)tn;
-    }
-    jl_set_typeof(v, dt);
-    if ((jl_value_t*)dt == jl_bigint_type) {
-        jl_value_t *sizefield = jl_deserialize_value(s, NULL);
-        int32_t sz = jl_unbox_int32(sizefield);
-        int32_t nw = (sz == 0 ? 1 : (sz < 0 ? -sz : sz));
-        size_t nb = nw * gmp_limb_size;
-        void *buf = jl_gc_counted_malloc(nb);
-        if (buf == NULL)
-            jl_throw(jl_memory_exception);
-        ios_readall(s->s, (char*)buf, nb);
-        jl_set_nth_field(v, 0, jl_box_int32(nw));
-        jl_set_nth_field(v, 1, sizefield);
-        jl_set_nth_field(v, 2, jl_box_voidpointer(buf));
-    }
-    else {
-        jl_deserialize_struct(s, v);
-    }
-    return v;
-}
-
-static jl_value_t *jl_deserialize_value(jl_serializer_state *s, jl_value_t **loc) JL_GC_DISABLED
-{
-    assert(!ios_eof(s->s));
-    jl_value_t *v;
-    size_t n;
-    uintptr_t pos;
-    uint8_t tag = read_uint8(s->s);
-    if (tag > LAST_TAG)
-        return deser_tag[tag];
-    switch (tag) {
-    case TAG_NULL: return NULL;
-    case 0:
-        tag = read_uint8(s->s);
-        return deser_tag[tag];
-    case TAG_BACKREF: JL_FALLTHROUGH; case TAG_SHORT_BACKREF: ;
-        uintptr_t offs = (tag == TAG_BACKREF) ? read_int32(s->s) : read_uint16(s->s);
-        int isflagref = 0;
-        isflagref = !!(offs & 1);
-        offs >>= 1;
-        // assert(offs >= 0); // offs is unsigned so this is always true
-        assert(offs < backref_list.len);
-        jl_value_t *bp = (jl_value_t*)backref_list.items[offs];
-        assert(bp);
-        if (isflagref && loc != HT_NOTFOUND) {
-            if (loc != NULL) {
-                // as in jl_deserialize_value_singleton, the caller won't have a place to
-                // store this reference given a field type like Union{Int,Nothing}
-                arraylist_push(&flagref_list, loc);
-                arraylist_push(&flagref_list, (void*)(uintptr_t)-1);
-            }
-        }
-        return (jl_value_t*)bp;
-    case TAG_SVEC: JL_FALLTHROUGH; case TAG_LONG_SVEC:
-        return jl_deserialize_value_svec(s, tag, loc);
-    case TAG_COMMONSYM:
-        return deser_symbols[read_uint8(s->s)];
-    case TAG_SYMBOL: JL_FALLTHROUGH; case TAG_LONG_SYMBOL:
-        return jl_deserialize_value_symbol(s, tag);
-    case TAG_ARRAY: JL_FALLTHROUGH; case TAG_ARRAY1D:
-        return jl_deserialize_value_array(s, tag);
-    case TAG_UNIONALL:
-        pos = backref_list.len;
-        arraylist_push(&backref_list, NULL);
-        if (read_uint8(s->s)) {
-            jl_module_t *m = (jl_module_t*)jl_deserialize_value(s, NULL);
-            jl_sym_t *sym = (jl_sym_t*)jl_deserialize_value(s, NULL);
-            jl_value_t *v = jl_get_global(m, sym);
-            assert(jl_is_unionall(v));
-            backref_list.items[pos] = v;
-            return v;
-        }
-        v = jl_gc_alloc(s->ptls, sizeof(jl_unionall_t), jl_unionall_type);
-        backref_list.items[pos] = v;
-        ((jl_unionall_t*)v)->var = (jl_tvar_t*)jl_deserialize_value(s, (jl_value_t**)&((jl_unionall_t*)v)->var);
-        jl_gc_wb(v, ((jl_unionall_t*)v)->var);
-        ((jl_unionall_t*)v)->body = jl_deserialize_value(s, &((jl_unionall_t*)v)->body);
-        jl_gc_wb(v, ((jl_unionall_t*)v)->body);
-        return v;
-    case TAG_TVAR:
-        v = jl_gc_alloc(s->ptls, sizeof(jl_tvar_t), jl_tvar_type);
-        jl_tvar_t *tv = (jl_tvar_t*)v;
-        arraylist_push(&backref_list, tv);
-        tv->name = (jl_sym_t*)jl_deserialize_value(s, NULL);
-        jl_gc_wb(tv, tv->name);
-        tv->lb = jl_deserialize_value(s, &tv->lb);
-        jl_gc_wb(tv, tv->lb);
-        tv->ub = jl_deserialize_value(s, &tv->ub);
-        jl_gc_wb(tv, tv->ub);
-        return (jl_value_t*)tv;
-    case TAG_METHOD:
-        return jl_deserialize_value_method(s, loc);
-    case TAG_METHOD_INSTANCE:
-        return jl_deserialize_value_method_instance(s, loc);
-    case TAG_CODE_INSTANCE:
-        return jl_deserialize_value_code_instance(s, loc);
-    case TAG_MODULE:
-        return jl_deserialize_value_module(s);
-    case TAG_SHORTER_INT64:
-        v = jl_box_int64((int16_t)read_uint16(s->s));
-        arraylist_push(&backref_list, v);
-        return v;
-    case TAG_SHORT_INT64:
-        v = jl_box_int64(read_int32(s->s));
-        arraylist_push(&backref_list, v);
-        return v;
-    case TAG_INT64:
-        v = jl_box_int64((int64_t)read_uint64(s->s));
-        arraylist_push(&backref_list, v);
-        return v;
-    case TAG_SHORT_INT32:
-        v = jl_box_int32((int16_t)read_uint16(s->s));
-        arraylist_push(&backref_list, v);
-        return v;
-    case TAG_INT32:
-        v = jl_box_int32(read_int32(s->s));
-        arraylist_push(&backref_list, v);
-        return v;
-    case TAG_UINT8:
-        return jl_box_uint8(read_uint8(s->s));
-    case TAG_SINGLETON:
-        return jl_deserialize_value_singleton(s, loc);
-    case TAG_CORE:
-        return (jl_value_t*)jl_core_module;
-    case TAG_BASE:
-        return (jl_value_t*)jl_base_module;
-    case TAG_CNULL:
-        v = jl_gc_alloc(s->ptls, sizeof(void*), NULL);
-        jl_set_typeof(v, (void*)(intptr_t)0x50);
-        *(void**)v = NULL;
-        uintptr_t pos = backref_list.len;
-        arraylist_push(&backref_list, v);
-        jl_set_typeof(v, jl_deserialize_value(s, &jl_astaggedvalue(v)->type));
-        return v;
-    case TAG_BITYPENAME:
-        v = deser_tag[read_uint8(s->s)];
-        return (jl_value_t*)((jl_datatype_t*)jl_unwrap_unionall(v))->name;
-    case TAG_STRING:
-        n = read_int32(s->s);
-        v = jl_alloc_string(n);
-        arraylist_push(&backref_list, v);
-        ios_readall(s->s, jl_string_data(v), n);
-        return v;
-    case TAG_DATATYPE:
-        pos = backref_list.len;
-        arraylist_push(&backref_list, NULL);
-        return jl_deserialize_datatype(s, pos, loc);
-    default:
-        assert(tag == TAG_GENERAL || tag == TAG_SHORT_GENERAL);
-        return jl_deserialize_value_any(s, tag, loc);
-    }
-}
-
-static void jl_insert_methods(jl_array_t *list)
-{
-    size_t i, l = jl_array_len(list);
-    for (i = 0; i < l; i += 2) {
-        jl_method_t *meth = (jl_method_t*)jl_array_ptr_ref(list, i);
-        assert(!meth->is_for_opaque_closure);
-        jl_tupletype_t *simpletype = (jl_tupletype_t*)jl_array_ptr_ref(list, i + 1);
-        assert(jl_is_method(meth));
-        jl_methtable_t *mt = jl_method_table_for((jl_value_t*)meth->sig);
-        assert((jl_value_t*)mt != jl_nothing);
-        jl_method_table_insert(mt, meth, simpletype);
-    }
-}
-
-// verify that these edges intersect with the same methods as before
-static void jl_verify_edges(jl_array_t *targets, jl_array_t **pvalids)
-{
-    size_t i, l = jl_array_len(targets) / 2;
-    jl_array_t *valids = jl_alloc_array_1d(jl_array_uint8_type, l);
-    memset(jl_array_data(valids), 1, l);
-    *pvalids = valids;
-    for (i = 0; i < l; i++) {
-        jl_value_t *callee = jl_array_ptr_ref(targets, i * 2);
-        jl_method_instance_t *callee_mi = (jl_method_instance_t*)callee;
-        jl_value_t *sig;
-        if (jl_is_method_instance(callee)) {
-            sig = callee_mi->specTypes;
-        }
-        else {
-            sig = callee;
-        }
-        jl_array_t *expected = (jl_array_t*)jl_array_ptr_ref(targets, i * 2 + 1);
-        assert(jl_is_array(expected));
-        int valid = 1;
-        size_t min_valid = 0;
-        size_t max_valid = ~(size_t)0;
-        int ambig = 0;
-        // TODO: possibly need to included ambiguities too (for the optimizer correctness)?
-        jl_value_t *matches = jl_matching_methods((jl_tupletype_t*)sig, -1, 0, jl_world_counter, &min_valid, &max_valid, &ambig);
-        if (matches == jl_false || jl_array_len(matches) != jl_array_len(expected)) {
-            valid = 0;
-        }
-        else {
-            size_t j, k, l = jl_array_len(expected);
-            for (k = 0; k < jl_array_len(matches); k++) {
-                jl_method_match_t *match = (jl_method_match_t*)jl_array_ptr_ref(matches, k);
-                jl_method_t *m = match->method;
-                for (j = 0; j < l; j++) {
-                    if (m == (jl_method_t*)jl_array_ptr_ref(expected, j))
-                        break;
-                }
-                if (j == l) {
-                    // intersection has a new method or a method was
-                    // deleted--this is now probably no good, just invalidate
-                    // everything about it now
-                    valid = 0;
-                    break;
-                }
-            }
-        }
-        jl_array_uint8_set(valids, i, valid);
-    }
-}
-
-static void jl_insert_backedges(jl_array_t *list, jl_array_t *targets)
-{
-    // map(enable, ((list[i] => targets[list[i + 1] .* 2]) for i in 1:2:length(list) if all(valids[list[i + 1]])))
-    size_t i, l = jl_array_len(list);
-    jl_array_t *valids = NULL;
-    jl_value_t *loctag = NULL;
-    JL_GC_PUSH2(&valids, &loctag);
-    jl_verify_edges(targets, &valids);
-    for (i = 0; i < l; i += 2) {
-        jl_method_instance_t *caller = (jl_method_instance_t*)jl_array_ptr_ref(list, i);
-        assert(jl_is_method_instance(caller) && jl_is_method(caller->def.method));
-        assert(caller->def.method->primary_world == jl_world_counter); // caller should be new
-        jl_array_t *idxs_array = (jl_array_t*)jl_array_ptr_ref(list, i + 1);
-        assert(jl_isa((jl_value_t*)idxs_array, jl_array_int32_type));
-        int32_t *idxs = (int32_t*)jl_array_data(idxs_array);
-        int valid = 1;
-        size_t j;
-        for (j = 0; valid && j < jl_array_len(idxs_array); j++) {
-            int32_t idx = idxs[j];
-            valid = jl_array_uint8_ref(valids, idx);
-        }
-        if (valid) {
-            // if this callee is still valid, add all the backedges
-            for (j = 0; j < jl_array_len(idxs_array); j++) {
-                int32_t idx = idxs[j];
-                jl_value_t *callee = jl_array_ptr_ref(targets, idx * 2);
-                if (jl_is_method_instance(callee)) {
-                    jl_method_instance_add_backedge((jl_method_instance_t*)callee, caller);
                 }
                 else {
-                    jl_methtable_t *mt = jl_method_table_for(callee);
-                    assert((jl_value_t*)mt != jl_nothing);
-                    jl_method_table_add_backedge(mt, callee, (jl_value_t*)caller);
+                    /* bit flag */
+                    if (   oppriv & (1<<bit)
+                        && !(PL_op_private_labels[ix] == '-'
+                             && PL_op_private_labels[ix+1] == '\0'))
+                    {
+                        oppriv -= (1<<bit);
+                        sv_catpvs(tmpsv, ",");
+                        sv_catpv(tmpsv, &PL_op_private_labels[ix]);
+                    }
                 }
             }
-            // then enable it
-            jl_code_instance_t *codeinst = caller->cache;
-            while (codeinst) {
-                if (codeinst->min_world > 0)
-                    codeinst->max_world = ~(size_t)0;
-                codeinst = jl_atomic_load_relaxed(&codeinst->next);
+            if (oppriv) {
+                sv_catpvs(tmpsv, ",");
+                Perl_sv_catpvf(aTHX_ tmpsv, "0x%" UVxf, (UV)oppriv);
             }
+        }
+        if (tmpsv && SvCUR(tmpsv)) {
+            S_opdump_indent(aTHX_ o, level, bar, file, "PRIVATE = (%s)\n",
+                            SvPVX_const(tmpsv) + 1);
+        } else
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "PRIVATE = (0x%" UVxf ")\n", (UV)oppriv);
+    }
+
+    switch (optype) {
+    case OP_AELEMFAST:
+    case OP_GVSV:
+    case OP_GV:
+#ifdef USE_ITHREADS
+        S_opdump_indent(aTHX_ o, level, bar, file,
+                        "PADIX = %" IVdf "\n", (IV)cPADOPo->op_padix);
+#else
+        S_opdump_indent(aTHX_ o, level, bar, file,
+            "GV = %" SVf " (0x%" UVxf ")\n",
+            SVfARG(S_gv_display(aTHX_ cGVOPo_gv)), PTR2UV(cGVOPo_gv));
+#endif
+        break;
+
+    case OP_MULTIDEREF:
+    {
+        UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
+        UV i, count = items[-1].uv;
+
+        S_opdump_indent(aTHX_ o, level, bar, file, "ARGS = \n");
+        for (i=0; i < count;  i++)
+            S_opdump_indent(aTHX_ o, level+1, (bar << 1), file,
+                                    "%" UVuf " => 0x%" UVxf "\n",
+                                    i, items[i].uv);
+        break;
+    }
+
+    case OP_MULTICONCAT:
+        S_opdump_indent(aTHX_ o, level, bar, file, "NARGS = %" IVdf "\n",
+            (IV)cUNOP_AUXo->op_aux[PERL_MULTICONCAT_IX_NARGS].ssize);
+        /* XXX really ought to dump each field individually,
+         * but that's too much like hard work */
+        S_opdump_indent(aTHX_ o, level, bar, file, "CONSTS = (%" SVf ")\n",
+            SVfARG(multiconcat_stringify(o)));
+        break;
+
+    case OP_CONST:
+    case OP_HINTSEVAL:
+    case OP_METHOD_NAMED:
+    case OP_METHOD_SUPER:
+    case OP_METHOD_REDIR:
+    case OP_METHOD_REDIR_SUPER:
+#ifndef USE_ITHREADS
+        /* with ITHREADS, consts are stored in the pad, and the right pad
+         * may not be active here, so skip */
+        S_opdump_indent(aTHX_ o, level, bar, file, "SV = %s\n",
+                        SvPEEK(cMETHOPx_meth(o)));
+#endif
+        break;
+    case OP_NULL:
+        if (o->op_targ != OP_NEXTSTATE && o->op_targ != OP_DBSTATE)
+            break;
+        /* FALLTHROUGH */
+    case OP_NEXTSTATE:
+    case OP_DBSTATE:
+        if (CopLINE(cCOPo))
+            S_opdump_indent(aTHX_ o, level, bar, file, "LINE = %" UVuf "\n",
+                             (UV)CopLINE(cCOPo));
+
+        if (CopSTASHPV(cCOPo)) {
+            SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+            HV *stash = CopSTASH(cCOPo);
+            const char * const hvname = HvNAME_get(stash);
+
+            S_opdump_indent(aTHX_ o, level, bar, file, "PACKAGE = \"%s\"\n",
+                               generic_pv_escape(tmpsv, hvname,
+                                  HvNAMELEN(stash), HvNAMEUTF8(stash)));
+        }
+
+        if (CopLABEL(cCOPo)) {
+            SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+            STRLEN label_len;
+            U32 label_flags;
+            const char *label = CopLABEL_len_flags(cCOPo,
+                                                     &label_len, &label_flags);
+            S_opdump_indent(aTHX_ o, level, bar, file, "LABEL = \"%s\"\n",
+                                generic_pv_escape( tmpsv, label, label_len,
+                                           (label_flags & SVf_UTF8)));
+        }
+
+        S_opdump_indent(aTHX_ o, level, bar, file, "SEQ = %u\n",
+                         (unsigned int)cCOPo->cop_seq);
+        break;
+
+    case OP_ENTERITER:
+    case OP_ENTERLOOP:
+        S_opdump_indent(aTHX_ o, level, bar, file, "REDO");
+        S_opdump_link(aTHX_ o, cLOOPo->op_redoop, file);
+        S_opdump_indent(aTHX_ o, level, bar, file, "NEXT");
+        S_opdump_link(aTHX_ o, cLOOPo->op_nextop, file);
+        S_opdump_indent(aTHX_ o, level, bar, file, "LAST");
+        S_opdump_link(aTHX_ o, cLOOPo->op_lastop, file);
+        break;
+
+    case OP_REGCOMP:
+    case OP_SUBSTCONT:
+    case OP_COND_EXPR:
+    case OP_RANGE:
+    case OP_MAPWHILE:
+    case OP_GREPWHILE:
+    case OP_OR:
+    case OP_DOR:
+    case OP_AND:
+    case OP_ORASSIGN:
+    case OP_DORASSIGN:
+    case OP_ANDASSIGN:
+    case OP_ARGDEFELEM:
+    case OP_ENTERGIVEN:
+    case OP_ENTERWHEN:
+    case OP_ENTERTRY:
+    case OP_ONCE:
+        S_opdump_indent(aTHX_ o, level, bar, file, "OTHER");
+        S_opdump_link(aTHX_ o, cLOGOPo->op_other, file);
+        break;
+    case OP_SPLIT:
+    case OP_MATCH:
+    case OP_QR:
+    case OP_SUBST:
+        S_do_pmop_dump_bar(aTHX_ level, bar, file, cPMOPo);
+        break;
+    case OP_LEAVE:
+    case OP_LEAVEEVAL:
+    case OP_LEAVESUB:
+    case OP_LEAVESUBLV:
+    case OP_LEAVEWRITE:
+    case OP_SCOPE:
+        if (o->op_private & OPpREFCOUNTED)
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "REFCNT = %" UVuf "\n", (UV)o->op_targ);
+        break;
+
+    case OP_DUMP:
+    case OP_GOTO:
+    case OP_NEXT:
+    case OP_LAST:
+    case OP_REDO:
+        if (o->op_flags & (OPf_SPECIAL|OPf_STACKED|OPf_KIDS))
+            break;
+        {
+            SV * const label = newSVpvs_flags("", SVs_TEMP);
+            generic_pv_escape(label, cPVOPo->op_pv, strlen(cPVOPo->op_pv), 0);
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "PV = \"%" SVf "\" (0x%" UVxf ")\n",
+                            SVfARG(label), PTR2UV(cPVOPo->op_pv));
+            break;
+        }
+
+    case OP_TRANS:
+    case OP_TRANSR:
+        if (o->op_private & OPpTRANS_USE_SVOP) {
+            /* utf8: table stored as an inversion map */
+#ifndef USE_ITHREADS
+        /* with ITHREADS, it is stored in the pad, and the right pad
+         * may not be active here, so skip */
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "INVMAP = 0x%" UVxf "\n",
+                            PTR2UV(MUTABLE_SV(cSVOPo->op_sv)));
+#endif
         }
         else {
-            if (_jl_debug_method_invalidation) {
-                jl_array_ptr_1d_push(_jl_debug_method_invalidation, (jl_value_t*)caller);
-                loctag = jl_cstr_to_string("insert_backedges");
-                jl_array_ptr_1d_push(_jl_debug_method_invalidation, loctag);
+            const OPtrans_map * const tbl = (OPtrans_map*)cPVOPo->op_pv;
+            SSize_t i, size = tbl->size;
+
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                            "TABLE = 0x%" UVxf "\n",
+                            PTR2UV(tbl));
+            S_opdump_indent(aTHX_ o, level, bar, file,
+                "  SIZE: 0x%" UVxf "\n", (UV)size);
+
+            /* dump size+1 values, to include the extra slot at the end */
+            for (i = 0; i <= size; i++) {
+                short val = tbl->map[i];
+                if ((i & 0xf) == 0)
+                    S_opdump_indent(aTHX_ o, level, bar, file,
+                        " %4" UVxf ":", (UV)i);
+                if (val < 0)
+                    PerlIO_printf(file, " %2"  IVdf, (IV)val);
+                else
+                    PerlIO_printf(file, " %02" UVxf, (UV)val);
+
+                if ( i == size || (i & 0xf) == 0xf)
+                    PerlIO_printf(file, "\n");
             }
         }
-    }
-    JL_GC_POP();
-}
+        break;
 
 
-static jl_value_t *read_verify_mod_list(ios_t *s, jl_array_t *mod_list)
-{
-    if (!jl_main_module->build_id) {
-        return jl_get_exceptionf(jl_errorexception_type,
-                "Main module uuid state is invalid for module deserialization.");
+    default:
+        break;
     }
-    size_t i, l = jl_array_len(mod_list);
-    for (i = 0; ; i++) {
-        size_t len = read_int32(s);
-        if (len == 0 && i == l)
-            return NULL; // success
-        if (len == 0 || i == l)
-            return jl_get_exceptionf(jl_errorexception_type, "Wrong number of entries in module list.");
-        char *name = (char*)alloca(len + 1);
-        ios_readall(s, name, len);
-        name[len] = '\0';
-        jl_uuid_t uuid;
-        uuid.hi = read_uint64(s);
-        uuid.lo = read_uint64(s);
-        uint64_t build_id = read_uint64(s);
-        jl_sym_t *sym = _jl_symbol(name, len);
-        jl_module_t *m = (jl_module_t*)jl_array_ptr_ref(mod_list, i);
-        if (!m || !jl_is_module(m) || m->uuid.hi != uuid.hi || m->uuid.lo != uuid.lo || m->name != sym || m->build_id != build_id) {
-            return jl_get_exceptionf(jl_errorexception_type,
-                "Invalid input in module list: expected %s.", name);
-        }
+    if (o->op_flags & OPf_KIDS) {
+        OP *kid;
+        level++;
+        bar <<= 1;
+        for (kid = cUNOPo->op_first; kid; kid = OpSIBLING(kid))
+            S_do_op_dump_bar(aTHX_ level,
+                            (bar | cBOOL(OpHAS_SIBLING(kid))),
+                            file, kid);
     }
 }
 
-static int readstr_verify(ios_t *s, const char *str)
+
+void
+Perl_do_op_dump(pTHX_ I32 level, PerlIO *file, const OP *o)
 {
-    size_t i, len = strlen(str);
-    for (i = 0; i < len; ++i)
-        if ((char)read_uint8(s) != str[i])
-            return 0;
-    return 1;
+    S_do_op_dump_bar(aTHX_ level, 0, file, o);
 }
 
-JL_DLLEXPORT int jl_read_verify_header(ios_t *s)
+
+/*
+=for apidoc op_dump
+
+Dumps the optree starting at OP C<o> to C<STDERR>.
+
+=cut
+*/
+
+void
+Perl_op_dump(pTHX_ const OP *o)
 {
-    uint16_t bom;
-    return (readstr_verify(s, JI_MAGIC) &&
-            read_uint16(s) == JI_FORMAT_VERSION &&
-            ios_read(s, (char *) &bom, 2) == 2 && bom == BOM &&
-            read_uint8(s) == sizeof(void*) &&
-            readstr_verify(s, JL_BUILD_UNAME) && !read_uint8(s) &&
-            readstr_verify(s, JL_BUILD_ARCH) && !read_uint8(s) &&
-            readstr_verify(s, JULIA_VERSION_STRING) && !read_uint8(s) &&
-            readstr_verify(s, jl_git_branch()) && !read_uint8(s) &&
-            readstr_verify(s, jl_git_commit()) && !read_uint8(s));
+    PERL_ARGS_ASSERT_OP_DUMP;
+    do_op_dump(0, Perl_debug_log, o);
 }
 
-static void jl_finalize_serializer(jl_serializer_state *s)
+void
+Perl_gv_dump(pTHX_ GV *gv)
 {
-    size_t i, l;
-    // save module initialization order
-    if (jl_module_init_order != NULL) {
-        l = jl_array_len(jl_module_init_order);
-        for (i = 0; i < l; i++) {
-            // verify that all these modules were saved
-            assert(ptrhash_get(&backref_table, jl_array_ptr_ref(jl_module_init_order, i)) != HT_NOTFOUND);
-        }
-    }
-    jl_serialize_value(s, jl_module_init_order);
+    STRLEN len;
+    const char* name;
+    SV *sv, *tmp = newSVpvs_flags("", SVs_TEMP);
 
-    // record list of reinitialization functions
-    l = reinit_list.len;
-    for (i = 0; i < l; i += 2) {
-        write_int32(s->s, (int)((uintptr_t) reinit_list.items[i]));
-        write_int32(s->s, (int)((uintptr_t) reinit_list.items[i+1]));
-    }
-    write_int32(s->s, -1);
-}
-
-static void jl_reinit_item(jl_value_t *v, int how, arraylist_t *tracee_list)
-{
-    JL_TRY {
-        switch (how) {
-            case 1: { // rehash IdDict
-                jl_array_t **a = (jl_array_t**)v;
-                // Assume *a don't need a write barrier
-                *a = jl_idtable_rehash(*a, jl_array_len(*a));
-                jl_gc_wb(v, *a);
-                break;
-            }
-            case 2: { // reinsert module v into parent (const)
-                jl_module_t *mod = (jl_module_t*)v;
-                if (mod->parent == mod) // top level modules handled by loader
-                    break;
-                jl_binding_t *b = jl_get_binding_wr(mod->parent, mod->name, 1);
-                jl_declare_constant(b); // this can throw
-                if (b->value != NULL) {
-                    if (!jl_is_module(b->value)) {
-                        jl_errorf("Invalid redefinition of constant %s.",
-                                  jl_symbol_name(mod->name)); // this also throws
-                    }
-                    if (jl_generating_output() && jl_options.incremental) {
-                        jl_errorf("Cannot replace module %s during incremental precompile.", jl_symbol_name(mod->name));
-                    }
-                    jl_printf(JL_STDERR, "WARNING: replacing module %s.\n", jl_symbol_name(mod->name));
-                }
-                b->value = v;
-                jl_gc_wb_binding(b, v);
-                break;
-            }
-            case 3: { // rehash MethodTable
-                jl_methtable_t *mt = (jl_methtable_t*)v;
-                if (tracee_list)
-                    arraylist_push(tracee_list, mt);
-                break;
-            }
-            default:
-                assert(0 && "corrupt deserialization state");
-                abort();
-        }
-    }
-    JL_CATCH {
-        jl_printf((JL_STREAM*)STDERR_FILENO, "WARNING: error while reinitializing value ");
-        jl_static_show((JL_STREAM*)STDERR_FILENO, v);
-        jl_printf((JL_STREAM*)STDERR_FILENO, ":\n");
-        jl_static_show((JL_STREAM*)STDERR_FILENO, jl_current_exception());
-        jl_printf((JL_STREAM*)STDERR_FILENO, "\n");
-        jlbacktrace(); // written to STDERR_FILENO
-    }
-}
-
-static jl_array_t *jl_finalize_deserializer(jl_serializer_state *s, arraylist_t *tracee_list)
-{
-    jl_array_t *init_order = (jl_array_t*)jl_deserialize_value(s, NULL);
-
-    // run reinitialization functions
-    int pos = read_int32(s->s);
-    while (pos != -1) {
-        jl_reinit_item((jl_value_t*)backref_list.items[pos], read_int32(s->s), tracee_list);
-        pos = read_int32(s->s);
-    }
-    return init_order;
-}
-
-JL_DLLEXPORT void jl_init_restored_modules(jl_array_t *init_order)
-{
-    if (!init_order)
+    if (!gv) {
+        PerlIO_printf(Perl_debug_log, "{}\n");
         return;
-    int i, l = jl_array_len(init_order);
-    for (i = 0; i < l; i++) {
-        jl_value_t *mod = jl_array_ptr_ref(init_order, i);
-        if (!jl_generating_output() || jl_options.incremental) {
-            jl_module_run_initializer((jl_module_t*)mod);
+    }
+    sv = sv_newmortal();
+    PerlIO_printf(Perl_debug_log, "{\n");
+    gv_fullname3(sv, gv, NULL);
+    name = SvPV_const(sv, len);
+    Perl_dump_indent(aTHX_ 1, Perl_debug_log, "GV_NAME = %s",
+                     generic_pv_escape( tmp, name, len, SvUTF8(sv) ));
+    if (gv != GvEGV(gv)) {
+        gv_efullname3(sv, GvEGV(gv), NULL);
+        name = SvPV_const(sv, len);
+        Perl_dump_indent(aTHX_ 1, Perl_debug_log, "-> %s",
+                     generic_pv_escape( tmp, name, len, SvUTF8(sv) ));
+    }
+    (void)PerlIO_putc(Perl_debug_log, '\n');
+    Perl_dump_indent(aTHX_ 0, Perl_debug_log, "}\n");
+}
+
+
+/* map magic types to the symbolic names
+ * (with the PERL_MAGIC_ prefixed stripped)
+ */
+
+static const struct { const char type; const char *name; } magic_names[] = {
+#include "mg_names.inc"
+        /* this null string terminates the list */
+        { 0,                         NULL },
+};
+
+void
+Perl_do_magic_dump(pTHX_ I32 level, PerlIO *file, const MAGIC *mg, I32 nest, I32 maxnest, bool dumpops, STRLEN pvlim)
+{
+    PERL_ARGS_ASSERT_DO_MAGIC_DUMP;
+
+    for (; mg; mg = mg->mg_moremagic) {
+        Perl_dump_indent(aTHX_ level, file,
+                         "  MAGIC = 0x%" UVxf "\n", PTR2UV(mg));
+        if (mg->mg_virtual) {
+            const MGVTBL * const v = mg->mg_virtual;
+            if (v >= PL_magic_vtables
+                && v < PL_magic_vtables + magic_vtable_max) {
+                const U32 i = v - PL_magic_vtables;
+                Perl_dump_indent(aTHX_ level, file, "    MG_VIRTUAL = &PL_vtbl_%s\n", PL_magic_vtable_names[i]);
+            }
+            else
+                Perl_dump_indent(aTHX_ level, file, "    MG_VIRTUAL = 0x%"
+                                       UVxf "\n", PTR2UV(v));
         }
-        else {
-            if (jl_module_init_order == NULL)
-                jl_module_init_order = jl_alloc_vec_any(0);
-            jl_array_ptr_1d_push(jl_module_init_order, mod);
+        else
+            Perl_dump_indent(aTHX_ level, file, "    MG_VIRTUAL = 0\n");
+
+        if (mg->mg_private)
+            Perl_dump_indent(aTHX_ level, file, "    MG_PRIVATE = %d\n", mg->mg_private);
+
+        {
+            int n;
+            const char *name = NULL;
+            for (n = 0; magic_names[n].name; n++) {
+                if (mg->mg_type == magic_names[n].type) {
+                    name = magic_names[n].name;
+                    break;
+                }
+            }
+            if (name)
+                Perl_dump_indent(aTHX_ level, file,
+                                "    MG_TYPE = PERL_MAGIC_%s\n", name);
+            else
+                Perl_dump_indent(aTHX_ level, file,
+                                "    MG_TYPE = UNKNOWN(\\%o)\n", mg->mg_type);
+        }
+
+        if (mg->mg_flags) {
+            Perl_dump_indent(aTHX_ level, file, "    MG_FLAGS = 0x%02X\n", mg->mg_flags);
+            if (mg->mg_type == PERL_MAGIC_envelem &&
+                mg->mg_flags & MGf_TAINTEDDIR)
+                Perl_dump_indent(aTHX_ level, file, "      TAINTEDDIR\n");
+            if (mg->mg_type == PERL_MAGIC_regex_global &&
+                mg->mg_flags & MGf_MINMATCH)
+                Perl_dump_indent(aTHX_ level, file, "      MINMATCH\n");
+            if (mg->mg_flags & MGf_REFCOUNTED)
+                Perl_dump_indent(aTHX_ level, file, "      REFCOUNTED\n");
+            if (mg->mg_flags & MGf_GSKIP)
+                Perl_dump_indent(aTHX_ level, file, "      GSKIP\n");
+            if (mg->mg_flags & MGf_COPY)
+                Perl_dump_indent(aTHX_ level, file, "      COPY\n");
+            if (mg->mg_flags & MGf_DUP)
+                Perl_dump_indent(aTHX_ level, file, "      DUP\n");
+            if (mg->mg_flags & MGf_LOCAL)
+                Perl_dump_indent(aTHX_ level, file, "      LOCAL\n");
+            if (mg->mg_type == PERL_MAGIC_regex_global &&
+                mg->mg_flags & MGf_BYTES)
+                Perl_dump_indent(aTHX_ level, file, "      BYTES\n");
+        }
+        if (mg->mg_obj) {
+            Perl_dump_indent(aTHX_ level, file, "    MG_OBJ = 0x%" UVxf "\n",
+                PTR2UV(mg->mg_obj));
+            if (mg->mg_type == PERL_MAGIC_qr) {
+                REGEXP* const re = (REGEXP *)mg->mg_obj;
+                SV * const dsv = sv_newmortal();
+                const char * const s
+                    = pv_pretty(dsv, RX_WRAPPED(re), RX_WRAPLEN(re),
+                    60, NULL, NULL,
+                    ( PERL_PV_PRETTY_QUOTE | PERL_PV_ESCAPE_RE | PERL_PV_PRETTY_ELLIPSES |
+                    (RX_UTF8(re) ? PERL_PV_ESCAPE_UNI : 0))
+                );
+                Perl_dump_indent(aTHX_ level+1, file, "    PAT = %s\n", s);
+                Perl_dump_indent(aTHX_ level+1, file, "    REFCNT = %" IVdf "\n",
+                        (IV)RX_REFCNT(re));
+            }
+            if (mg->mg_flags & MGf_REFCOUNTED)
+                do_sv_dump(level+2, file, mg->mg_obj, nest+1, maxnest, dumpops, pvlim); /* MG is already +1 */
+        }
+        if (mg->mg_len)
+            Perl_dump_indent(aTHX_ level, file, "    MG_LEN = %ld\n", (long)mg->mg_len);
+        if (mg->mg_ptr) {
+            Perl_dump_indent(aTHX_ level, file, "    MG_PTR = 0x%" UVxf, PTR2UV(mg->mg_ptr));
+            if (mg->mg_len >= 0) {
+                if (mg->mg_type != PERL_MAGIC_utf8) {
+                    SV * const sv = newSVpvs("");
+                    PerlIO_printf(file, " %s", pv_display(sv, mg->mg_ptr, mg->mg_len, 0, pvlim));
+                    SvREFCNT_dec_NN(sv);
+                }
+            }
+            else if (mg->mg_len == HEf_SVKEY) {
+                PerlIO_puts(file, " => HEf_SVKEY\n");
+                do_sv_dump(level+2, file, MUTABLE_SV(((mg)->mg_ptr)), nest+1,
+                           maxnest, dumpops, pvlim); /* MG is already +1 */
+                continue;
+            }
+            else if (mg->mg_len == -1 && mg->mg_type == PERL_MAGIC_utf8);
+            else
+                PerlIO_puts(
+                  file,
+                 " ???? - " __FILE__
+                 " does not know how to handle this MG_LEN"
+                );
+            (void)PerlIO_putc(file, '\n');
+        }
+        if (mg->mg_type == PERL_MAGIC_utf8) {
+            const STRLEN * const cache = (STRLEN *) mg->mg_ptr;
+            if (cache) {
+                IV i;
+                for (i = 0; i < PERL_MAGIC_UTF8_CACHESIZE; i++)
+                    Perl_dump_indent(aTHX_ level, file,
+                                     "      %2" IVdf ": %" UVuf " -> %" UVuf "\n",
+                                     i,
+                                     (UV)cache[i * 2],
+                                     (UV)cache[i * 2 + 1]);
+            }
         }
     }
 }
 
-
-// --- entry points ---
-
-JL_DLLEXPORT int jl_save_incremental(const char *fname, jl_array_t *worklist)
+void
+Perl_magic_dump(pTHX_ const MAGIC *mg)
 {
-    JL_TIMING(SAVE_MODULE);
-    ios_t f;
-    jl_array_t *mod_array = NULL, *udeps = NULL;
-    if (ios_file(&f, fname, 1, 1, 1, 1) == NULL) {
-        jl_printf(JL_STDERR, "Cannot open cache file \"%s\" for writing.\n", fname);
-        return 1;
+    do_magic_dump(0, Perl_debug_log, mg, 0, 0, FALSE, 0);
+}
+
+void
+Perl_do_hv_dump(pTHX_ I32 level, PerlIO *file, const char *name, HV *sv)
+{
+    const char *hvname;
+
+    PERL_ARGS_ASSERT_DO_HV_DUMP;
+
+    Perl_dump_indent(aTHX_ level, file, "%s = 0x%" UVxf, name, PTR2UV(sv));
+    if (sv && (hvname = HvNAME_get(sv)))
+    {
+        /* we have to use pv_display and HvNAMELEN_get() so that we display the real package
+           name which quite legally could contain insane things like tabs, newlines, nulls or
+           other scary crap - this should produce sane results - except maybe for unicode package
+           names - but we will wait for someone to file a bug on that - demerphq */
+        SV * const tmpsv = newSVpvs_flags("", SVs_TEMP);
+        PerlIO_printf(file, "\t\"%s\"\n",
+                              generic_pv_escape( tmpsv, hvname,
+                                   HvNAMELEN(sv), HvNAMEUTF8(sv)));
     }
-    JL_GC_PUSH2(&mod_array, &udeps);
-    mod_array = jl_get_loaded_modules();
+    else
+        (void)PerlIO_putc(file, '\n');
+}
 
-    serializer_worklist = worklist;
-    write_header(&f);
-    // write description on contents
-    write_work_list(&f);
-    // write binary blob from caller
-    int64_t srctextpos = write_dependency_list(&f, &udeps, mod_array);
-    // write description of requirements for loading
-    // this can return errors during deserialize,
-    // best to keep it early (before any actual initialization)
-    write_mod_list(&f, mod_array);
+void
+Perl_do_gv_dump(pTHX_ I32 level, PerlIO *file, const char *name, GV *sv)
+{
+    PERL_ARGS_ASSERT_DO_GV_DUMP;
 
-    arraylist_new(&reinit_list, 0);
-    htable_new(&edges_map, 0);
-    htable_new(&backref_table, 5000);
-    ptrhash_put(&backref_table, jl_main_module, (char*)HT_NOTFOUND + 1);
-    backref_table_numel = 1;
-    jl_idtable_type = jl_base_module ? jl_get_global(jl_base_module, jl_symbol("IdDict")) : NULL;
-    jl_idtable_typename = jl_base_module ? ((jl_datatype_t*)jl_unwrap_unionall((jl_value_t*)jl_idtable_type))->name : NULL;
-    jl_bigint_type = jl_base_module ? jl_get_global(jl_base_module, jl_symbol("BigInt")) : NULL;
-    if (jl_bigint_type) {
-        gmp_limb_size = jl_unbox_long(jl_get_global((jl_module_t*)jl_get_global(jl_base_module, jl_symbol("GMP")),
-                                                    jl_symbol("BITS_PER_LIMB"))) / 8;
+    Perl_dump_indent(aTHX_ level, file, "%s = 0x%" UVxf, name, PTR2UV(sv));
+    if (sv && GvNAME(sv)) {
+        SV * const tmpsv = newSVpvs("");
+        PerlIO_printf(file, "\t\"%s\"\n",
+                              generic_pv_escape( tmpsv, GvNAME(sv), GvNAMELEN(sv), GvNAMEUTF8(sv) ));
+    }
+    else
+        (void)PerlIO_putc(file, '\n');
+}
+
+void
+Perl_do_gvgv_dump(pTHX_ I32 level, PerlIO *file, const char *name, GV *sv)
+{
+    PERL_ARGS_ASSERT_DO_GVGV_DUMP;
+
+    Perl_dump_indent(aTHX_ level, file, "%s = 0x%" UVxf, name, PTR2UV(sv));
+    if (sv && GvNAME(sv)) {
+       SV *tmp = newSVpvs_flags("", SVs_TEMP);
+        const char *hvname;
+        HV * const stash = GvSTASH(sv);
+        PerlIO_printf(file, "\t");
+        /* TODO might have an extra \" here */
+        if (stash && (hvname = HvNAME_get(stash))) {
+            PerlIO_printf(file, "\"%s\" :: \"",
+                                  generic_pv_escape(tmp, hvname,
+                                      HvNAMELEN(stash), HvNAMEUTF8(stash)));
+        }
+        PerlIO_printf(file, "%s\"\n",
+                              generic_pv_escape( tmp, GvNAME(sv), GvNAMELEN(sv), GvNAMEUTF8(sv)));
+    }
+    else
+        (void)PerlIO_putc(file, '\n');
+}
+
+const struct flag_to_name first_sv_flags_names[] = {
+    {SVs_TEMP, "TEMP,"},
+    {SVs_OBJECT, "OBJECT,"},
+    {SVs_GMG, "GMG,"},
+    {SVs_SMG, "SMG,"},
+    {SVs_RMG, "RMG,"},
+    {SVf_IOK, "IOK,"},
+    {SVf_NOK, "NOK,"},
+    {SVf_POK, "POK,"}
+};
+
+const struct flag_to_name second_sv_flags_names[] = {
+    {SVf_OOK, "OOK,"},
+    {SVf_FAKE, "FAKE,"},
+    {SVf_READONLY, "READONLY,"},
+    {SVf_PROTECT, "PROTECT,"},
+    {SVf_BREAK, "BREAK,"},
+    {SVp_IOK, "pIOK,"},
+    {SVp_NOK, "pNOK,"},
+    {SVp_POK, "pPOK,"}
+};
+
+const struct flag_to_name cv_flags_names[] = {
+    {CVf_ANON, "ANON,"},
+    {CVf_UNIQUE, "UNIQUE,"},
+    {CVf_CLONE, "CLONE,"},
+    {CVf_CLONED, "CLONED,"},
+    {CVf_CONST, "CONST,"},
+    {CVf_NODEBUG, "NODEBUG,"},
+    {CVf_LVALUE, "LVALUE,"},
+    {CVf_METHOD, "METHOD,"},
+    {CVf_WEAKOUTSIDE, "WEAKOUTSIDE,"},
+    {CVf_CVGV_RC, "CVGV_RC,"},
+    {CVf_DYNFILE, "DYNFILE,"},
+    {CVf_AUTOLOAD, "AUTOLOAD,"},
+    {CVf_HASEVAL, "HASEVAL,"},
+    {CVf_SLABBED, "SLABBED,"},
+    {CVf_NAMED, "NAMED,"},
+    {CVf_LEXICAL, "LEXICAL,"},
+    {CVf_ISXSUB, "ISXSUB,"}
+};
+
+const struct flag_to_name hv_flags_names[] = {
+    {SVphv_SHAREKEYS, "SHAREKEYS,"},
+    {SVphv_LAZYDEL, "LAZYDEL,"},
+    {SVphv_HASKFLAGS, "HASKFLAGS,"},
+    {SVf_AMAGIC, "OVERLOAD,"},
+    {SVphv_CLONEABLE, "CLONEABLE,"}
+};
+
+const struct flag_to_name gp_flags_names[] = {
+    {GVf_INTRO, "INTRO,"},
+    {GVf_MULTI, "MULTI,"},
+    {GVf_ASSUMECV, "ASSUMECV,"},
+};
+
+const struct flag_to_name gp_flags_imported_names[] = {
+    {GVf_IMPORTED_SV, " SV"},
+    {GVf_IMPORTED_AV, " AV"},
+    {GVf_IMPORTED_HV, " HV"},
+    {GVf_IMPORTED_CV, " CV"},
+};
+
+/* NOTE: this structure is mostly duplicative of one generated by
+ * 'make regen' in regnodes.h - perhaps we should somehow integrate
+ * the two. - Yves */
+const struct flag_to_name regexp_extflags_names[] = {
+    {RXf_PMf_MULTILINE,   "PMf_MULTILINE,"},
+    {RXf_PMf_SINGLELINE,  "PMf_SINGLELINE,"},
+    {RXf_PMf_FOLD,        "PMf_FOLD,"},
+    {RXf_PMf_EXTENDED,    "PMf_EXTENDED,"},
+    {RXf_PMf_EXTENDED_MORE, "PMf_EXTENDED_MORE,"},
+    {RXf_PMf_KEEPCOPY,    "PMf_KEEPCOPY,"},
+    {RXf_PMf_NOCAPTURE,   "PMf_NOCAPURE,"},
+    {RXf_IS_ANCHORED,     "IS_ANCHORED,"},
+    {RXf_NO_INPLACE_SUBST, "NO_INPLACE_SUBST,"},
+    {RXf_EVAL_SEEN,       "EVAL_SEEN,"},
+    {RXf_CHECK_ALL,       "CHECK_ALL,"},
+    {RXf_MATCH_UTF8,      "MATCH_UTF8,"},
+    {RXf_USE_INTUIT_NOML, "USE_INTUIT_NOML,"},
+    {RXf_USE_INTUIT_ML,   "USE_INTUIT_ML,"},
+    {RXf_INTUIT_TAIL,     "INTUIT_TAIL,"},
+    {RXf_SPLIT,           "SPLIT,"},
+    {RXf_COPY_DONE,       "COPY_DONE,"},
+    {RXf_TAINTED_SEEN,    "TAINTED_SEEN,"},
+    {RXf_TAINTED,         "TAINTED,"},
+    {RXf_START_ONLY,      "START_ONLY,"},
+    {RXf_SKIPWHITE,       "SKIPWHITE,"},
+    {RXf_WHITE,           "WHITE,"},
+    {RXf_NULL,            "NULL,"},
+};
+
+/* NOTE: this structure is mostly duplicative of one generated by
+ * 'make regen' in regnodes.h - perhaps we should somehow integrate
+ * the two. - Yves */
+const struct flag_to_name regexp_core_intflags_names[] = {
+    {PREGf_SKIP,            "SKIP,"},
+    {PREGf_IMPLICIT,        "IMPLICIT,"},
+    {PREGf_NAUGHTY,         "NAUGHTY,"},
+    {PREGf_VERBARG_SEEN,    "VERBARG_SEEN,"},
+    {PREGf_CUTGROUP_SEEN,   "CUTGROUP_SEEN,"},
+    {PREGf_USE_RE_EVAL,     "USE_RE_EVAL,"},
+    {PREGf_NOSCAN,          "NOSCAN,"},
+    {PREGf_GPOS_SEEN,       "GPOS_SEEN,"},
+    {PREGf_GPOS_FLOAT,      "GPOS_FLOAT,"},
+    {PREGf_ANCH_MBOL,       "ANCH_MBOL,"},
+    {PREGf_ANCH_SBOL,       "ANCH_SBOL,"},
+    {PREGf_ANCH_GPOS,       "ANCH_GPOS,"},
+};
+
+/* Perl_do_sv_dump():
+ *
+ * level:   amount to indent the output
+ * sv:      the object to dump
+ * nest:    the current level of recursion
+ * maxnest: the maximum allowed level of recursion
+ * dumpops: if true, also dump the ops associated with a CV
+ * pvlim:   limit on the length of any strings that are output
+ * */
+
+void
+Perl_do_sv_dump(pTHX_ I32 level, PerlIO *file, SV *sv, I32 nest, I32 maxnest, bool dumpops, STRLEN pvlim)
+{
+    SV *d;
+    const char *s;
+    U32 flags;
+    U32 type;
+
+    PERL_ARGS_ASSERT_DO_SV_DUMP;
+
+    if (!sv) {
+        Perl_dump_indent(aTHX_ level, file, "SV = 0\n");
+        return;
     }
 
-    int en = jl_gc_enable(0); // edges map is not gc-safe
-    jl_array_t *lambdas = jl_alloc_vec_any(0);
-    jl_array_t *edges = jl_alloc_vec_any(0);
-    jl_array_t *targets = jl_alloc_vec_any(0);
+    flags = SvFLAGS(sv);
+    type = SvTYPE(sv);
 
-    size_t i;
-    size_t len = jl_array_len(mod_array);
-    for (i = 0; i < len; i++) {
-        jl_module_t *m = (jl_module_t*)jl_array_ptr_ref(mod_array, i);
-        assert(jl_is_module(m));
-        if (m->parent == m) // some toplevel modules (really just Base) aren't actually
-            jl_collect_lambdas_from_mod(lambdas, m);
+    /* process general SV flags */
+
+    d = Perl_newSVpvf(aTHX_
+                   "(0x%" UVxf ") at 0x%" UVxf "\n%*s  REFCNT = %" IVdf "\n%*s  FLAGS = (",
+                   PTR2UV(SvANY(sv)), PTR2UV(sv),
+                   (int)(PL_dumpindent*level), "", (IV)SvREFCNT(sv),
+                   (int)(PL_dumpindent*level), "");
+
+    if ((flags & SVs_PADSTALE))
+            sv_catpvs(d, "PADSTALE,");
+    if ((flags & SVs_PADTMP))
+            sv_catpvs(d, "PADTMP,");
+    append_flags(d, flags, first_sv_flags_names);
+    if (flags & SVf_ROK)  {	
+                                sv_catpvs(d, "ROK,");
+        if (SvWEAKREF(sv))	sv_catpvs(d, "WEAKREF,");
     }
-    jl_collect_methtable_from_mod(lambdas, jl_type_type_mt);
-    jl_collect_missing_backedges_to_mod(jl_type_type_mt);
-    jl_collect_methtable_from_mod(lambdas, jl_nonfunction_mt);
-    jl_collect_missing_backedges_to_mod(jl_nonfunction_mt);
+    if (flags & SVf_IsCOW && type != SVt_PVHV) sv_catpvs(d, "IsCOW,");
+    append_flags(d, flags, second_sv_flags_names);
+    if (flags & SVp_SCREAM && type != SVt_PVHV && !isGV_with_GP(sv)
+                           && type != SVt_PVAV) {
+        if (SvPCS_IMPORTED(sv))
+                                sv_catpvs(d, "PCS_IMPORTED,");
+        else
+                                sv_catpvs(d, "SCREAM,");
+    }
 
-    jl_collect_backedges(edges, targets);
+    /* process type-specific SV flags */
 
-    jl_serializer_state s = {
-        &f,
-        jl_get_ptls_states(),
-        mod_array
-    };
-    jl_serialize_value(&s, worklist);
-    jl_serialize_value(&s, lambdas);
-    jl_serialize_value(&s, edges);
-    jl_serialize_value(&s, targets);
-    jl_finalize_serializer(&s);
-    serializer_worklist = NULL;
-
-    jl_gc_enable(en);
-    htable_reset(&edges_map, 0);
-    htable_reset(&backref_table, 0);
-    arraylist_free(&reinit_list);
-
-    // Write the source-text for the dependent files
-    if (udeps) {
-        // Go back and update the source-text position to point to the current position
-        int64_t posfile = ios_pos(&f);
-        ios_seek(&f, srctextpos);
-        write_int64(&f, posfile);
-        ios_seek_end(&f);
-        // Each source-text file is written as
-        //   int32: length of abspath
-        //   char*: abspath
-        //   uint64: length of src text
-        //   char*: src text
-        // At the end we write int32(0) as a terminal sentinel.
-        len = jl_array_len(udeps);
-        ios_t srctext;
-        for (i = 0; i < len; i++) {
-            jl_value_t *deptuple = jl_array_ptr_ref(udeps, i);
-            jl_value_t *depmod = jl_fieldref(deptuple, 0);  // module
-            // Dependencies declared with `include_dependency` are excluded
-            // because these may not be Julia code (and could be huge)
-            if (depmod != (jl_value_t*)jl_main_module) {
-                jl_value_t *dep = jl_fieldref(deptuple, 1);  // file abspath
-                const char *depstr = jl_string_data(dep);
-                if (!depstr[0])
-                    continue;
-                ios_t *srctp = ios_file(&srctext, depstr, 1, 0, 0, 0);
-                if (!srctp) {
-                    jl_printf(JL_STDERR, "WARNING: could not cache source text for \"%s\".\n",
-                              jl_string_data(dep));
-                    continue;
-                }
-                size_t slen = jl_string_len(dep);
-                write_int32(&f, slen);
-                ios_write(&f, depstr, slen);
-                posfile = ios_pos(&f);
-                write_uint64(&f, 0);   // placeholder for length of this file in bytes
-                uint64_t filelen = (uint64_t) ios_copyall(&f, &srctext);
-                ios_close(&srctext);
-                ios_seek(&f, posfile);
-                write_uint64(&f, filelen);
-                ios_seek_end(&f);
+    switch (type) {
+    case SVt_PVCV:
+    case SVt_PVFM:
+        append_flags(d, CvFLAGS(sv), cv_flags_names);
+        break;
+    case SVt_PVHV:
+        append_flags(d, flags, hv_flags_names);
+        break;
+    case SVt_PVGV:
+    case SVt_PVLV:
+        if (isGV_with_GP(sv)) {
+            append_flags(d, GvFLAGS(sv), gp_flags_names);
+        }
+        if (isGV_with_GP(sv) && GvIMPORTED(sv)) {
+            sv_catpvs(d, "IMPORT");
+            if (GvIMPORTED(sv) == GVf_IMPORTED)
+                sv_catpvs(d, "ALL,");
+            else {
+                sv_catpvs(d, "(");
+                append_flags(d, GvFLAGS(sv), gp_flags_imported_names);
+                sv_catpvs(d, " ),");
             }
         }
-    }
-    write_int32(&f, 0); // mark the end of the source text
-    ios_close(&f);
-    JL_GC_POP();
+        /* FALLTHROUGH */
+    case SVt_PVMG:
+    default:
+        if (SvIsUV(sv) && !(flags & SVf_ROK))	sv_catpvs(d, "IsUV,");
+        break;
 
+    case SVt_PVAV:
+        break;
+    }
+    /* SVphv_SHAREKEYS is also 0x20000000 */
+    if ((type != SVt_PVHV) && SvUTF8(sv))
+        sv_catpvs(d, "UTF8");
+
+    if (*(SvEND(d) - 1) == ',') {
+        SvCUR_set(d, SvCUR(d) - 1);
+        SvPVX(d)[SvCUR(d)] = '\0';
+    }
+    sv_catpvs(d, ")");
+    s = SvPVX_const(d);
+
+    /* dump initial SV details */
+
+#ifdef DEBUG_LEAKING_SCALARS
+    Perl_dump_indent(aTHX_ level, file,
+        "ALLOCATED at %s:%d %s %s (parent 0x%" UVxf "); serial %" UVuf "\n",
+        sv->sv_debug_file ? sv->sv_debug_file : "(unknown)",
+        sv->sv_debug_line,
+        sv->sv_debug_inpad ? "for" : "by",
+        sv->sv_debug_optype ? PL_op_name[sv->sv_debug_optype]: "(none)",
+        PTR2UV(sv->sv_debug_parent),
+        sv->sv_debug_serial
+    );
+#endif
+    Perl_dump_indent(aTHX_ level, file, "SV = ");
+
+    /* Dump SV type */
+
+    if (type < SVt_LAST) {
+        PerlIO_printf(file, "%s%s\n", svtypenames[type], s);
+
+        if (type ==  SVt_NULL) {
+            SvREFCNT_dec_NN(d);
+            return;
+        }
+    } else {
+        PerlIO_printf(file, "UNKNOWN(0x%" UVxf ") %s\n", (UV)type, s);
+        SvREFCNT_dec_NN(d);
+        return;
+    }
+
+    /* Dump general SV fields */
+
+    if ((type >= SVt_PVIV && type != SVt_PVAV && type != SVt_PVHV
+         && type != SVt_PVCV && type != SVt_PVFM && type != SVt_PVIO
+         && type != SVt_REGEXP && !isGV_with_GP(sv) && !SvVALID(sv))
+        || (type == SVt_IV && !SvROK(sv))) {
+        if (SvIsUV(sv)
+                                     )
+            Perl_dump_indent(aTHX_ level, file, "  UV = %" UVuf, (UV)SvUVX(sv));
+        else
+            Perl_dump_indent(aTHX_ level, file, "  IV = %" IVdf, (IV)SvIVX(sv));
+        (void)PerlIO_putc(file, '\n');
+    }
+
+    if ((type >= SVt_PVNV && type != SVt_PVAV && type != SVt_PVHV
+                && type != SVt_PVCV && type != SVt_PVFM  && type != SVt_REGEXP
+                && type != SVt_PVIO && !isGV_with_GP(sv) && !SvVALID(sv))
+               || type == SVt_NV) {
+        DECLARATION_FOR_LC_NUMERIC_MANIPULATION;
+        STORE_LC_NUMERIC_SET_STANDARD();
+        Perl_dump_indent(aTHX_ level, file, "  NV = %.*" NVgf "\n", NV_DIG, SvNVX(sv));
+        RESTORE_LC_NUMERIC();
+    }
+
+    if (SvROK(sv)) {
+        Perl_dump_indent(aTHX_ level, file, "  RV = 0x%" UVxf "\n",
+                               PTR2UV(SvRV(sv)));
+        if (nest < maxnest)
+            do_sv_dump(level+1, file, SvRV(sv), nest+1, maxnest, dumpops, pvlim);
+    }
+
+    if (type < SVt_PV) {
+        SvREFCNT_dec_NN(d);
+        return;
+    }
+
+    if ((type <= SVt_PVLV && !isGV_with_GP(sv))
+     || (type == SVt_PVIO && IoFLAGS(sv) & IOf_FAKE_DIRP)) {
+        const bool re = isREGEXP(sv);
+        const char * const ptr =
+            re ? RX_WRAPPED((REGEXP*)sv) : SvPVX_const(sv);
+        if (ptr) {
+            STRLEN delta;
+            if (SvOOK(sv)) {
+                SvOOK_offset(sv, delta);
+                Perl_dump_indent(aTHX_ level, file,"  OFFSET = %" UVuf "\n",
+                                 (UV) delta);
+            } else {
+                delta = 0;
+            }
+            Perl_dump_indent(aTHX_ level, file,"  PV = 0x%" UVxf " ",
+                                   PTR2UV(ptr));
+            if (SvOOK(sv)) {
+                PerlIO_printf(file, "( %s . ) ",
+                              pv_display(d, ptr - delta, delta, 0,
+                                         pvlim));
+            }
+            if (type == SVt_INVLIST) {
+                PerlIO_printf(file, "\n");
+                /* 4 blanks indents 2 beyond the PV, etc */
+                _invlist_dump(file, level, "    ", sv);
+            }
+            else {
+                PerlIO_printf(file, "%s", pv_display(d, ptr, SvCUR(sv),
+                                                     re ? 0 : SvLEN(sv),
+                                                     pvlim));
+                if (SvUTF8(sv)) /* the 6?  \x{....} */
+                    PerlIO_printf(file, " [UTF8 \"%s\"]",
+                                         sv_uni_display(d, sv, 6 * SvCUR(sv),
+                                                        UNI_DISPLAY_QQ));
+                PerlIO_printf(file, "\n");
+            }
+            Perl_dump_indent(aTHX_ level, file, "  CUR = %" IVdf "\n", (IV)SvCUR(sv));
+            if (re && type == SVt_PVLV)
+                /* LV-as-REGEXP usurps len field to store pointer to
+                 * regexp struct */
+                Perl_dump_indent(aTHX_ level, file, "  REGEXP = 0x%" UVxf "\n",
+                   PTR2UV(((XPV*)SvANY(sv))->xpv_len_u.xpvlenu_rx));
+            else
+                Perl_dump_indent(aTHX_ level, file, "  LEN = %" IVdf "\n",
+                                       (IV)SvLEN(sv));
+#ifdef PERL_COPY_ON_WRITE
+            if (SvIsCOW(sv) && SvLEN(sv))
+                Perl_dump_indent(aTHX_ level, file, "  COW_REFCNT = %d\n",
+                                       CowREFCNT(sv));
+#endif
+        }
+        else
+            Perl_dump_indent(aTHX_ level, file, "  PV = 0\n");
+    }
+
+    if (type >= SVt_PVMG) {
+        if (SvMAGIC(sv))
+                do_magic_dump(level, file, SvMAGIC(sv), nest+1, maxnest, dumpops, pvlim);
+        if (SvSTASH(sv))
+            do_hv_dump(level, file, "  STASH", SvSTASH(sv));
+
+        if ((type == SVt_PVMG || type == SVt_PVLV) && SvVALID(sv)) {
+            Perl_dump_indent(aTHX_ level, file, "  USEFUL = %" IVdf "\n",
+                                   (IV)BmUSEFUL(sv));
+        }
+    }
+
+    /* Dump type-specific SV fields */
+
+    switch (type) {
+    case SVt_PVAV:
+        Perl_dump_indent(aTHX_ level, file, "  ARRAY = 0x%" UVxf,
+                               PTR2UV(AvARRAY(sv)));
+        if (AvARRAY(sv) != AvALLOC(sv)) {
+            PerlIO_printf(file, " (offset=%" IVdf ")\n",
+                                (IV)(AvARRAY(sv) - AvALLOC(sv)));
+            Perl_dump_indent(aTHX_ level, file, "  ALLOC = 0x%" UVxf "\n",
+                                   PTR2UV(AvALLOC(sv)));
+        }
+        else
+            (void)PerlIO_putc(file, '\n');
+        Perl_dump_indent(aTHX_ level, file, "  FILL = %" IVdf "\n",
+                               (IV)AvFILLp(sv));
+        Perl_dump_indent(aTHX_ level, file, "  MAX = %" IVdf "\n",
+                               (IV)AvMAX(sv));
+        SvPVCLEAR(d);
+        if (AvREAL(sv))	sv_catpvs(d, ",REAL");
+        if (AvREIFY(sv))	sv_catpvs(d, ",REIFY");
+        Perl_dump_indent(aTHX_ level, file, "  FLAGS = (%s)\n",
+                         SvCUR(d) ? SvPVX_const(d) + 1 : "");
+        if (nest < maxnest && AvARRAY(MUTABLE_AV(sv))) {
+            SSize_t count;
+            SV **svp = AvARRAY(MUTABLE_AV(sv));
+            for (count = 0;
+                 count <= AvFILLp(MUTABLE_AV(sv)) && count < maxnest;
+                 count++, svp++)
+            {
+                SV* const elt = *svp;
+                Perl_dump_indent(aTHX_ level + 1, file, "Elt No. %" IVdf "\n",
+                                       (IV)count);
+                do_sv_dump(level+1, file, elt, nest+1, maxnest, dumpops, pvlim);
+            }
+        }
+        break;
+    case SVt_PVHV: {
+        U32 usedkeys;
+        if (SvOOK(sv)) {
+            struct xpvhv_aux *const aux = HvAUX(sv);
+            Perl_dump_indent(aTHX_ level, file, "  AUX_FLAGS = %" UVuf "\n",
+                             (UV)aux->xhv_aux_flags);
+        }
+        Perl_dump_indent(aTHX_ level, file, "  ARRAY = 0x%" UVxf, PTR2UV(HvARRAY(sv)));
+        usedkeys = HvUSEDKEYS(MUTABLE_HV(sv));
+        if (HvARRAY(sv) && usedkeys) {
+            /* Show distribution of HEs in the ARRAY */
+            int freq[200];
+#define FREQ_MAX ((int)(C_ARRAY_LENGTH(freq) - 1))
+            int i;
+            int max = 0;
+            U32 pow2 = 2, keys = usedkeys;
+            NV theoret, sum = 0;
+
+            PerlIO_printf(file, "  (");
+            Zero(freq, FREQ_MAX + 1, int);
+            for (i = 0; (STRLEN)i <= HvMAX(sv); i++) {
+                HE* h;
+                int count = 0;
+                for (h = HvARRAY(sv)[i]; h; h = HeNEXT(h))
+                    count++;
+                if (count > FREQ_MAX)
+                    count = FREQ_MAX;
+                freq[count]++;
+                if (max < count)
+                    max = count;
+            }
+            for (i = 0; i <= max; i++) {
+                if (freq[i]) {
+                    PerlIO_printf(file, "%d%s:%d", i,
+                                  (i == FREQ_MAX) ? "+" : "",
+                                  freq[i]);
+                    if (i != max)
+                        PerlIO_printf(file, ", ");
+                }
+            }
+            (void)PerlIO_putc(file, ')');
+            /* The "quality" of a hash is defined as the total number of
+               comparisons needed to access every element once, relative
+               to the expected number needed for a random hash.
+
+               The total number of comparisons is equal to the sum of
+               the squares of the number of entries in each bucket.
+               For a random hash of n keys into k buckets, the expected
+               value is
+                                n + n(n-1)/2k
+            */
+
+            for (i = max; i > 0; i--) { /* Precision: count down. */
+                sum += freq[i] * i * i;
+            }
+            while ((keys = keys >> 1))
+                pow2 = pow2 << 1;
+            theoret = usedkeys;
+            theoret += theoret * (theoret-1)/pow2;
+            (void)PerlIO_putc(file, '\n');
+            Perl_dump_indent(aTHX_ level, file, "  hash quality = %.1"
+                                   NVff "%%", theoret/sum*100);
+        }
+        (void)PerlIO_putc(file, '\n');
+        Perl_dump_indent(aTHX_ level, file, "  KEYS = %" IVdf "\n",
+                               (IV)usedkeys);
+        {
+            STRLEN count = 0;
+            HE **ents = HvARRAY(sv);
+
+            if (ents) {
+                HE *const *const last = ents + HvMAX(sv);
+                count = last + 1 - ents;
+                
+                do {
+                    if (!*ents)
+                        --count;
+                } while (++ents <= last);
+            }
+
+            Perl_dump_indent(aTHX_ level, file, "  FILL = %" UVuf "\n",
+                             (UV)count);
+        }
+        Perl_dump_indent(aTHX_ level, file, "  MAX = %" IVdf "\n",
+                               (IV)HvMAX(sv));
+        if (SvOOK(sv)) {
+            Perl_dump_indent(aTHX_ level, file, "  RITER = %" IVdf "\n",
+                                   (IV)HvRITER_get(sv));
+            Perl_dump_indent(aTHX_ level, file, "  EITER = 0x%" UVxf "\n",
+                                   PTR2UV(HvEITER_get(sv)));
+#ifdef PERL_HASH_RANDOMIZE_KEYS
+            Perl_dump_indent(aTHX_ level, file, "  RAND = 0x%" UVxf,
+                                   (UV)HvRAND_get(sv));
+            if (HvRAND_get(sv) != HvLASTRAND_get(sv) && HvRITER_get(sv) != -1 ) {
+                PerlIO_printf(file, " (LAST = 0x%" UVxf ")",
+                                    (UV)HvLASTRAND_get(sv));
+            }
+#endif
+            (void)PerlIO_putc(file, '\n');
+        }
+        {
+            MAGIC * const mg = mg_find(sv, PERL_MAGIC_symtab);
+            if (mg && mg->mg_obj) {
+                Perl_dump_indent(aTHX_ level, file, "  PMROOT = 0x%" UVxf "\n", PTR2UV(mg->mg_obj));
+            }
+        }
+        {
+            const char * const hvname = HvNAME_get(sv);
+            if (hvname) {
+                SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+                Perl_dump_indent(aTHX_ level, file, "  NAME = \"%s\"\n",
+                                       generic_pv_escape( tmpsv, hvname,
+                                           HvNAMELEN(sv), HvNAMEUTF8(sv)));
+        }
+        }
+        if (SvOOK(sv)) {
+            AV * const backrefs
+                = *Perl_hv_backreferences_p(aTHX_ MUTABLE_HV(sv));
+            struct mro_meta * const meta = HvAUX(sv)->xhv_mro_meta;
+            if (HvAUX(sv)->xhv_name_count)
+                Perl_dump_indent(aTHX_
+                 level, file, "  NAMECOUNT = %" IVdf "\n",
+                 (IV)HvAUX(sv)->xhv_name_count
+                );
+            if (HvAUX(sv)->xhv_name_u.xhvnameu_name && HvENAME_HEK_NN(sv)) {
+                const I32 count = HvAUX(sv)->xhv_name_count;
+                if (count) {
+                    SV * const names = newSVpvs_flags("", SVs_TEMP);
+                    /* The starting point is the first element if count is
+                       positive and the second element if count is negative. */
+                    HEK *const *hekp = HvAUX(sv)->xhv_name_u.xhvnameu_names
+                        + (count < 0 ? 1 : 0);
+                    HEK *const *const endp = HvAUX(sv)->xhv_name_u.xhvnameu_names
+                        + (count < 0 ? -count : count);
+                    while (hekp < endp) {
+                        if (*hekp) {
+                            SV *tmp = newSVpvs_flags("", SVs_TEMP);
+                            Perl_sv_catpvf(aTHX_ names, ", \"%s\"",
+                              generic_pv_escape(tmp, HEK_KEY(*hekp), HEK_LEN(*hekp), HEK_UTF8(*hekp)));
+                        } else {
+                            /* This should never happen. */
+                            sv_catpvs(names, ", (null)");
+                        }
+                        ++hekp;
+                    }
+                    Perl_dump_indent(aTHX_
+                     level, file, "  ENAME = %s\n", SvPV_nolen(names)+2
+                    );
+                }
+                else {
+                    SV * const tmp = newSVpvs_flags("", SVs_TEMP);
+                    const char *const hvename = HvENAME_get(sv);
+                    Perl_dump_indent(aTHX_
+                     level, file, "  ENAME = \"%s\"\n",
+                     generic_pv_escape(tmp, hvename,
+                                       HvENAMELEN_get(sv), HvENAMEUTF8(sv)));
+                }
+            }
+            if (backrefs) {
+                Perl_dump_indent(aTHX_ level, file, "  BACKREFS = 0x%" UVxf "\n",
+                                 PTR2UV(backrefs));
+                do_sv_dump(level+1, file, MUTABLE_SV(backrefs), nest+1, maxnest,
+                           dumpops, pvlim);
+            }
+            if (meta) {
+                SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+                Perl_dump_indent(aTHX_ level, file, "  MRO_WHICH = \"%s\" (0x%"
+                                 UVxf ")\n",
+                                 generic_pv_escape( tmpsv, meta->mro_which->name,
+                                meta->mro_which->length,
+                                (meta->mro_which->kflags & HVhek_UTF8)),
+                                 PTR2UV(meta->mro_which));
+                Perl_dump_indent(aTHX_ level, file, "  CACHE_GEN = 0x%"
+                                 UVxf "\n",
+                                 (UV)meta->cache_gen);
+                Perl_dump_indent(aTHX_ level, file, "  PKG_GEN = 0x%" UVxf "\n",
+                                 (UV)meta->pkg_gen);
+                if (meta->mro_linear_all) {
+                    Perl_dump_indent(aTHX_ level, file, "  MRO_LINEAR_ALL = 0x%"
+                                 UVxf "\n",
+                                 PTR2UV(meta->mro_linear_all));
+                do_sv_dump(level+1, file, MUTABLE_SV(meta->mro_linear_all), nest+1, maxnest,
+                           dumpops, pvlim);
+                }
+                if (meta->mro_linear_current) {
+                    Perl_dump_indent(aTHX_ level, file,
+                                 "  MRO_LINEAR_CURRENT = 0x%" UVxf "\n",
+                                 PTR2UV(meta->mro_linear_current));
+                do_sv_dump(level+1, file, MUTABLE_SV(meta->mro_linear_current), nest+1, maxnest,
+                           dumpops, pvlim);
+                }
+                if (meta->mro_nextmethod) {
+                    Perl_dump_indent(aTHX_ level, file,
+                                 "  MRO_NEXTMETHOD = 0x%" UVxf "\n",
+                                 PTR2UV(meta->mro_nextmethod));
+                do_sv_dump(level+1, file, MUTABLE_SV(meta->mro_nextmethod), nest+1, maxnest,
+                           dumpops, pvlim);
+                }
+                if (meta->isa) {
+                    Perl_dump_indent(aTHX_ level, file, "  ISA = 0x%" UVxf "\n",
+                                 PTR2UV(meta->isa));
+                do_sv_dump(level+1, file, MUTABLE_SV(meta->isa), nest+1, maxnest,
+                           dumpops, pvlim);
+                }
+            }
+        }
+        if (nest < maxnest) {
+            HV * const hv = MUTABLE_HV(sv);
+            STRLEN i;
+            HE *he;
+
+            if (HvARRAY(hv)) {
+                int count = maxnest - nest;
+                for (i=0; i <= HvMAX(hv); i++) {
+                    for (he = HvARRAY(hv)[i]; he; he = HeNEXT(he)) {
+                        U32 hash;
+                        SV * keysv;
+                        const char * keypv;
+                        SV * elt;
+                        STRLEN len;
+
+                        if (count-- <= 0) goto DONEHV;
+
+                        hash = HeHASH(he);
+                        keysv = hv_iterkeysv(he);
+                        keypv = SvPV_const(keysv, len);
+                        elt = HeVAL(he);
+
+                        Perl_dump_indent(aTHX_ level+1, file, "Elt %s ", pv_display(d, keypv, len, 0, pvlim));
+                        if (SvUTF8(keysv))
+                            PerlIO_printf(file, "[UTF8 \"%s\"] ", sv_uni_display(d, keysv, 6 * SvCUR(keysv), UNI_DISPLAY_QQ));
+                        if (HvEITER_get(hv) == he)
+                            PerlIO_printf(file, "[CURRENT] ");
+                        PerlIO_printf(file, "HASH = 0x%" UVxf, (UV) hash);
+
+                        if (sv == (SV*)PL_strtab)
+                            PerlIO_printf(file, " REFCNT = 0x%" UVxf "\n",
+                                (UV)he->he_valu.hent_refcount );
+                        else {
+                            (void)PerlIO_putc(file, '\n');
+                            do_sv_dump(level+1, file, elt, nest+1, maxnest, dumpops, pvlim);
+                        }
+                    }
+                }
+              DONEHV:;
+            }
+        }
+        break;
+    } /* case SVt_PVHV */
+
+    case SVt_PVCV:
+        if (CvAUTOLOAD(sv)) {
+            SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+            STRLEN len;
+            const char *const name =  SvPV_const(sv, len);
+            Perl_dump_indent(aTHX_ level, file, "  AUTOLOAD = \"%s\"\n",
+                             generic_pv_escape(tmpsv, name, len, SvUTF8(sv)));
+        }
+        if (SvPOK(sv)) {
+            SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+            const char *const proto = CvPROTO(sv);
+            Perl_dump_indent(aTHX_ level, file, "  PROTOTYPE = \"%s\"\n",
+                             generic_pv_escape(tmpsv, proto, CvPROTOLEN(sv),
+                                SvUTF8(sv)));
+        }
+        /* FALLTHROUGH */
+    case SVt_PVFM:
+        do_hv_dump(level, file, "  COMP_STASH", CvSTASH(sv));
+        if (!CvISXSUB(sv)) {
+            if (CvSTART(sv)) {
+                if (CvSLABBED(sv))
+                    Perl_dump_indent(aTHX_ level, file,
+                                 "  SLAB = 0x%" UVxf "\n",
+                                 PTR2UV(CvSTART(sv)));
+                else
+                    Perl_dump_indent(aTHX_ level, file,
+                                 "  START = 0x%" UVxf " ===> %" IVdf "\n",
+                                 PTR2UV(CvSTART(sv)),
+                                 (IV)sequence_num(CvSTART(sv)));
+            }
+            Perl_dump_indent(aTHX_ level, file, "  ROOT = 0x%" UVxf "\n",
+                             PTR2UV(CvROOT(sv)));
+            if (CvROOT(sv) && dumpops) {
+                do_op_dump(level+1, file, CvROOT(sv));
+            }
+        } else {
+            SV * const constant = cv_const_sv((const CV *)sv);
+
+            Perl_dump_indent(aTHX_ level, file, "  XSUB = 0x%" UVxf "\n", PTR2UV(CvXSUB(sv)));
+
+            if (constant) {
+                Perl_dump_indent(aTHX_ level, file, "  XSUBANY = 0x%" UVxf
+                                 " (CONST SV)\n",
+                                 PTR2UV(CvXSUBANY(sv).any_ptr));
+                do_sv_dump(level+1, file, constant, nest+1, maxnest, dumpops,
+                           pvlim);
+            } else {
+                Perl_dump_indent(aTHX_ level, file, "  XSUBANY = %" IVdf "\n",
+                                 (IV)CvXSUBANY(sv).any_i32);
+            }
+        }
+        if (CvNAMED(sv))
+            Perl_dump_indent(aTHX_ level, file, "  NAME = \"%s\"\n",
+                                   HEK_KEY(CvNAME_HEK((CV *)sv)));
+        else do_gvgv_dump(level, file, "  GVGV::GV", CvGV(sv));
+        Perl_dump_indent(aTHX_ level, file, "  FILE = \"%s\"\n", CvFILE(sv));
+        Perl_dump_indent(aTHX_ level, file, "  DEPTH = %"
+                                      IVdf "\n", (IV)CvDEPTH(sv));
+        Perl_dump_indent(aTHX_ level, file, "  FLAGS = 0x%" UVxf "\n",
+                               (UV)CvFLAGS(sv));
+        Perl_dump_indent(aTHX_ level, file, "  OUTSIDE_SEQ = %" UVuf "\n", (UV)CvOUTSIDE_SEQ(sv));
+        if (!CvISXSUB(sv)) {
+            Perl_dump_indent(aTHX_ level, file, "  PADLIST = 0x%" UVxf "\n", PTR2UV(CvPADLIST(sv)));
+            if (nest < maxnest) {
+                do_dump_pad(level+1, file, CvPADLIST(sv), 0);
+            }
+        }
+        else
+            Perl_dump_indent(aTHX_ level, file, "  HSCXT = 0x%p\n", CvHSCXT(sv));
+        {
+            const CV * const outside = CvOUTSIDE(sv);
+            Perl_dump_indent(aTHX_ level, file, "  OUTSIDE = 0x%" UVxf " (%s)\n",
+                        PTR2UV(outside),
+                        (!outside ? "null"
+                         : CvANON(outside) ? "ANON"
+                         : (outside == PL_main_cv) ? "MAIN"
+                         : CvUNIQUE(outside) ? "UNIQUE"
+                         : CvGV(outside) ?
+                             generic_pv_escape(
+                                 newSVpvs_flags("", SVs_TEMP),
+                                 GvNAME(CvGV(outside)),
+                                 GvNAMELEN(CvGV(outside)),
+                                 GvNAMEUTF8(CvGV(outside)))
+                         : "UNDEFINED"));
+        }
+        if (CvOUTSIDE(sv)
+         && (nest < maxnest && (CvCLONE(sv) || CvCLONED(sv))))
+            do_sv_dump(level+1, file, MUTABLE_SV(CvOUTSIDE(sv)), nest+1, maxnest, dumpops, pvlim);
+        break;
+
+    case SVt_PVGV:
+    case SVt_PVLV:
+        if (type == SVt_PVLV) {
+            Perl_dump_indent(aTHX_ level, file, "  TYPE = %c\n", LvTYPE(sv));
+            Perl_dump_indent(aTHX_ level, file, "  TARGOFF = %" IVdf "\n", (IV)LvTARGOFF(sv));
+            Perl_dump_indent(aTHX_ level, file, "  TARGLEN = %" IVdf "\n", (IV)LvTARGLEN(sv));
+            Perl_dump_indent(aTHX_ level, file, "  TARG = 0x%" UVxf "\n", PTR2UV(LvTARG(sv)));
+            Perl_dump_indent(aTHX_ level, file, "  FLAGS = %" IVdf "\n", (IV)LvFLAGS(sv));
+            if (isALPHA_FOLD_NE(LvTYPE(sv), 't'))
+                do_sv_dump(level+1, file, LvTARG(sv), nest+1, maxnest,
+                    dumpops, pvlim);
+        }
+        if (isREGEXP(sv)) goto dumpregexp;
+        if (!isGV_with_GP(sv))
+            break;
+        {
+            SV* tmpsv = newSVpvs_flags("", SVs_TEMP);
+            Perl_dump_indent(aTHX_ level, file, "  NAME = \"%s\"\n",
+                     generic_pv_escape(tmpsv, GvNAME(sv),
+                                       GvNAMELEN(sv),
+                                       GvNAMEUTF8(sv)));
+        }
+        Perl_dump_indent(aTHX_ level, file, "  NAMELEN = %" IVdf "\n", (IV)GvNAMELEN(sv));
+        do_hv_dump (level, file, "  GvSTASH", GvSTASH(sv));
+        Perl_dump_indent(aTHX_ level, file, "  FLAGS = 0x%" UVxf "\n", (UV)GvFLAGS(sv));
+        Perl_dump_indent(aTHX_ level, file, "  GP = 0x%" UVxf "\n", PTR2UV(GvGP(sv)));
+        if (!GvGP(sv))
+            break;
+        Perl_dump_indent(aTHX_ level, file, "    SV = 0x%" UVxf "\n", PTR2UV(GvSV(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    REFCNT = %" IVdf "\n", (IV)GvREFCNT(sv));
+        Perl_dump_indent(aTHX_ level, file, "    IO = 0x%" UVxf "\n", PTR2UV(GvIOp(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    FORM = 0x%" UVxf "  \n", PTR2UV(GvFORM(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    AV = 0x%" UVxf "\n", PTR2UV(GvAV(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    HV = 0x%" UVxf "\n", PTR2UV(GvHV(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    CV = 0x%" UVxf "\n", PTR2UV(GvCV(sv)));
+        Perl_dump_indent(aTHX_ level, file, "    CVGEN = 0x%" UVxf "\n", (UV)GvCVGEN(sv));
+        Perl_dump_indent(aTHX_ level, file, "    GPFLAGS = 0x%" UVxf
+                                            " (%s)\n",
+                               (UV)GvGPFLAGS(sv),
+                               "");
+        Perl_dump_indent(aTHX_ level, file, "    LINE = %" IVdf "\n", (IV)GvLINE(sv));
+        Perl_dump_indent(aTHX_ level, file, "    FILE = \"%s\"\n", GvFILE(sv));
+        do_gv_dump (level, file, "    EGV", GvEGV(sv));
+        break;
+    case SVt_PVIO:
+        Perl_dump_indent(aTHX_ level, file, "  IFP = 0x%" UVxf "\n", PTR2UV(IoIFP(sv)));
+        Perl_dump_indent(aTHX_ level, file, "  OFP = 0x%" UVxf "\n", PTR2UV(IoOFP(sv)));
+        Perl_dump_indent(aTHX_ level, file, "  DIRP = 0x%" UVxf "\n", PTR2UV(IoDIRP(sv)));
+        Perl_dump_indent(aTHX_ level, file, "  LINES = %" IVdf "\n", (IV)IoLINES(sv));
+        Perl_dump_indent(aTHX_ level, file, "  PAGE = %" IVdf "\n", (IV)IoPAGE(sv));
+        Perl_dump_indent(aTHX_ level, file, "  PAGE_LEN = %" IVdf "\n", (IV)IoPAGE_LEN(sv));
+        Perl_dump_indent(aTHX_ level, file, "  LINES_LEFT = %" IVdf "\n", (IV)IoLINES_LEFT(sv));
+        if (IoTOP_NAME(sv))
+            Perl_dump_indent(aTHX_ level, file, "  TOP_NAME = \"%s\"\n", IoTOP_NAME(sv));
+        if (!IoTOP_GV(sv) || SvTYPE(IoTOP_GV(sv)) == SVt_PVGV)
+            do_gv_dump (level, file, "  TOP_GV", IoTOP_GV(sv));
+        else {
+            Perl_dump_indent(aTHX_ level, file, "  TOP_GV = 0x%" UVxf "\n",
+                             PTR2UV(IoTOP_GV(sv)));
+            do_sv_dump (level+1, file, MUTABLE_SV(IoTOP_GV(sv)), nest+1,
+                        maxnest, dumpops, pvlim);
+        }
+        /* Source filters hide things that are not GVs in these three, so let's
+           be careful out there.  */
+        if (IoFMT_NAME(sv))
+            Perl_dump_indent(aTHX_ level, file, "  FMT_NAME = \"%s\"\n", IoFMT_NAME(sv));
+        if (!IoFMT_GV(sv) || SvTYPE(IoFMT_GV(sv)) == SVt_PVGV)
+            do_gv_dump (level, file, "  FMT_GV", IoFMT_GV(sv));
+        else {
+            Perl_dump_indent(aTHX_ level, file, "  FMT_GV = 0x%" UVxf "\n",
+                             PTR2UV(IoFMT_GV(sv)));
+            do_sv_dump (level+1, file, MUTABLE_SV(IoFMT_GV(sv)), nest+1,
+                        maxnest, dumpops, pvlim);
+        }
+        if (IoBOTTOM_NAME(sv))
+            Perl_dump_indent(aTHX_ level, file, "  BOTTOM_NAME = \"%s\"\n", IoBOTTOM_NAME(sv));
+        if (!IoBOTTOM_GV(sv) || SvTYPE(IoBOTTOM_GV(sv)) == SVt_PVGV)
+            do_gv_dump (level, file, "  BOTTOM_GV", IoBOTTOM_GV(sv));
+        else {
+            Perl_dump_indent(aTHX_ level, file, "  BOTTOM_GV = 0x%" UVxf "\n",
+                             PTR2UV(IoBOTTOM_GV(sv)));
+            do_sv_dump (level+1, file, MUTABLE_SV(IoBOTTOM_GV(sv)), nest+1,
+                        maxnest, dumpops, pvlim);
+        }
+        if (isPRINT(IoTYPE(sv)))
+            Perl_dump_indent(aTHX_ level, file, "  TYPE = '%c'\n", IoTYPE(sv));
+        else
+            Perl_dump_indent(aTHX_ level, file, "  TYPE = '\\%o'\n", IoTYPE(sv));
+        Perl_dump_indent(aTHX_ level, file, "  FLAGS = 0x%" UVxf "\n", (UV)IoFLAGS(sv));
+        break;
+    case SVt_REGEXP:
+      dumpregexp:
+        {
+            struct regexp * const r = ReANY((REGEXP*)sv);
+
+#define SV_SET_STRINGIFY_REGEXP_FLAGS(d,flags,names) STMT_START { \
+            sv_setpv(d,"");                                 \
+            append_flags(d, flags, names);     \
+            if (SvCUR(d) > 0 && *(SvEND(d) - 1) == ',') {       \
+                SvCUR_set(d, SvCUR(d) - 1);                 \
+                SvPVX(d)[SvCUR(d)] = '\0';                  \
+            }                                               \
+} STMT_END
+            SV_SET_STRINGIFY_REGEXP_FLAGS(d,r->compflags,regexp_extflags_names);
+            Perl_dump_indent(aTHX_ level, file, "  COMPFLAGS = 0x%" UVxf " (%s)\n",
+                                (UV)(r->compflags), SvPVX_const(d));
+
+            SV_SET_STRINGIFY_REGEXP_FLAGS(d,r->extflags,regexp_extflags_names);
+            Perl_dump_indent(aTHX_ level, file, "  EXTFLAGS = 0x%" UVxf " (%s)\n",
+                                (UV)(r->extflags), SvPVX_const(d));
+
+            Perl_dump_indent(aTHX_ level, file, "  ENGINE = 0x%" UVxf " (%s)\n",
+                                PTR2UV(r->engine), (r->engine == &PL_core_reg_engine) ? "STANDARD" : "PLUG-IN" );
+            if (r->engine == &PL_core_reg_engine) {
+                SV_SET_STRINGIFY_REGEXP_FLAGS(d,r->intflags,regexp_core_intflags_names);
+                Perl_dump_indent(aTHX_ level, file, "  INTFLAGS = 0x%" UVxf " (%s)\n",
+                                (UV)(r->intflags), SvPVX_const(d));
+            } else {
+                Perl_dump_indent(aTHX_ level, file, "  INTFLAGS = 0x%" UVxf "\n",
+                                (UV)(r->intflags));
+            }
+#undef SV_SET_STRINGIFY_REGEXP_FLAGS
+            Perl_dump_indent(aTHX_ level, file, "  NPARENS = %" UVuf "\n",
+                                (UV)(r->nparens));
+            Perl_dump_indent(aTHX_ level, file, "  LASTPAREN = %" UVuf "\n",
+                                (UV)(r->lastparen));
+            Perl_dump_indent(aTHX_ level, file, "  LASTCLOSEPAREN = %" UVuf "\n",
+                                (UV)(r->lastcloseparen));
+            Perl_dump_indent(aTHX_ level, file, "  MINLEN = %" IVdf "\n",
+                                (IV)(r->minlen));
+            Perl_dump_indent(aTHX_ level, file, "  MINLENRET = %" IVdf "\n",
+                                (IV)(r->minlenret));
+            Perl_dump_indent(aTHX_ level, file, "  GOFS = %" UVuf "\n",
+                                (UV)(r->gofs));
+            Perl_dump_indent(aTHX_ level, file, "  PRE_PREFIX = %" UVuf "\n",
+                                (UV)(r->pre_prefix));
+            Perl_dump_indent(aTHX_ level, file, "  SUBLEN = %" IVdf "\n",
+                                (IV)(r->sublen));
+            Perl_dump_indent(aTHX_ level, file, "  SUBOFFSET = %" IVdf "\n",
+                                (IV)(r->suboffset));
+            Perl_dump_indent(aTHX_ level, file, "  SUBCOFFSET = %" IVdf "\n",
+                                (IV)(r->subcoffset));
+            if (r->subbeg)
+                Perl_dump_indent(aTHX_ level, file, "  SUBBEG = 0x%" UVxf " %s\n",
+                            PTR2UV(r->subbeg),
+                            pv_display(d, r->subbeg, r->sublen, 50, pvlim));
+            else
+                Perl_dump_indent(aTHX_ level, file, "  SUBBEG = 0x0\n");
+            Perl_dump_indent(aTHX_ level, file, "  MOTHER_RE = 0x%" UVxf "\n",
+                                PTR2UV(r->mother_re));
+            if (nest < maxnest && r->mother_re)
+                do_sv_dump(level+1, file, (SV *)r->mother_re, nest+1,
+                           maxnest, dumpops, pvlim);
+            Perl_dump_indent(aTHX_ level, file, "  PAREN_NAMES = 0x%" UVxf "\n",
+                                PTR2UV(r->paren_names));
+            Perl_dump_indent(aTHX_ level, file, "  SUBSTRS = 0x%" UVxf "\n",
+                                PTR2UV(r->substrs));
+            Perl_dump_indent(aTHX_ level, file, "  PPRIVATE = 0x%" UVxf "\n",
+                                PTR2UV(r->pprivate));
+            Perl_dump_indent(aTHX_ level, file, "  OFFS = 0x%" UVxf "\n",
+                                PTR2UV(r->offs));
+            Perl_dump_indent(aTHX_ level, file, "  QR_ANONCV = 0x%" UVxf "\n",
+                                PTR2UV(r->qr_anoncv));
+#ifdef PERL_ANY_COW
+            Perl_dump_indent(aTHX_ level, file, "  SAVED_COPY = 0x%" UVxf "\n",
+                                PTR2UV(r->saved_copy));
+#endif
+        }
+        break;
+    }
+    SvREFCNT_dec_NN(d);
+}
+
+/*
+=for apidoc sv_dump
+
+Dumps the contents of an SV to the C<STDERR> filehandle.
+
+For an example of its output, see L<Devel::Peek>.
+
+=cut
+*/
+
+void
+Perl_sv_dump(pTHX_ SV *sv)
+{
+    if (sv && SvROK(sv))
+        do_sv_dump(0, Perl_debug_log, sv, 0, 4, 0, 0);
+    else
+        do_sv_dump(0, Perl_debug_log, sv, 0, 0, 0, 0);
+}
+
+int
+Perl_runops_debug(pTHX)
+{
+#if defined DEBUGGING && !defined DEBUGGING_RE_ONLY
+    SSize_t orig_stack_hwm = PL_curstackinfo->si_stack_hwm;
+
+    PL_curstackinfo->si_stack_hwm = PL_stack_sp - PL_stack_base;
+#endif
+
+    if (!PL_op) {
+        Perl_ck_warner_d(aTHX_ packWARN(WARN_DEBUGGING), "NULL OP IN RUN");
+        return 0;
+    }
+    DEBUG_l(Perl_deb(aTHX_ "Entering new RUNOPS level\n"));
+    do {
+#ifdef PERL_TRACE_OPS
+        ++PL_op_exec_cnt[PL_op->op_type];
+#endif
+#if defined DEBUGGING && !defined DEBUGGING_RE_ONLY
+        if (PL_curstackinfo->si_stack_hwm < PL_stack_sp - PL_stack_base)
+            Perl_croak_nocontext(
+                "panic: previous op failed to extend arg stack: "
+                "base=%p, sp=%p, hwm=%p\n",
+                    PL_stack_base, PL_stack_sp,
+                    PL_stack_base + PL_curstackinfo->si_stack_hwm);
+        PL_curstackinfo->si_stack_hwm = PL_stack_sp - PL_stack_base;
+#endif
+        if (PL_debug) {
+            ENTER;
+            SAVETMPS;
+            if (PL_watchaddr && (*PL_watchaddr != PL_watchok))
+                PerlIO_printf(Perl_debug_log,
+                              "WARNING: %" UVxf " changed from %" UVxf " to %" UVxf "\n",
+                              PTR2UV(PL_watchaddr), PTR2UV(PL_watchok),
+                              PTR2UV(*PL_watchaddr));
+            if (DEBUG_s_TEST_) {
+                if (DEBUG_v_TEST_) {
+                    PerlIO_printf(Perl_debug_log, "\n");
+                    deb_stack_all();
+                }
+                else
+                    debstack();
+            }
+
+
+            if (DEBUG_t_TEST_) debop(PL_op);
+            if (DEBUG_P_TEST_) debprof(PL_op);
+            FREETMPS;
+            LEAVE;
+        }
+
+        PERL_DTRACE_PROBE_OP(PL_op);
+    } while ((PL_op = PL_op->op_ppaddr(aTHX)));
+    DEBUG_l(Perl_deb(aTHX_ "leaving RUNOPS level\n"));
+    PERL_ASYNC_CHECK();
+
+#if defined DEBUGGING && !defined DEBUGGING_RE_ONLY
+    if (PL_curstackinfo->si_stack_hwm < orig_stack_hwm)
+        PL_curstackinfo->si_stack_hwm = orig_stack_hwm;
+#endif
+    TAINT_NOT;
     return 0;
 }
 
-#ifndef JL_NDEBUG
-// skip the performance optimizations of jl_types_equal and just use subtyping directly
-// one of these types is invalid - that's why we're doing the recache type operation
-static int jl_invalid_types_equal(jl_datatype_t *a, jl_datatype_t *b)
+
+/* print the names of the n lexical vars starting at pad offset off */
+
+STATIC void
+S_deb_padvar(pTHX_ PADOFFSET off, int n, bool paren)
 {
-    return jl_subtype((jl_value_t*)a, (jl_value_t*)b) && jl_subtype((jl_value_t*)b, (jl_value_t*)a);
+    PADNAME *sv;
+    CV * const cv = deb_curcv(cxstack_ix);
+    PADNAMELIST *comppad = NULL;
+    int i;
+
+    if (cv) {
+        PADLIST * const padlist = CvPADLIST(cv);
+        comppad = PadlistNAMES(padlist);
+    }
+    if (paren)
+        PerlIO_printf(Perl_debug_log, "(");
+    for (i = 0; i < n; i++) {
+        if (comppad && (sv = padnamelist_fetch(comppad, off + i)))
+            PerlIO_printf(Perl_debug_log, "%" PNf, PNfARG(sv));
+        else
+            PerlIO_printf(Perl_debug_log, "[%" UVuf "]",
+                    (UV)(off+i));
+        if (i < n - 1)
+            PerlIO_printf(Perl_debug_log, ",");
+    }
+    if (paren)
+        PerlIO_printf(Perl_debug_log, ")");
 }
-STATIC_INLINE jl_value_t *verify_type(jl_value_t *v) JL_NOTSAFEPOINT
+
+
+/* append to the out SV, the name of the lexical at offset off in the CV
+ * cv */
+
+static void
+S_append_padvar(pTHX_ PADOFFSET off, CV *cv, SV *out, int n,
+        bool paren, bool is_scalar)
 {
-    assert(v && jl_typeof(v) && jl_typeof(jl_typeof(v)) == (jl_value_t*)jl_datatype_type);
-    return v;
+    PADNAME *sv;
+    PADNAMELIST *namepad = NULL;
+    int i;
+
+    if (cv) {
+        PADLIST * const padlist = CvPADLIST(cv);
+        namepad = PadlistNAMES(padlist);
+    }
+
+    if (paren)
+        sv_catpvs_nomg(out, "(");
+    for (i = 0; i < n; i++) {
+        if (namepad && (sv = padnamelist_fetch(namepad, off + i)))
+        {
+            STRLEN cur = SvCUR(out);
+            Perl_sv_catpvf(aTHX_ out, "[%" UTF8f,
+                                 UTF8fARG(1, PadnameLEN(sv) - 1,
+                                          PadnamePV(sv) + 1));
+            if (is_scalar)
+                SvPVX(out)[cur] = '$';
+        }
+        else
+            Perl_sv_catpvf(aTHX_ out, "[%" UVuf "]", (UV)(off+i));
+        if (i < n - 1)
+            sv_catpvs_nomg(out, ",");
+    }
+    if (paren)
+        sv_catpvs_nomg(out, "(");
 }
+
+
+static void
+S_append_gv_name(pTHX_ GV *gv, SV *out)
+{
+    SV *sv;
+    if (!gv) {
+        sv_catpvs_nomg(out, "<NULLGV>");
+        return;
+    }
+    sv = newSV(0);
+    gv_fullname4(sv, gv, NULL, FALSE);
+    Perl_sv_catpvf(aTHX_ out, "$%" SVf, SVfARG(sv));
+    SvREFCNT_dec_NN(sv);
+}
+
+#ifdef USE_ITHREADS
+#  define ITEM_SV(item) (comppad ? \
+    *av_fetch(comppad, (item)->pad_offset, FALSE) : NULL);
+#else
+#  define ITEM_SV(item) UNOP_AUX_item_sv(item)
 #endif
 
 
-static jl_datatype_t *recache_datatype(jl_datatype_t *dt) JL_GC_DISABLED;
+/* return a temporary SV containing a stringified representation of
+ * the op_aux field of a MULTIDEREF op, associated with CV cv
+ */
 
-static jl_value_t *recache_type(jl_value_t *p) JL_GC_DISABLED
+SV*
+Perl_multideref_stringify(pTHX_ const OP *o, CV *cv)
 {
-    if (jl_is_datatype(p)) {
-        jl_datatype_t *pdt = (jl_datatype_t*)p;
-        if (ptrhash_get(&uniquing_table, p) != HT_NOTFOUND) {
-            p = (jl_value_t*)recache_datatype(pdt);
-        }
-        else {
-            jl_svec_t *tt = pdt->parameters;
-            // ensure all type parameters are recached
-            size_t i, l = jl_svec_len(tt);
-            for (i = 0; i < l; i++)
-                jl_svecset(tt, i, recache_type(jl_svecref(tt, i)));
-            ptrhash_put(&uniquing_table, p, p); // ensures this algorithm isn't too exponential
-        }
-    }
-    else if (jl_is_typevar(p)) {
-        jl_tvar_t *ptv = (jl_tvar_t*)p;
-        ptv->lb = recache_type(ptv->lb);
-        ptv->ub = recache_type(ptv->ub);
-    }
-    else if (jl_is_uniontype(p)) {
-        jl_uniontype_t *pu = (jl_uniontype_t*)p;
-        pu->a = recache_type(pu->a);
-        pu->b = recache_type(pu->b);
-    }
-    else if (jl_is_unionall(p)) {
-        jl_unionall_t *pa = (jl_unionall_t*)p;
-        pa->var = (jl_tvar_t*)recache_type((jl_value_t*)pa->var);
-        pa->body = recache_type(pa->body);
-    }
-    else {
-        jl_datatype_t *pt = (jl_datatype_t*)jl_typeof(p);
-        jl_datatype_t *cachep = recache_datatype(pt);
-        if (cachep->instance)
-            p = cachep->instance;
-        else if (pt != cachep)
-            jl_set_typeof(p, cachep);
-    }
-    return p;
-}
+    UNOP_AUX_item *items = cUNOP_AUXo->op_aux;
+    UV actions = items->uv;
+    SV *sv;
+    bool last = 0;
+    bool is_hash = FALSE;
+    int derefs = 0;
+    SV *out = newSVpvn_flags("",0,SVs_TEMP);
+#ifdef USE_ITHREADS
+    PAD *comppad;
 
-static jl_datatype_t *recache_datatype(jl_datatype_t *dt) JL_GC_DISABLED
-{
-    jl_datatype_t *t; // the type after unique'ing
-    assert(verify_type((jl_value_t*)dt));
-    t = (jl_datatype_t*)ptrhash_get(&uniquing_table, dt);
-    if (t == HT_NOTFOUND)
-        return dt;
-    if (t != NULL)
-        return t;
+    if (cv) {
+        PADLIST *padlist = CvPADLIST(cv);
+        comppad = PadlistARRAY(padlist)[1];
+    }
+    else
+        comppad = NULL;
+#endif
 
-    jl_svec_t *tt = dt->parameters;
-    // recache all type parameters
-    size_t i, l = jl_svec_len(tt);
-    for (i = 0; i < l; i++)
-        jl_svecset(tt, i, recache_type(jl_svecref(tt, i)));
+    PERL_ARGS_ASSERT_MULTIDEREF_STRINGIFY;
 
-    // then recache the type itself
-    if (jl_svec_len(tt) == 0) { // jl_cache_type doesn't work if length(parameters) == 0
-        t = dt;
-    }
-    else {
-        t = jl_lookup_cache_type_(dt);
-        if (t == NULL) {
-            jl_cache_type_(dt);
-            t = dt;
-        }
-        assert(t->hash == dt->hash);
-        assert(jl_invalid_types_equal(t, dt));
-    }
-    ptrhash_put(&uniquing_table, dt, t);
-    return t;
-}
+    while (!last) {
+        switch (actions & MDEREF_ACTION_MASK) {
 
-static void jl_recache_types(void) JL_GC_DISABLED
-{
-    size_t i;
-    // first rewrite all the unique'd objects
-    for (i = 0; i < flagref_list.len; i += 2) {
-        jl_value_t **loc = (jl_value_t**)flagref_list.items[i + 0];
-        int offs = (int)(intptr_t)flagref_list.items[i + 1];
-        jl_value_t *o = loc ? *loc : (jl_value_t*)backref_list.items[offs];
-        if (!jl_is_method(o) && !jl_is_method_instance(o)) {
-            jl_datatype_t *dt;
-            jl_value_t *v;
-            if (jl_is_datatype(o)) {
-                dt = (jl_datatype_t*)o;
-                v = dt->instance;
-            }
-            else {
-                dt = (jl_datatype_t*)jl_typeof(o);
-                v = o;
-            }
-            jl_datatype_t *t = recache_datatype(dt);
-            if ((jl_value_t*)dt == o && t != dt) {
-                assert(!type_in_worklist(dt));
-                if (loc)
-                    *loc = (jl_value_t*)t;
-                if (offs > 0)
-                    backref_list.items[offs] = t;
-            }
-            if (v == o && t->instance != v) {
-                assert(t->instance);
-                assert(loc);
-                *loc = t->instance;
-                if (offs > 0)
-                    backref_list.items[offs] = t->instance;
-            }
-        }
-    }
-    // invalidate the old datatypes to help catch errors
-    for (i = 0; i < uniquing_table.size; i += 2) {
-        jl_datatype_t *o = (jl_datatype_t*)uniquing_table.table[i];
-        jl_datatype_t *t = (jl_datatype_t*)uniquing_table.table[i + 1];
-        if (o != t) {
-            assert(t != NULL && jl_is_datatype(o));
-            if (t->instance != o->instance)
-                jl_set_typeof(o->instance, (void*)(intptr_t)0x20);
-            jl_set_typeof(o, (void*)(intptr_t)0x10);
-        }
-    }
-    // then do a cleanup pass to drop these from future iterations of flagref_list
-    i = 0;
-    while (i < flagref_list.len) {
-        jl_value_t **loc = (jl_value_t**)flagref_list.items[i + 0];
-        int offs = (int)(intptr_t)flagref_list.items[i + 1];
-        jl_value_t *o = loc ? *loc : (jl_value_t*)backref_list.items[offs];
-        if (jl_is_method(o) || jl_is_method_instance(o)) {
-            i += 2;
-        }
-        else {
-            // delete this item from the flagref list, so it won't be re-encountered later
-            flagref_list.len -= 2;
-            if (i >= flagref_list.len)
+        case MDEREF_reload:
+            actions = (++items)->uv;
+            continue;
+            NOT_REACHED; /* NOTREACHED */
+
+        case MDEREF_HV_padhv_helem:
+            is_hash = TRUE;
+            /* FALLTHROUGH */
+        case MDEREF_AV_padav_aelem:
+            derefs = 1;
+            S_append_padvar(aTHX_ (++items)->pad_offset, cv, out, 1, 0, 1);
+            goto do_elem;
+            NOT_REACHED; /* NOTREACHED */
+
+        case MDEREF_HV_gvhv_helem:
+            is_hash = TRUE;
+            /* FALLTHROUGH */
+        case MDEREF_AV_gvav_aelem:
+            derefs = 1;
+            items++;
+            sv = ITEM_SV(items);
+            S_append_gv_name(aTHX_ (GV*)sv, out);
+            goto do_elem;
+            NOT_REACHED; /* NOTREACHED */
+
+        case MDEREF_HV_gvsv_vivify_rv2hv_helem:
+            is_hash = TRUE;
+            /* FALLTHROUGH */
+        case MDEREF_AV_gvsv_vivify_rv2av_aelem:
+            items++;
+            sv = ITEM_SV(items);
+            S_append_gv_name(aTHX_ (GV*)sv, out);
+            goto do_vivify_rv2xv_elem;
+            NOT_REACHED; /* NOTREACHED */
+
+        case MDEREF_HV_padsv_vivify_rv2hv_helem:
+            is_hash = TRUE;
+            /* FALLTHROUGH */
+        case MDEREF_AV_padsv_vivify_rv2av_aelem:
+            S_append_padvar(aTHX_ (++items)->pad_offset, cv, out, 1, 0, 1);
+            goto do_vivify_rv2xv_elem;
+            NOT_REACHED; /* NOTREACHED */
+
+        case MDEREF_HV_pop_rv2hv_helem:
+        case MDEREF_HV_vivify_rv2hv_helem:
+            is_hash = TRUE;
+            /* FALLTHROUGH */
+        do_vivify_rv2xv_elem:
+        case MDEREF_AV_pop_rv2av_aelem:
+        case MDEREF_AV_vivify_rv2av_aelem:
+            if (!derefs++)
+                sv_catpvs_nomg(out, "->");
+        do_elem:
+            if ((actions & MDEREF_INDEX_MASK)== MDEREF_INDEX_none) {
+                sv_catpvs_nomg(out, "->");
+                last = 1;
                 break;
-            flagref_list.items[i + 0] = flagref_list.items[flagref_list.len + 0];
-            flagref_list.items[i + 1] = flagref_list.items[flagref_list.len + 1];
-        }
-    }
+            }
+
+            sv_catpvn_nomg(out, (is_hash ? "{" : "["), 1);
+            switch (actions & MDEREF_INDEX_MASK) {
+            case MDEREF_INDEX_const:
+                if (is_hash) {
+                    items++;
+                    sv = ITEM_SV(items);
+                    if (!sv)
+                        sv_catpvs_nomg(out, "???");
+                    else {
+                        STRLEN cur;
+                        char *s;
+                        s = SvPV(sv, cur);
+                        pv_pretty(out, s, cur, 30,
+                                    NULL, NULL,
+                                    (PERL_PV_PRETTY_NOCLEAR
+                                    |PERL_PV_PRETTY_QUOTE
+                                    |PERL_PV_PRETTY_ELLIPSES));
+                    }
+                }
+                else
+                    Perl_sv_catpvf(aTHX_ out, "%" IVdf, (++items)->iv);
+                break;
+            case MDEREF_INDEX_padsv:
+                S_append_padvar(aTHX_ (++items)->pad_offset, cv, out, 1, 0, 1);
+                break;
+            case MDEREF_INDEX_gvsv:
+                items++;
+                sv = ITEM_SV(items);
+                S_append_gv_name(aTHX_ (GV*)sv, out);
+                break;
+            }
+            sv_catpvn_nomg(out, (is_hash ? "}" : "]"), 1);
+
+            if (actions & MDEREF_FLAG_last)
+                last = 1;
+            is_hash = FALSE;
+
+            break;
+
+        default:
+            PerlIO_printf(Perl_debug_log, "UNKNOWN(%d)",
+                (int)(actions & MDEREF_ACTION_MASK));
+            last = 1;
+            break;
+
+        } /* switch */
+
+        actions >>= MDEREF_SHIFT;
+    } /* while */
+    return out;
 }
 
-// look up a method from a previously deserialized dependent module
-static jl_method_t *jl_lookup_method(jl_methtable_t *mt, jl_datatype_t *sig, size_t world)
+
+/* Return a temporary SV containing a stringified representation of
+ * the op_aux field of a MULTICONCAT op. Note that if the aux contains
+ * both plain and utf8 versions of the const string and indices, only
+ * the first is displayed.
+ */
+
+SV*
+Perl_multiconcat_stringify(pTHX_ const OP *o)
 {
-    if (world < jl_main_module->primary_world)
-        world = jl_main_module->primary_world;
-    struct jl_typemap_assoc search = {(jl_value_t*)sig, world, NULL, 0, ~(size_t)0};
-    jl_typemap_entry_t *entry = jl_typemap_assoc_by_type(mt->defs, &search, /*offs*/0, /*subtype*/0);
-    return (jl_method_t*)entry->func.value;
+    UNOP_AUX_item *aux = cUNOP_AUXo->op_aux;
+    UNOP_AUX_item *lens;
+    STRLEN len;
+    SSize_t nargs;
+    char *s;
+    SV *out = newSVpvn_flags("", 0, SVs_TEMP);
+
+    PERL_ARGS_ASSERT_MULTICONCAT_STRINGIFY;
+
+    nargs = aux[PERL_MULTICONCAT_IX_NARGS].ssize;
+    s   = aux[PERL_MULTICONCAT_IX_PLAIN_PV].pv;
+    len = aux[PERL_MULTICONCAT_IX_PLAIN_LEN].ssize;
+    if (!s) {
+        s   = aux[PERL_MULTICONCAT_IX_UTF8_PV].pv;
+        len = aux[PERL_MULTICONCAT_IX_UTF8_LEN].ssize;
+        sv_catpvs(out, "UTF8 ");
+    }
+    pv_pretty(out, s, len, 50,
+                NULL, NULL,
+                (PERL_PV_PRETTY_NOCLEAR
+                |PERL_PV_PRETTY_QUOTE
+                |PERL_PV_PRETTY_ELLIPSES));
+
+    lens = aux + PERL_MULTICONCAT_IX_LENGTHS;
+    while (nargs-- >= 0) {
+        Perl_sv_catpvf(aTHX_ out, ",%" IVdf, (IV)lens->ssize);
+        lens++;
+    }
+    return out;
 }
 
-static jl_method_t *jl_recache_method(jl_method_t *m)
+
+I32
+Perl_debop(pTHX_ const OP *o)
 {
-    assert(!m->is_for_opaque_closure);
-    jl_datatype_t *sig = (jl_datatype_t*)m->sig;
-    jl_methtable_t *mt = jl_method_table_for((jl_value_t*)m->sig);
-    assert((jl_value_t*)mt != jl_nothing);
-    jl_set_typeof(m, (void*)(intptr_t)0x30); // invalidate the old value to help catch errors
-    jl_method_t *_new = jl_lookup_method(mt, sig, m->module->primary_world);
-    return _new;
-}
+    PERL_ARGS_ASSERT_DEBOP;
 
-static jl_value_t *jl_recache_other_(jl_value_t *o);
+    if (CopSTASH_eq(PL_curcop, PL_debstash) && !DEBUG_J_TEST_)
+        return 0;
 
-static jl_method_instance_t *jl_recache_method_instance(jl_method_instance_t *mi)
-{
-    jl_method_t *m = mi->def.method;
-    m = (jl_method_t*)jl_recache_other_((jl_value_t*)m);
-    assert(jl_is_method(m));
-    jl_datatype_t *argtypes = (jl_datatype_t*)mi->specTypes;
-    jl_set_typeof(mi, (void*)(intptr_t)0x40); // invalidate the old value to help catch errors
-    jl_svec_t *env = jl_emptysvec;
-    jl_value_t *ti = jl_type_intersection_env((jl_value_t*)argtypes, (jl_value_t*)m->sig, &env);
-    //assert(ti != jl_bottom_type); (void)ti;
-    if (ti == jl_bottom_type)
-        env = jl_emptysvec; // the intersection may fail now if the type system had made an incorrect subtype env in the past
-    jl_method_instance_t *_new = jl_specializations_get_linfo(m, (jl_value_t*)argtypes, env);
-    return _new;
-}
-
-static jl_value_t *jl_recache_other_(jl_value_t *o)
-{
-    jl_value_t *newo = (jl_value_t*)ptrhash_get(&uniquing_table, o);
-    if (newo != HT_NOTFOUND)
-        return newo;
-    if (jl_is_method(o)) {
-        // lookup the real Method based on the placeholder sig
-        newo = (jl_value_t*)jl_recache_method((jl_method_t*)o);
-        ptrhash_put(&uniquing_table, newo, newo);
-    }
-    else if (jl_is_method_instance(o)) {
-        // lookup the real MethodInstance based on the placeholder specTypes
-        newo = (jl_value_t*)jl_recache_method_instance((jl_method_instance_t*)o);
-    }
-    else {
-        abort();
-    }
-    ptrhash_put(&uniquing_table, o, newo);
-    return newo;
-}
-
-static void jl_recache_other(void)
-{
-    size_t i = 0;
-    while (i < flagref_list.len) {
-        jl_value_t **loc = (jl_value_t**)flagref_list.items[i + 0];
-        int offs = (int)(intptr_t)flagref_list.items[i + 1];
-        jl_value_t *o = loc ? *loc : (jl_value_t*)backref_list.items[offs];
-        i += 2;
-        jl_value_t *newo = jl_recache_other_(o);
-        if (loc)
-            *loc = newo;
-        if (offs > 0)
-            backref_list.items[offs] = newo;
-    }
-    flagref_list.len = 0;
-}
-
-static int trace_method(jl_typemap_entry_t *entry, void *closure)
-{
-    jl_call_tracer(jl_newmeth_tracer, (jl_value_t*)entry->func.method);
-    return 1;
-}
-
-static jl_value_t *_jl_restore_incremental(ios_t *f, jl_array_t *mod_array)
-{
-    JL_TIMING(LOAD_MODULE);
-    jl_ptls_t ptls = jl_get_ptls_states();
-    if (ios_eof(f) || !jl_read_verify_header(f)) {
-        ios_close(f);
-        return jl_get_exceptionf(jl_errorexception_type,
-                "Precompile file header verification checks failed.");
-    }
-    { // skip past the mod list
-        size_t len;
-        while ((len = read_int32(f)))
-            ios_skip(f, len + 3 * sizeof(uint64_t));
-    }
-    { // skip past the dependency list
-        size_t deplen = read_uint64(f);
-        ios_skip(f, deplen);
-    }
-
-    jl_bigint_type = jl_base_module ? jl_get_global(jl_base_module, jl_symbol("BigInt")) : NULL;
-    if (jl_bigint_type) {
-        gmp_limb_size = jl_unbox_long(jl_get_global((jl_module_t*)jl_get_global(jl_base_module, jl_symbol("GMP")),
-                                                    jl_symbol("BITS_PER_LIMB"))) / 8;
-    }
-
-    // verify that the system state is valid
-    jl_value_t *verify_fail = read_verify_mod_list(f, mod_array);
-    if (verify_fail) {
-        ios_close(f);
-        return verify_fail;
-    }
-
-    // prepare to deserialize
-    int en = jl_gc_enable(0);
-    jl_gc_enable_finalizers(ptls, 0);
-    ++jl_world_counter; // reserve a world age for the deserialization
-
-    arraylist_new(&backref_list, 4000);
-    arraylist_push(&backref_list, jl_main_module);
-    arraylist_new(&flagref_list, 0);
-    arraylist_new(&ccallable_list, 0);
-    htable_new(&uniquing_table, 0);
-
-    jl_serializer_state s = {
-        f,
-        ptls,
-        mod_array
-    };
-    jl_array_t *restored = (jl_array_t*)jl_deserialize_value(&s, (jl_value_t**)&restored);
-    serializer_worklist = restored;
-    assert(jl_isa((jl_value_t*)restored, jl_array_any_type));
-
-    // get list of external generic functions
-    jl_value_t *external_methods = jl_deserialize_value(&s, &external_methods);
-    jl_value_t *external_backedges = jl_deserialize_value(&s, &external_backedges);
-    jl_value_t *external_edges = jl_deserialize_value(&s, &external_edges);
-
-    arraylist_t *tracee_list = NULL;
-    if (jl_newmeth_tracer)
-        tracee_list = arraylist_new((arraylist_t*)malloc_s(sizeof(arraylist_t)), 0);
-
-    // at this point, the AST is fully reconstructed, but still completely disconnected
-    // now all of the interconnects will be created
-    jl_recache_types(); // make all of the types identities correct
-    htable_reset(&uniquing_table, 0);
-    jl_insert_methods((jl_array_t*)external_methods); // hook up methods of external generic functions (needs to be after recache types)
-    jl_recache_other(); // make all of the other objects identities correct (needs to be after insert methods)
-    htable_free(&uniquing_table);
-    jl_array_t *init_order = jl_finalize_deserializer(&s, tracee_list); // done with f and s (needs to be after recache)
-
-    JL_GC_PUSH4(&init_order, &restored, &external_backedges, &external_edges);
-    jl_gc_enable(en); // subtyping can allocate a lot, not valid before recache-other
-
-    jl_insert_backedges((jl_array_t*)external_backedges, (jl_array_t*)external_edges); // restore external backedges (needs to be last)
-
-    serializer_worklist = NULL;
-    arraylist_free(&flagref_list);
-    arraylist_free(&backref_list);
-    ios_close(f);
-
-    jl_gc_enable_finalizers(ptls, 1); // make sure we don't run any Julia code concurrently before this point
-    if (tracee_list) {
-        jl_methtable_t *mt;
-        while ((mt = (jl_methtable_t*)arraylist_pop(tracee_list)) != NULL) {
-            JL_GC_PROMISE_ROOTED(mt);
-            jl_typemap_visitor(mt->defs, trace_method, NULL);
-        }
-        arraylist_free(tracee_list);
-        free(tracee_list);
-    }
-    for (int i = 0; i < ccallable_list.len; i++) {
-        jl_svec_t *item = (jl_svec_t*)ccallable_list.items[i];
-        JL_GC_PROMISE_ROOTED(item);
-        int success = jl_compile_extern_c(NULL, NULL, NULL, jl_svecref(item, 0), jl_svecref(item, 1));
-        if (!success)
-            jl_safe_printf("@ccallable was already defined for this method name\n");
-    }
-    arraylist_free(&ccallable_list);
-    jl_value_t *ret = (jl_value_t*)jl_svec(2, restored, init_order);
-    JL_GC_POP();
-
-    return (jl_value_t*)ret;
-}
-
-JL_DLLEXPORT jl_value_t *jl_restore_incremental_from_buf(const char *buf, size_t sz, jl_array_t *mod_array)
-{
-    ios_t f;
-    ios_static_buffer(&f, (char*)buf, sz);
-    return _jl_restore_incremental(&f, mod_array);
-}
-
-JL_DLLEXPORT jl_value_t *jl_restore_incremental(const char *fname, jl_array_t *mod_array)
-{
-    ios_t f;
-    if (ios_file(&f, fname, 1, 0, 0, 0) == NULL) {
-        return jl_get_exceptionf(jl_errorexception_type,
-            "Cache file \"%s\" not found.\n", fname);
-    }
-    return _jl_restore_incremental(&f, mod_array);
-}
-
-// --- init ---
-
-void jl_init_serializer(void)
-{
-    jl_ptls_t ptls = jl_get_ptls_states();
-    htable_new(&ser_tag, 0);
-    htable_new(&common_symbol_tag, 0);
-    htable_new(&backref_table, 0);
-
-    void *vals[] = { jl_emptysvec, jl_emptytuple, jl_false, jl_true, jl_nothing, jl_any_type,
-                     call_sym, invoke_sym, goto_ifnot_sym, return_sym, jl_symbol("tuple"),
-                     jl_an_empty_string, jl_an_empty_vec_any,
-
-                     // empirical list of very common symbols
-                     #include "common_symbols1.inc"
-
-                     jl_box_int32(0), jl_box_int32(1), jl_box_int32(2),
-                     jl_box_int32(3), jl_box_int32(4), jl_box_int32(5),
-                     jl_box_int32(6), jl_box_int32(7), jl_box_int32(8),
-                     jl_box_int32(9), jl_box_int32(10), jl_box_int32(11),
-                     jl_box_int32(12), jl_box_int32(13), jl_box_int32(14),
-                     jl_box_int32(15), jl_box_int32(16), jl_box_int32(17),
-                     jl_box_int32(18), jl_box_int32(19), jl_box_int32(20),
-
-                     jl_box_int64(0), jl_box_int64(1), jl_box_int64(2),
-                     jl_box_int64(3), jl_box_int64(4), jl_box_int64(5),
-                     jl_box_int64(6), jl_box_int64(7), jl_box_int64(8),
-                     jl_box_int64(9), jl_box_int64(10), jl_box_int64(11),
-                     jl_box_int64(12), jl_box_int64(13), jl_box_int64(14),
-                     jl_box_int64(15), jl_box_int64(16), jl_box_int64(17),
-                     jl_box_int64(18), jl_box_int64(19), jl_box_int64(20),
-
-                     jl_bool_type, jl_linenumbernode_type, jl_pinode_type,
-                     jl_upsilonnode_type, jl_type_type, jl_bottom_type, jl_ref_type,
-                     jl_pointer_type, jl_abstractarray_type, jl_nothing_type,
-                     jl_vararg_type,
-                     jl_densearray_type, jl_function_type, jl_typename_type,
-                     jl_builtin_type, jl_task_type, jl_uniontype_type,
-                     jl_array_any_type, jl_intrinsic_type,
-                     jl_abstractslot_type, jl_methtable_type, jl_typemap_level_type,
-                     jl_voidpointer_type, jl_newvarnode_type, jl_abstractstring_type,
-                     jl_array_symbol_type, jl_anytuple_type, jl_tparam0(jl_anytuple_type),
-                     jl_emptytuple_type, jl_array_uint8_type, jl_code_info_type,
-                     jl_typeofbottom_type, jl_typeofbottom_type->super,
-                     jl_namedtuple_type, jl_array_int32_type,
-                     jl_typedslot_type, jl_uint32_type, jl_uint64_type,
-                     jl_type_type_mt, jl_nonfunction_mt,
-                     jl_opaque_closure_type,
-
-                     ptls->root_task,
-
-                     NULL };
-
-    // more common symbols, less common than those above. will get 2-byte encodings.
-    void *common_symbols[] = {
-        #include "common_symbols2.inc"
-        NULL
-    };
-
-    deser_tag[TAG_SYMBOL] = (jl_value_t*)jl_symbol_type;
-    deser_tag[TAG_SSAVALUE] = (jl_value_t*)jl_ssavalue_type;
-    deser_tag[TAG_DATATYPE] = (jl_value_t*)jl_datatype_type;
-    deser_tag[TAG_SLOTNUMBER] = (jl_value_t*)jl_slotnumber_type;
-    deser_tag[TAG_SVEC] = (jl_value_t*)jl_simplevector_type;
-    deser_tag[TAG_ARRAY] = (jl_value_t*)jl_array_type;
-    deser_tag[TAG_EXPR] = (jl_value_t*)jl_expr_type;
-    deser_tag[TAG_PHINODE] = (jl_value_t*)jl_phinode_type;
-    deser_tag[TAG_PHICNODE] = (jl_value_t*)jl_phicnode_type;
-    deser_tag[TAG_STRING] = (jl_value_t*)jl_string_type;
-    deser_tag[TAG_MODULE] = (jl_value_t*)jl_module_type;
-    deser_tag[TAG_TVAR] = (jl_value_t*)jl_tvar_type;
-    deser_tag[TAG_METHOD_INSTANCE] = (jl_value_t*)jl_method_instance_type;
-    deser_tag[TAG_METHOD] = (jl_value_t*)jl_method_type;
-    deser_tag[TAG_CODE_INSTANCE] = (jl_value_t*)jl_code_instance_type;
-    deser_tag[TAG_GLOBALREF] = (jl_value_t*)jl_globalref_type;
-    deser_tag[TAG_INT32] = (jl_value_t*)jl_int32_type;
-    deser_tag[TAG_INT64] = (jl_value_t*)jl_int64_type;
-    deser_tag[TAG_UINT8] = (jl_value_t*)jl_uint8_type;
-    deser_tag[TAG_LINEINFO] = (jl_value_t*)jl_lineinfonode_type;
-    deser_tag[TAG_UNIONALL] = (jl_value_t*)jl_unionall_type;
-    deser_tag[TAG_GOTONODE] = (jl_value_t*)jl_gotonode_type;
-    deser_tag[TAG_QUOTENODE] = (jl_value_t*)jl_quotenode_type;
-    deser_tag[TAG_GOTOIFNOT] = (jl_value_t*)jl_gotoifnot_type;
-    deser_tag[TAG_RETURNNODE] = (jl_value_t*)jl_returnnode_type;
-    deser_tag[TAG_ARGUMENT] = (jl_value_t*)jl_argument_type;
-
-    intptr_t i = 0;
-    while (vals[i] != NULL) {
-        deser_tag[LAST_TAG+1+i] = (jl_value_t*)vals[i];
-        i += 1;
-    }
-    assert(LAST_TAG+1+i < 256);
-
-    for (i = 2; i < 256; i++) {
-        if (deser_tag[i])
-            ptrhash_put(&ser_tag, deser_tag[i], (void*)i);
-    }
-
-    i = 2;
-    while (common_symbols[i-2] != NULL) {
-        ptrhash_put(&common_symbol_tag, common_symbols[i-2], (void*)i);
-        deser_symbols[i] = (jl_value_t*)common_symbols[i-2];
-        i += 1;
-    }
-    assert(i <= 256);
-}
-
-#ifdef __cplusplus
-}
+    Perl_deb(aTHX_ "%s", OP_NAME(o));
+    switch (o->op_type) {
+    case OP_CONST:
+    case OP_HINTSEVAL:
+        /* With ITHREADS, consts are stored in the pad, and the right pad
+         * may not be active here, so check.
+         * Looks like only during compiling the pads are illegal.
+         */
+#ifdef USE_ITHREADS
+        if ((((SVOP*)o)->op_sv) || !IN_PERL_COMPILETIME)
 #endif
+            PerlIO_printf(Perl_debug_log, "(%s)", SvPEEK(cSVOPo_sv));
+        break;
+    case OP_GVSV:
+    case OP_GV:
+        PerlIO_printf(Perl_debug_log, "(%" SVf ")",
+                SVfARG(S_gv_display(aTHX_ cGVOPo_gv)));
+        break;
+
+    case OP_PADSV:
+    case OP_PADAV:
+    case OP_PADHV:
+    case OP_ARGELEM:
+        S_deb_padvar(aTHX_ o->op_targ, 1, 1);
+        break;
+
+    case OP_PADRANGE:
+        S_deb_padvar(aTHX_ o->op_targ,
+                        o->op_private & OPpPADRANGE_COUNTMASK, 1);
+        break;
+
+    case OP_MULTIDEREF:
+        PerlIO_printf(Perl_debug_log, "(%" SVf ")",
+            SVfARG(multideref_stringify(o, deb_curcv(cxstack_ix))));
+        break;
+
+    case OP_MULTICONCAT:
+        PerlIO_printf(Perl_debug_log, "(%" SVf ")",
+            SVfARG(multiconcat_stringify(o)));
+        break;
+
+    default:
+        break;
+    }
+    PerlIO_printf(Perl_debug_log, "\n");
+    return 0;
+}
+
+
+/*
+=for apidoc op_class
+
+Given an op, determine what type of struct it has been allocated as.
+Returns one of the OPclass enums, such as OPclass_LISTOP.
+
+=cut
+*/
+
+
+OPclass
+Perl_op_class(pTHX_ const OP *o)
+{
+    bool custom = 0;
+
+    if (!o)
+        return OPclass_NULL;
+
+    if (o->op_type == 0) {
+        if (o->op_targ == OP_NEXTSTATE || o->op_targ == OP_DBSTATE)
+            return OPclass_COP;
+        return (o->op_flags & OPf_KIDS) ? OPclass_UNOP : OPclass_BASEOP;
+    }
+
+    if (o->op_type == OP_SASSIGN)
+        return ((o->op_private & OPpASSIGN_BACKWARDS) ? OPclass_UNOP : OPclass_BINOP);
+
+    if (o->op_type == OP_AELEMFAST) {
+#ifdef USE_ITHREADS
+            return OPclass_PADOP;
+#else
+            return OPclass_SVOP;
+#endif
+    }
+    
+#ifdef USE_ITHREADS
+    if (o->op_type == OP_GV || o->op_type == OP_GVSV ||
+        o->op_type == OP_RCATLINE)
+        return OPclass_PADOP;
+#endif
+
+    if (o->op_type == OP_CUSTOM)
+        custom = 1;
+
+    switch (OP_CLASS(o)) {
+    case OA_BASEOP:
+        return OPclass_BASEOP;
+
+    case OA_UNOP:
+        return OPclass_UNOP;
+
+    case OA_BINOP:
+        return OPclass_BINOP;
+
+    case OA_LOGOP:
+        return OPclass_LOGOP;
+
+    case OA_LISTOP:
+        return OPclass_LISTOP;
+
+    case OA_PMOP:
+        return OPclass_PMOP;
+
+    case OA_SVOP:
+        return OPclass_SVOP;
+
+    case OA_PADOP:
+        return OPclass_PADOP;
+
+    case OA_PVOP_OR_SVOP:
+        /*
+         * Character translations (tr///) are usually a PVOP, keeping a 
+         * pointer to a table of shorts used to look up translations.
+         * Under utf8, however, a simple table isn't practical; instead,
+         * the OP is an SVOP (or, under threads, a PADOP),
+         * and the SV is an AV.
+         */
+        return (!custom &&
+                   (o->op_private & OPpTRANS_USE_SVOP)
+               )
+#if  defined(USE_ITHREADS)
+                ? OPclass_PADOP : OPclass_PVOP;
+#else
+                ? OPclass_SVOP : OPclass_PVOP;
+#endif
+
+    case OA_LOOP:
+        return OPclass_LOOP;
+
+    case OA_COP:
+        return OPclass_COP;
+
+    case OA_BASEOP_OR_UNOP:
+        /*
+         * UNI(OP_foo) in toke.c returns token UNI or FUNC1 depending on
+         * whether parens were seen. perly.y uses OPf_SPECIAL to
+         * signal whether a BASEOP had empty parens or none.
+         * Some other UNOPs are created later, though, so the best
+         * test is OPf_KIDS, which is set in newUNOP.
+         */
+        return (o->op_flags & OPf_KIDS) ? OPclass_UNOP : OPclass_BASEOP;
+
+    case OA_FILESTATOP:
+        /*
+         * The file stat OPs are created via UNI(OP_foo) in toke.c but use
+         * the OPf_REF flag to distinguish between OP types instead of the
+         * usual OPf_SPECIAL flag. As usual, if OPf_KIDS is set, then we
+         * return OPclass_UNOP so that walkoptree can find our children. If
+         * OPf_KIDS is not set then we check OPf_REF. Without OPf_REF set
+         * (no argument to the operator) it's an OP; with OPf_REF set it's
+         * an SVOP (and op_sv is the GV for the filehandle argument).
+         */
+        return ((o->op_flags & OPf_KIDS) ? OPclass_UNOP :
+#ifdef USE_ITHREADS
+                (o->op_flags & OPf_REF) ? OPclass_PADOP : OPclass_BASEOP);
+#else
+                (o->op_flags & OPf_REF) ? OPclass_SVOP : OPclass_BASEOP);
+#endif
+    case OA_LOOPEXOP:
+        /*
+         * next, last, redo, dump and goto use OPf_SPECIAL to indicate that a
+         * label was omitted (in which case it's a BASEOP) or else a term was
+         * seen. In this last case, all except goto are definitely PVOP but
+         * goto is either a PVOP (with an ordinary constant label), an UNOP
+         * with OPf_STACKED (with a non-constant non-sub) or an UNOP for
+         * OP_REFGEN (with goto &sub) in which case OPf_STACKED also seems to
+         * get set.
+         */
+        if (o->op_flags & OPf_STACKED)
+            return OPclass_UNOP;
+        else if (o->op_flags & OPf_SPECIAL)
+            return OPclass_BASEOP;
+        else
+            return OPclass_PVOP;
+    case OA_METHOP:
+        return OPclass_METHOP;
+    case OA_UNOP_AUX:
+        return OPclass_UNOP_AUX;
+    }
+    Perl_warn(aTHX_ "Can't determine class of operator %s, assuming BASEOP\n",
+         OP_NAME(o));
+    return OPclass_BASEOP;
+}
+
+
+
+STATIC CV*
+S_deb_curcv(pTHX_ I32 ix)
+{
+    PERL_SI *si = PL_curstackinfo;
+    for (; ix >=0; ix--) {
+        const PERL_CONTEXT * const cx = &(si->si_cxstack)[ix];
+
+        if (CxTYPE(cx) == CXt_SUB || CxTYPE(cx) == CXt_FORMAT)
+            return cx->blk_sub.cv;
+        else if (CxTYPE(cx) == CXt_EVAL && !CxEVALBLOCK(cx))
+            return cx->blk_eval.cv;
+        else if (ix == 0 && si->si_type == PERLSI_MAIN)
+            return PL_main_cv;
+        else if (ix == 0 && CxTYPE(cx) == CXt_NULL
+               && si->si_type == PERLSI_SORT)
+        {
+            /* fake sort sub; use CV of caller */
+            si = si->si_prev;
+            ix = si->si_cxix + 1;
+        }
+    }
+    return NULL;
+}
+
+void
+Perl_watch(pTHX_ char **addr)
+{
+    PERL_ARGS_ASSERT_WATCH;
+
+    PL_watchaddr = addr;
+    PL_watchok = *addr;
+    PerlIO_printf(Perl_debug_log, "WATCHING, %" UVxf " is currently %" UVxf "\n",
+        PTR2UV(PL_watchaddr), PTR2UV(PL_watchok));
+}
+
+STATIC void
+S_debprof(pTHX_ const OP *o)
+{
+    PERL_ARGS_ASSERT_DEBPROF;
+
+    if (!DEBUG_J_TEST_ && CopSTASH_eq(PL_curcop, PL_debstash))
+        return;
+    if (!PL_profiledata)
+        Newxz(PL_profiledata, MAXO, U32);
+    ++PL_profiledata[o->op_type];
+}
+
+void
+Perl_debprofdump(pTHX)
+{
+    unsigned i;
+    if (!PL_profiledata)
+        return;
+    for (i = 0; i < MAXO; i++) {
+        if (PL_profiledata[i])
+            PerlIO_printf(Perl_debug_log,
+                          "%5lu %s\n", (unsigned long)PL_profiledata[i],
+                                       PL_op_name[i]);
+    }
+}
+
+
+/*
+ * ex: set ts=8 sts=4 sw=4 et:
+ */
