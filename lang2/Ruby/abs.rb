@@ -1,10 +1,11 @@
-# frozen_string_literal: true
+require_relative '../../spec_helper'
 
-# Calculates the absolute value of a number
-class Abs
-  def self.call(number)
-    return -number if number.negative?
+describe :rational_abs, shared: true do
+  it "returns self's absolute value" do
+    Rational(3, 4).send(@method).should == Rational(3, 4)
+    Rational(-3, 4).send(@method).should == Rational(3, 4)
+    Rational(3, -4).send(@method).should == Rational(3, 4)
 
-    number
+    Rational(bignum_value, -bignum_value).send(@method).should == Rational(bignum_value, bignum_value)
   end
 end

@@ -1,83 +1,142 @@
-/*
+/**********************************************************************
 
- version.c -- Perl 5 interface to Berkeley DB
+  version.c -
 
- written by Paul Marquess <pmqs@cpan.org>
- last modified 2nd Jan 2002
- version 1.802
+  $Author$
+  created at: Thu Sep 30 20:08:01 JST 1993
 
- All comments/suggestions/problems are welcome
+  Copyright (C) 1993-2007 Yukihiro Matsumoto
 
-     Copyright (c) 1995-2002 Paul Marquess. All rights reserved.
-     This program is free software; you can redistribute it and/or
-     modify it under the same terms as Perl itself.
+**********************************************************************/
 
- Changes:
-        1.71 -  Support for Berkeley DB version 3.
-                Support for Berkeley DB 2/3's backward compatibility mode.
-        1.72 -  No change.
-        1.73 -  Added support for threading
-        1.74 -  Added Perl core patch 7801.
+#include "ruby/ruby.h"
+#include "version.h"
+#include "vm_core.h"
+#include "mjit.h"
+#include <stdio.h>
 
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
 
-*/
+#define PRINT(type) puts(ruby_##type)
+#define MKSTR(type) rb_obj_freeze(rb_usascii_str_new_static(ruby_##type, sizeof(ruby_##type)-1))
+#define MKINT(name) INT2FIX(ruby_##name)
 
-#define PERL_NO_GET_CONTEXT
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
+const int ruby_api_version[] = {
+    RUBY_API_VERSION_MAJOR,
+    RUBY_API_VERSION_MINOR,
+    RUBY_API_VERSION_TEENY,
+};
+#define RUBY_VERSION \
+    STRINGIZE(RUBY_VERSION_MAJOR) "." \
+    STRINGIZE(RUBY_VERSION_MINOR) "." \
+    STRINGIZE(RUBY_VERSION_TEENY) ""
+#ifndef RUBY_FULL_REVISION
+# define RUBY_FULL_REVISION RUBY_REVISION
+#endif
+const char ruby_version[] = RUBY_VERSION;
+const char ruby_revision[] = RUBY_FULL_REVISION;
+const char ruby_release_date[] = RUBY_RELEASE_DATE;
+const char ruby_platform[] = RUBY_PLATFORM;
+const int ruby_patchlevel = RUBY_PATCHLEVEL;
+const char ruby_description[] = RUBY_DESCRIPTION_WITH("");
+static const char ruby_description_with_jit[] = RUBY_DESCRIPTION_WITH(" +JIT");
+const char ruby_copyright[] = RUBY_COPYRIGHT;
+const char ruby_engine[] = "ruby";
 
-#include <db.h>
+/*! Defines platform-depended Ruby-level constants */
+void
+Init_version(void)
+{
+    enum {ruby_patchlevel = RUBY_PATCHLEVEL};
+    VALUE version;
+    VALUE ruby_engine_name;
+    /*
+     * The running version of ruby
+     */
+    rb_define_global_const("RUBY_VERSION", (version = MKSTR(version)));
+    /*
+     * The date this ruby was released
+     */
+    rb_define_global_const("RUBY_RELEASE_DATE", MKSTR(release_date));
+    /*
+     * The platform for this ruby
+     */
+    rb_define_global_const("RUBY_PLATFORM", MKSTR(platform));
+    /*
+     * The patchlevel for this ruby.  If this is a development build of ruby
+     * the patchlevel will be -1
+     */
+    rb_define_global_const("RUBY_PATCHLEVEL", MKINT(patchlevel));
+    /*
+     * The GIT commit hash for this ruby.
+     */
+    rb_define_global_const("RUBY_REVISION", MKSTR(revision));
+    /*
+     * The copyright string for ruby
+     */
+    rb_define_global_const("RUBY_COPYRIGHT", MKSTR(copyright));
+    /*
+     * The engine or interpreter this ruby uses.
+     */
+    rb_define_global_const("RUBY_ENGINE", ruby_engine_name = MKSTR(engine));
+    ruby_set_script_name(ruby_engine_name);
+    /*
+     * The version of the engine or interpreter this ruby uses.
+     */
+    rb_define_global_const("RUBY_ENGINE_VERSION", (1 ? version : MKSTR(version)));
+
+    rb_provide("ruby2_keywords.rb");
+}
+
+#if USE_MJIT
+#define MJIT_OPTS_ON mjit_opts.on
+#else
+#define MJIT_OPTS_ON 0
+#endif
 
 void
-#ifdef CAN_PROTOTYPE
-__getBerkeleyDBInfo(void)
-#else
-__getBerkeleyDBInfo()
-#endif
+Init_ruby_description(void)
 {
-#ifdef dTHX
-    dTHX;
-#endif
-    SV * version_sv = perl_get_sv("DB_File::db_version", GV_ADD|GV_ADDMULTI) ;
-    SV * ver_sv = perl_get_sv("DB_File::db_ver", GV_ADD|GV_ADDMULTI) ;
-    SV * compat_sv = perl_get_sv("DB_File::db_185_compat", GV_ADD|GV_ADDMULTI) ;
+    VALUE description;
 
-#ifdef DB_VERSION_MAJOR
-    int Major, Minor, Patch ;
-
-    (void)db_version(&Major, &Minor, &Patch) ;
-
-    /* Check that the versions of db.h and libdb.a are the same */
-    if (Major != DB_VERSION_MAJOR || Minor != DB_VERSION_MINOR )
-                /* || Patch != DB_VERSION_PATCH) */
-
-        croak("\nDB_File was build with libdb version %d.%d.%d,\nbut you are attempting to run it with libdb version %d.%d.%d\n",
-                DB_VERSION_MAJOR, DB_VERSION_MINOR, DB_VERSION_PATCH,
-                Major, Minor, Patch) ;
-
-    /* check that libdb is recent enough  -- we need 2.3.4 or greater */
-    if (Major == 2 && (Minor < 3 || (Minor ==  3 && Patch < 4)))
-        croak("DB_File needs Berkeley DB 2.3.4 or greater, you have %d.%d.%d\n",
-                 Major, Minor, Patch) ;
-
-    {
-        char buffer[40] ;
-        sprintf(buffer, "%d.%d", Major, Minor) ;
-        sv_setpv(version_sv, buffer) ;
-        sprintf(buffer, "%d.%03d%03d", Major, Minor, Patch) ;
-        sv_setpv(ver_sv, buffer) ;
+    if (MJIT_OPTS_ON) {
+        description = MKSTR(description_with_jit);
+    }
+    else {
+        description = MKSTR(description);
     }
 
-#else /* ! DB_VERSION_MAJOR */
-    sv_setiv(version_sv, 1) ;
-    sv_setiv(ver_sv, 1) ;
-#endif /* ! DB_VERSION_MAJOR */
+    /*
+     * The full ruby version string, like <tt>ruby -v</tt> prints
+     */
+    rb_define_global_const("RUBY_DESCRIPTION", /* MKSTR(description) */ description);
+}
 
-#ifdef COMPAT185
-    sv_setiv(compat_sv, 1) ;
-#else /* ! COMPAT185 */
-    sv_setiv(compat_sv, 0) ;
-#endif /* ! COMPAT185 */
+/*! Prints the version information of the CRuby interpreter to stdout. */
+void
+ruby_show_version(void)
+{
+    if (MJIT_OPTS_ON) {
+        PRINT(description_with_jit);
+    }
+    else {
+        PRINT(description);
+    }
+#ifdef RUBY_LAST_COMMIT_TITLE
+    fputs("last_commit=" RUBY_LAST_COMMIT_TITLE, stdout);
+#endif
+#ifdef HAVE_MALLOC_CONF
+    if (malloc_conf) printf("malloc_conf=%s\n", malloc_conf);
+#endif
+    fflush(stdout);
+}
 
+/*! Prints the copyright notice of the CRuby interpreter to stdout. */
+void
+ruby_show_copyright(void)
+{
+    PRINT(copyright);
+    fflush(stdout);
 }
