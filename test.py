@@ -17,11 +17,12 @@ EXTENSION_TO_LANGUAGE = {
 
 LANG_TO_EXT = {l: e for e, l in EXTENSION_TO_LANGUAGE.items()}
 
-lang = "Go"
-file_list = [f for f in glob.iglob(f'go-master/**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXTENSION_TO_LANGUAGE.keys()]
+lang = "JavaScript"
+file_list = [f for f in glob.iglob(f'freeCodeCamp-main/**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXTENSION_TO_LANGUAGE.keys()]
 assert len(file_list) > 0
-print(len(file_list))
-print(len([f for f in file_list if pathlib.Path(f).suffix == LANG_TO_EXT[lang]]))
+# print(file_list)
+# print(len(file_list))
+# print(len([f for f in file_list if pathlib.Path(f).suffix == LANG_TO_EXT[lang]]))
 
 os.makedirs(f"lang2/{lang}", exist_ok=True)
 
