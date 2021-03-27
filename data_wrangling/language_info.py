@@ -2,7 +2,7 @@ import os
 import pathlib
 
 
-EXTENSION_TO_LANGUAGE = {
+EXT_TO_LANG = {
     ".c": "C",
     ".cpp": "C++",
     ".go": "Go",
@@ -15,9 +15,9 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "Ruby"
 }
 
-LANGUAGE_FILES = [file for lang in EXTENSION_TO_LANGUAGE.values() for file in os.listdir(f'../lang/{lang}')]
+LANG_FILES = [file for lang in EXT_TO_LANG.values() for file in os.listdir(f'../lang/{lang}')]
 
 
 def get_language_from_filename(filename: str) -> str:
     ext = pathlib.Path(filename).suffix
-    return EXTENSION_TO_LANGUAGE[ext]
+    return EXT_TO_LANG[ext]

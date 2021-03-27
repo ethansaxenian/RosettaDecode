@@ -2,7 +2,7 @@ This git repo has been modified from [github.com/acmeism/RosettaCodeData](https:
 
 It contains all tasks from [Rosetta Code](https://rosettacode.org) in the current supported languages.
 
-Other sources of language data:
+Other sources of language data (currently in lang2/):
 [Go](https://github.com/golang/go),
 [Haskell](https://github.com/purescript/purescript),
 [JavaScript](https://github.com/freeCodeCamp/freeCodeCamp),
