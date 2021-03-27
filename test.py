@@ -15,14 +15,14 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "Ruby"
 }
 
-lang = "Ruby"
-file_list = [f for f in glob.iglob(f'ruby-master/**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXTENSION_TO_LANGUAGE.keys()]
+lang = "Haskell"
+file_list = [f for f in glob.iglob(f'purescript-master/**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXTENSION_TO_LANGUAGE.keys()]
 assert len(file_list) > 0
 # print(len(file_list))
-# print(len([f for f in file_list if pathlib.Path(f).suffix == ".rb"]))
+# print(len([f for f in file_list if pathlib.Path(f).suffix == ".hs"]))
 
 os.makedirs(f"lang2/{lang}", exist_ok=True)
 
-for file in file_list:
+for file in [f for f in file_list if pathlib.Path(f).suffix == ".hs"]:
     ext = pathlib.Path(file).suffix
     os.replace(file, f"lang2/{EXTENSION_TO_LANGUAGE[ext]}/{os.path.basename(file)}")

@@ -4,7 +4,8 @@ It contains all tasks from [Rosetta Code](https://rosettacode.org) in the langua
 
 Some files included from [The Algorithms](https://github.com/TheAlgorithms).
 
-Many files from the various language GitHub repos: 
+Many files from the various language GitHub repos:
+[Haskell (really purescript, but written in haskell)](https://github.com/purescript/purescript)
 [Julia](https://github.com/JuliaLang/julia), 
 [Perl](https://github.com/Perl/perl5), 
 [Ruby](https://github.com/ruby/ruby)
