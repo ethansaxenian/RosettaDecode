@@ -2,6 +2,8 @@ This git repo has been modified from [github.com/acmeism/RosettaCodeData](https:
 
 It contains all tasks from [Rosetta Code](https://rosettacode.org) in the languages from this [programming language popularity ranking](https://pypl.github.io/PYPL.html).
 
+Some files included from [The Algorithms](https://github.com/TheAlgorithms).
+
 Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl, Python, Ruby
 
 | Language    | Examples    |
