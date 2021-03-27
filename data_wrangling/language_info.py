@@ -9,7 +9,7 @@ EXT_TO_LANG = {
     ".hs": "Haskell",
     ".java": "Java",
     ".js": "JavaScript",
-    ".julia": "Julia",
+    ".jl": "Julia",
     ".pl": "Perl",
     ".py": "Python",
     ".rb": "Ruby"
