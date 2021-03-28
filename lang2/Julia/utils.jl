@@ -1,103 +1,51 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
+#  Copyright 2017, Iain Dunning, Joey Huchette, Miles Lubin, and contributors
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# Text / HTML objects
+# Lightweight unsafe view for vectors. It seems that the only way to avoid
+# triggering allocations is to have only bitstype fields, so we store a pointer.
+struct _VectorView{T} <: DenseVector{T}
+    offset::Int
+    len::Int
+    ptr::Ptr{T}
+end
 
-import .Base: print, show, ==, hash
+Base.getindex(v::_VectorView, idx::Integer) = unsafe_load(v.ptr, idx + v.offset)
 
-export HTML, @html_str
+function Base.setindex!(v::_VectorView, value, idx::Integer)
+    unsafe_store!(v.ptr, value, idx + v.offset)
+    return v
+end
 
-export HTML, Text
-
-"""
-`HTML(s)`: Create an object that renders `s` as html.
-
-    HTML("<div>foo</div>")
-
-You can also use a stream for large amounts of data:
-
-    HTML() do io
-      println(io, "<div>foo</div>")
+function Base.setindex!(v::_VectorView{T}, value::T, idx::Vector{Int}) where {T}
+    for i in idx
+        v[i] = value
     end
-
-!!! warning
-    `HTML` is currently exported to maintain
-    backwards-compatibility, but is considered
-    to be deprecated and should not be used.
-"""
-mutable struct HTML{T}
-    content::T
+    return v
 end
 
-function HTML(xs...)
-    HTML() do io
-        for x in xs
-            print(io, x)
-        end
+Base.length(v::_VectorView) = v.len
+
+function Base.fill!(v::_VectorView{T}, value) where {T}
+    val = convert(T, value)
+    for i in 1:length(v)
+        v[i] = val
     end
+    return v
 end
 
-show(io::IO, ::MIME"text/html", h::HTML) = print(io, h.content)
-show(io::IO, ::MIME"text/html", h::HTML{<:Function}) = h.content(io)
-
-"""
-    @html_str -> Docs.HTML
-
-Create an `HTML` object from a literal string.
-"""
-macro html_str(s)
-    :(HTML($s))
-end
-
-function catdoc(xs::HTML...)
-    HTML() do io
-        for x in xs
-            show(io, MIME"text/html"(), x)
-        end
+function _rmul!(v::_VectorView{T}, value::T) where {T<:Number}
+    for i in 1:length(v)
+        v[i] *= value
     end
+    return
 end
 
-export Text, @text_str
-
-"""
-`Text(s)`: Create an object that renders `s` as plain text.
-
-    Text("foo")
-
-You can also use a stream for large amounts of data:
-
-    Text() do io
-      println(io, "foo")
-    end
-
-!!! warning
-    `Text` is currently exported to maintain
-    backwards-compatibility, but is considered
-    to be deprecated and should not be used.
-"""
-mutable struct Text{T}
-    content::T
-end
-
-print(io::IO, t::Text) = print(io, t.content)
-print(io::IO, t::Text{<:Function}) = t.content(io)
-show(io::IO, t::Text) = print(io, t)
-
-==(t1::T, t2::T) where {T<:Union{HTML,Text}} = t1.content == t2.content
-hash(t::T, h::UInt) where {T<:Union{HTML,Text}} = hash(T, hash(t.content, h))
-
-"""
-    @text_str -> Docs.Text
-
-Create a `Text` object from a literal string.
-"""
-macro text_str(s)
-    :(Text($s))
-end
-
-function catdoc(xs::Text...)
-    Text() do io
-        for x in xs
-            show(io, MIME"text/plain"(), x)
-        end
-    end
+function _reinterpret_unsafe(::Type{T}, x::Vector{R}) where {T,R}
+    # how many T's fit into x?
+    @assert isbitstype(T) && isbitstype(R)
+    len = length(x) * sizeof(R)
+    p = reinterpret(Ptr{T}, pointer(x))
+    return _VectorView(0, div(len, sizeof(T)), p)
 end

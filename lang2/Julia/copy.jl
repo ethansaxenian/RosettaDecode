@@ -1,236 +1,282 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
+#  Copyright 2017, Iain Dunning, Joey Huchette, Miles Lubin, and contributors
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-using Random
+"""
+    copy_extension_data(data, new_model::AbstractModel, model::AbstractModel)
 
-mainres = ([4, 5, 3],
-           [1, 5, 3])
-bitres = ([true, true, false],
-          [false, true, false])
+Return a copy of the extension data `data` of the model `model` to the extension
+data of the new model `new_model`. A method should be added for any JuMP
+extension storing data in the `ext` field.
+"""
+function copy_extension_data end
 
-chnlprod(x) = Channel(c->for i in x; put!(c,i); end)
-@testset "copyto!" begin
-    for (dest, src, bigsrc, emptysrc, res) in [
-        ([1, 2, 3], () -> [4, 5], () -> [1, 2, 3, 4, 5], () -> Int[], mainres),
-        ([1, 2, 3], () -> 4:5, () -> 1:5, () -> 1:0, mainres),
-        ([1, 2, 3], () -> chnlprod(4:5), () -> chnlprod(1:5), () -> chnlprod(1:0), mainres),
-        (falses(3), () -> trues(2), () -> trues(5), () -> trues(0), bitres)]
+"""
+    ReferenceMap
 
-        @test copyto!(copy(dest), src()) == res[1]
-        @test copyto!(copy(dest), 1, src()) == res[1]
-        @test copyto!(copy(dest), 2, src(), 2) == res[2]
-        @test copyto!(copy(dest), 2, src(), 2, 1) == res[2]
+Mapping between variable and constraint reference of a model and its copy. The
+reference of the copied model can be obtained by indexing the map with the
+reference of the corresponding reference of the original model.
+"""
+struct ReferenceMap
+    model::Model
+    index_map::MOIU.IndexMap
+end
 
-        @test copyto!(copy(dest), 99, src(), 99, 0) == dest
+function Base.getindex(map::ReferenceMap, vref::VariableRef)
+    return VariableRef(map.model, map.index_map[index(vref)])
+end
 
-        @test copyto!(copy(dest), 1, emptysrc()) == dest
-        x = emptysrc()
-        exc = isa(x, AbstractArray) ? BoundsError : ArgumentError
-        @test_throws exc copyto!(dest, 1, emptysrc(), 1)
+function Base.getindex(map::ReferenceMap, cref::ConstraintRef)
+    return ConstraintRef(map.model, map.index_map[index(cref)], cref.shape)
+end
 
-        for idx in (0, 4)
-            @test_throws BoundsError copyto!(dest, idx, src())
-            @test_throws BoundsError copyto!(dest, idx, src(), 1)
-            @test_throws BoundsError copyto!(dest, idx, src(), 1, 1)
-            x = src()
-            exc = isa(x, AbstractArray) ? BoundsError : ArgumentError
-            @test_throws exc copyto!(dest, 1, x, idx)
-            x = src()
-            exc = isa(x, AbstractArray) ? BoundsError : ArgumentError
-            @test_throws exc copyto!(dest, 1, x, idx, 1)
-        end
-
-        @test_throws ArgumentError copyto!(dest, 1, src(), 1, -1)
-
-        @test_throws Union{BoundsError, ArgumentError} copyto!(dest, bigsrc())
-
-        @test_throws Union{BoundsError, ArgumentError} copyto!(dest, 3, src())
-        @test_throws Union{BoundsError, ArgumentError} copyto!(dest, 3, src(), 1)
-        @test_throws Union{BoundsError, ArgumentError} copyto!(dest, 3, src(), 1, 2)
-
-        @test_throws Union{BoundsError, ArgumentError} copyto!(dest, 1, src(), 2, 2)
+function Base.getindex(map::ReferenceMap, expr::GenericAffExpr)
+    result = zero(expr)
+    for (coef, var) in linear_terms(expr)
+        add_to_expression!(result, coef, map[var])
     end
+    result.constant = expr.constant
+    return result
 end
 
-@testset "with CartesianIndices" begin
-    let A = reshape(1:6, 3, 2), B = similar(A)
-        RA = CartesianIndices(axes(A))
-        copyto!(B, RA, A, RA)
-        @test B == A
+function Base.getindex(map::ReferenceMap, expr::GenericQuadExpr)
+    aff = map[expr.aff]
+    terms = [UnorderedPair(map[key.a], map[key.b]) => val for
+     (key, val) in expr.terms]
+    return GenericQuadExpr(aff, terms)
+end
+
+Base.getindex(map::ReferenceMap, val::AbstractArray) = getindex.(map, val)
+
+Base.broadcastable(reference_map::ReferenceMap) = Ref(reference_map)
+
+# Return a Boolean if the filtering function (1st argument) indicates that the whole value should
+# be copied over.
+_should_copy_complete_object(_, _) = true
+function _should_copy_complete_object(
+    filter_constraints::Function,
+    value::ConstraintRef,
+)
+    return filter_constraints(value)
+end
+function _should_copy_complete_object(
+    filter_constraints::Function,
+    value::AbstractArray{T},
+) where {T<:ConstraintRef}
+    return all([filter_constraints(value[i]) for i in eachindex(value)])
+end # all(filter_constraints.(value))
+
+"""
+    copy_model(model::Model; filter_constraints::Union{Nothing, Function}=nothing)
+
+Return a copy of the model `model` and a [`ReferenceMap`](@ref) that can be used
+to obtain the variable and constraint reference of the new model corresponding
+to a given `model`'s reference. A [`Base.copy(::AbstractModel)`](@ref) method
+has also been implemented, it is similar to `copy_model` but does not return
+the reference map.
+
+If the `filter_constraints` argument is given, only the constraints for which
+this function returns `true` will be copied. This function is given a
+constraint reference as argument.
+
+## Note
+
+Model copy is not supported in `DIRECT` mode, i.e. when a model is constructed
+using the [`direct_model`](@ref) constructor instead of the [`Model`](@ref)
+constructor. Moreover, independently on whether an optimizer was provided at
+model construction, the new model will have no optimizer, i.e., an optimizer
+will have to be provided to the new model in the [`optimize!`](@ref) call.
+
+## Examples
+
+In the following example, a model `model` is constructed with a variable `x` and
+a constraint `cref`. It is then copied into a model `new_model` with the new
+references assigned to `x_new` and `cref_new`.
+```julia
+model = Model()
+@variable(model, x)
+@constraint(model, cref, x == 2)
+
+new_model, reference_map = copy_model(model)
+x_new = reference_map[x]
+cref_new = reference_map[cref]
+```
+"""
+function copy_model(
+    model::Model;
+    filter_constraints::Union{Nothing,Function} = nothing,
+)
+    if mode(model) == DIRECT
+        error(
+            "Cannot copy a model in `DIRECT` mode. Use the `Model` ",
+            "constructor instead of the `direct_model` constructor to be ",
+            "able to copy the constructed model.",
+        )
     end
-    let A = reshape(1:6, 3, 2), B = zeros(8,8)
-        RA = CartesianIndices(axes(A))
-        copyto!(B, CartesianIndices((5:7,2:3)), A, RA)
-        @test B[5:7,2:3] == A
-        B[5:7,2:3] .= 0
-        @test all(x->x==0, B)
+    caching_mode = backend(model).mode
+    new_model = Model(caching_mode = caching_mode)
+
+    # At JuMP's level, filter_constraints should work with JuMP.ConstraintRef,
+    # whereas MOI.copy_to's filter_constraints works with MOI.ConstraintIndex.
+    function moi_filter_constraints(cref::MOI.ConstraintIndex)
+        jump_cref = constraint_ref_with_index(model, cref)
+        return filter_constraints(jump_cref)
     end
-end
+    filter = filter_constraints !== nothing ? moi_filter_constraints : nothing
 
-@testset "shallow and deep copying" begin
-    a = Any[[1]]
-    q = QuoteNode([1])
-    ca = copy(a); dca = @inferred(deepcopy(a))
-    @test ca !== a
-    @test ca[1] === a[1]
-    @test dca !== a
-    @test dca[1] !== a[1]
-    @test deepcopy(q).value !== q.value
+    # Copy the MOI backend, note that variable and constraint indices may have
+    # changed, the `index_map` gives the map between the indices of
+    # `backend(model` and the indices of `backend(new_model)`.
+    index_map = MOI.copy_to(
+        backend(new_model),
+        backend(model),
+        copy_names = true,
+        filter_constraints = filter,
+    )
 
-    @test_throws ErrorException("deepcopy of Modules not supported") deepcopy(Base)
+    new_model.optimize_hook = model.optimize_hook
 
-    # deepcopy recursive dicts
-    x = Dict{Dict, Int}()
-    x[x] = 0
-    @test length(deepcopy(x)) == 1
-end
-
-@testset "issue #13124" begin
-    a = rand(3, 5)
-    b = (a,a)
-    c = deepcopy(b)
-    @test c[1] === c[2]
-end
-
-@testset "issue #31309" begin
-    rgx1 = match(deepcopy(r""), "")
-    @test rgx1.regex == r""
-    @test rgx1.offset == 1
-    @test rgx1.match == ""
-    @test isempty(rgx1.offsets)
-    @test isempty(rgx1.captures)
-end
-
-@testset "deepcopy for bits types" begin
-    struct Immutable; x::Int; end
-    mutable struct Mutable; x::Int; end
-
-    @test deepcopy(Immutable(2)) === Immutable(2)
-    @test deepcopy(Mutable(2))   !== Mutable(2)
-    @inferred deepcopy(Immutable(2))
-    @inferred deepcopy(Mutable(2))
-
-    @test deepcopy(Dict(0 => 0))[0] == 0
-end
-
-# issue #30911
-@test deepcopy(Array{Int,N} where N) == Array{Int,N} where N
-
-# issue #14027
-struct Nullable14027{T}
-    hasvalue::Bool
-    value::T
-
-    Nullable14027{T}() where {T} = new(false)
-end
-@test !deepcopy(Nullable14027{Array}()).hasvalue
-
-@testset "issue #15250" begin
-    a1 = Core.svec(1, 2, 3, [])
-    a2 = Core.svec(1, 2, 3)
-    a3 = Core.svec(a1, a1)
-    b1 = deepcopy(a1)
-    @test a1 == b1
-    @test a1 !== b1
-    @test a1[4] !== b1[4]
-    b2 = deepcopy(a2)
-    @test a2 === b2
-    b3 = deepcopy(a3)
-    @test a3 == b3
-    @test a3 !== b3
-    @test a3[1] === a3[2]
-end
-
-@testset "issue #16667" begin
-    let x = BigInt[1:1000;], y = deepcopy(x), v
-        # Finalize the original values to make sure the deep copy is indeed
-        # independent
-        for v in x
-            finalize(v)
-        end
-        # Allocate some memory to make it more likely to trigger an error
-        # if `deepcopy` went wrong
-        x = BigInt[1:1000;]
-        @test y == x
-    end
-    let x = BigFloat[1:1000;], y, z, v
-        y, z = setprecision(2) do
-            deepcopy(x), BigFloat[1:1000;]
-        end
-        for v in x
-            finalize(v)
-        end
-        x = BigFloat[1:1000;]
-        # Make sure the difference in precision doesn't affect deep copy
-        @test y == x
-        # Check that the setprecision indeed does something
-        @test z != x
-    end
-end
-
-mutable struct Foo19921
-    a::String
-end
-
-mutable struct Bar19921
-    foo::Foo19921
-    fooDict::Dict{Foo19921, Int64}
-end
-
-@testset "issue 19921" begin
-    for i = 1 : 100
-        foo = Foo19921("foo")
-        bar = Bar19921(foo, Dict(foo => 3))
-        bar2 = deepcopy(bar)
-        @test bar2.foo ∈ keys(bar2.fooDict)
-        @test bar2.fooDict[bar2.foo] != nothing
+    # TODO copy NLP data
+    if model.nlp_data !== nothing
+        error(
+            "copy is not supported yet for models with nonlinear constraints",
+            " and/or nonlinear objective function",
+        )
     end
 
-    let d = IdDict(rand(2) => rand(2) for i = 1:100)
-        d2 = deepcopy(d)
-        for k in keys(d2)
-            @test haskey(d2, k)
-        end
-        for k in keys(d)
-            @test haskey(d, k)
+    reference_map = ReferenceMap(new_model, index_map)
+
+    for (name, value) in object_dictionary(model)
+        if _should_copy_complete_object(filter_constraints, value)
+            try
+                new_model[name] = getindex(reference_map, value)
+            catch err
+                if err isa MethodError
+                    @warn(
+                        "Skipping the copy of object `:$(name)` due to " *
+                        "unsupported type $(typeof(value)). Please open a " *
+                        "GitHub issue at https://github.com/jump-dev/JuMP.jl " *
+                        "with this message.",
+                    )
+                else
+                    rethrow(err)
+                end
+            end
         end
     end
+
+    for (key, data) in model.ext
+        new_model.ext[key] = copy_extension_data(data, new_model, model)
+    end
+
+    return new_model, reference_map
 end
 
-# issue #17149
-mutable struct Bar17149
-end
-let x = Bar17149()
-    @test deepcopy(x) !== x
+"""
+    copy(model::AbstractModel)
+
+Return a copy of the model `model`. It is similar to [`copy_model`](@ref)
+except that it does not return the mapping between the references of `model`
+and its copy.
+
+## Note
+
+Model copy is not supported in `DIRECT` mode, i.e. when a model is constructed
+using the [`direct_model`](@ref) constructor instead of the [`Model`](@ref)
+constructor. Moreover, independently on whether an optimizer was provided at
+model construction, the new model will have no optimizer, i.e., an optimizer
+will have to be provided to the new model in the [`optimize!`](@ref) call.
+
+## Examples
+
+In the following example, a model `model` is constructed with a variable `x` and
+a constraint `cref`. It is then copied into a model `new_model` with the new
+references assigned to `x_new` and `cref_new`.
+```julia
+model = Model()
+@variable(model, x)
+@constraint(model, cref, x == 2)
+
+new_model = copy(model)
+x_new = model[:x]
+cref_new = model[:cref]
+```
+"""
+function Base.copy(model::AbstractModel)
+    new_model, _ = copy_model(model)
+    return new_model
 end
 
-@testset "copying CodeInfo" begin
-    _testfunc() = nothing
-    ci,_ = code_typed(_testfunc, ())[1]
-    ci.edges = [_testfunc]
+"""
+    copy_conflict(model::Model)
 
-    ci2 = copy(ci)
-    # Test that edges are not shared
-    @test ci2.edges !== ci.edges
+Return a copy of the current conflict for the model `model` and a
+[`ReferenceMap`](@ref) that can be used to obtain the variable and constraint
+reference of the new model corresponding to a given `model`'s reference.
+
+This is a convenience function that provides a filtering function for
+[`copy_model`](@ref).
+
+## Note
+
+Model copy is not supported in `DIRECT` mode, i.e. when a model is constructed
+using the [`direct_model`](@ref) constructor instead of the [`Model`](@ref)
+constructor. Moreover, independently on whether an optimizer was provided at
+model construction, the new model will have no optimizer, i.e., an optimizer
+will have to be provided to the new model in the [`optimize!`](@ref) call.
+
+## Examples
+
+In the following example, a model `model` is constructed with a variable `x` and
+two constraints `cref` and `cref2`. This model has no solution, as the two
+constraints are mutually exclusive. The solver is asked to compute a conflict
+with [`compute_conflict!`](@ref). The parts of `model` participating in the
+conflict are then copied into a model `new_model`.
+```julia
+model = Model() # You must use a solver that supports conflict refining/IIS
+# computation, like CPLEX or Gurobi
+@variable(model, x)
+@constraint(model, cref, x >= 2)
+@constraint(model, cref2, x <= 1)
+
+compute_conflict!(model)
+if MOI.get(model, MOI.ConflictStatus()) != MOI.CONFLICT_FOUND
+    error("No conflict could be found for an infeasible model.")
 end
 
-@testset "issue #34025" begin
-    s = [2 0; 0 3]
-    r = ones(Int, 3, 3)
-    @test copyto!(copy(r), s') == [2 3 1; 0 1 1; 0 1 1]
-    @test copyto!(copy(r), s) == copyto!(copy(r), s') ==
-          copyto!(copy(r)', s) == copyto!(copy(r)', s')
-    r = ones(Int, 3, 3)
-    s = [1 2 3 4]'
-    @test copyto!(r, s) == [1 4 1; 2 1 1; 3 1 1]
-    a = fill(1, 5)
-    r = Base.IdentityUnitRange(-1:1)
-    copyto!(a, r)
-    @test a[1:3] == [-1, 0, 1]
+new_model, reference_map = copy_conflict(model)
+```
+"""
+function copy_conflict(model::Model)
+    filter_constraints =
+        (cref) ->
+            MOI.get(model, MOI.ConstraintConflictStatus(), cref) !=
+            MOI.NOT_IN_CONFLICT
+    new_model, reference_map =
+        copy_model(model, filter_constraints = filter_constraints)
+    return new_model, reference_map
 end
 
-@testset "issue #34889" begin
-    s = [1, 2]
-    @test copyto!(s, view(Int[],Int[])) == [1, 2]
-    @test copyto!(s, Float64[]) == [1, 2]
-    @test copyto!(s, String[]) == [1, 2] # No error
+# Calling `deepcopy` over a JuMP model is not supported, nor planned to be
+# supported, because it would involve making a deep copy of the underlying
+# solver (behind a C pointer).
+function Base.deepcopy(::Model)
+    return error(
+        "`JuMP.Model` does not support `deepcopy` as the reference to the underlying solver cannot be deep copied, use `copy` instead.",
+    )
+end
+
+function MOI.copy_to(dest::MOI.ModelLike, src::Model)
+    if src.nlp_data !== nothing
+        # Re-set the NLP block in-case things have changed since last
+        # solve.
+        MOI.set(src, MOI.NLPBlock(), _create_nlp_block_data(src))
+    end
+    return MOI.copy_to(dest, backend(src))
+end
+
+function MOI.copy_to(dest::Model, src::MOI.ModelLike)
+    return MOI.copy_to(backend(dest), src)
 end

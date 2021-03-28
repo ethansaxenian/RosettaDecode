@@ -10,15 +10,15 @@ EXT_TO_LANG = {
     ".java": "Java",
     ".js": "JavaScript",
     ".jl": "Julia",
-    ".pl": "Perl",
+    ".pm": "Perl",
     ".py": "Python",
     ".rb": "Ruby"
 }
 
 LANG_TO_EXT = {l: e for e, l in EXT_TO_LANG.items()}
 
-lang = "Haskell"
-directory = "hadolint-master/"
+lang = "Julia"
+directory = "JuMP.jl-master/"
 
 file_list = [f for f in glob.iglob(f'{directory}**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXT_TO_LANG.keys()]
 assert len(file_list) > 0

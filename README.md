@@ -38,9 +38,11 @@ Other sources of language data (currently in lang2/):
   
 - Julia
   - https://github.com/JuliaLang/julia
+  - https://github.com/jump-dev/JuMP.jl
   
 - Perl
   - https://github.com/Perl/perl5
+  - https://github.com/OpenKore/openkore
   
 - Ruby
   - https://github.com/ruby/ruby

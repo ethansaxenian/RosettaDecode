@@ -1,444 +1,353 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
+using JuMP
+using Test
 
-## symbols ##
+const MA = JuMP._MA
 
-"""
-    gensym([tag])
+include(joinpath(@__DIR__, "utilities.jl"))
 
-Generates a symbol which will not conflict with other variable names.
-"""
-gensym() = ccall(:jl_gensym, Ref{Symbol}, ())
-
-gensym(s::String) = ccall(:jl_tagged_gensym, Ref{Symbol}, (Ptr{UInt8}, Csize_t), s, sizeof(s))
-
-gensym(ss::String...) = map(gensym, ss)
-gensym(s::Symbol) = ccall(:jl_tagged_gensym, Ref{Symbol}, (Ptr{UInt8}, Csize_t), s, -1 % Csize_t)
-
-"""
-    @gensym
-
-Generates a gensym symbol for a variable. For example, `@gensym x y` is transformed into
-`x = gensym("x"); y = gensym("y")`.
-"""
-macro gensym(names...)
-    blk = Expr(:block)
-    for name in names
-        push!(blk.args, :($(esc(name)) = gensym($(string(name)))))
-    end
-    push!(blk.args, :nothing)
-    return blk
+@static if !(:JuMPExtension in names(Main))
+    include(joinpath(@__DIR__, "JuMPExtension.jl"))
 end
 
-## expressions ##
-
-copy(e::Expr) = exprarray(e.head, copy_exprargs(e.args))
-
-# copy parts of an AST that the compiler mutates
-function copy_exprs(@nospecialize(x))
-    if isa(x, Expr)
-        return copy(x)
-    elseif isa(x, PhiNode)
-        values = x.values
-        nvalues = length(values)
-        new_values = Vector{Any}(undef, nvalues)
-        @inbounds for i = 1:nvalues
-            isassigned(values, i) || continue
-            new_values[i] = copy_exprs(values[i])
-        end
-        return PhiNode(copy(x.edges), new_values)
-    elseif isa(x, PhiCNode)
-        values = x.values
-        nvalues = length(values)
-        new_values = Vector{Any}(undef, nvalues)
-        @inbounds for i = 1:nvalues
-            isassigned(values, i) || continue
-            new_values[i] = copy_exprs(values[i])
-        end
-        return PhiCNode(new_values)
-    end
-    return x
+# For "expression^3 and unary*"
+struct PowVariable <: JuMP.AbstractVariableRef
+    pow::Int
 end
-copy_exprargs(x::Array{Any,1}) = Any[copy_exprs(@inbounds x[i]) for i in 1:length(x)]
+Base.:^(x::PowVariable, i::Int) = PowVariable(x.pow * i)
+Base.:*(x::PowVariable, y::PowVariable) = PowVariable(x.pow + y.pow)
+Base.copy(x::PowVariable) = x
 
-@eval exprarray(head::Symbol, arg::Array{Any,1}) = $(Expr(:new, :Expr, :head, :arg))
+function expressions_test(
+    ModelType::Type{<:JuMP.AbstractModel},
+    VariableRefType::Type{<:JuMP.AbstractVariableRef},
+)
+    AffExprType = JuMP.GenericAffExpr{Float64,VariableRefType}
+    QuadExprType = JuMP.GenericQuadExpr{Float64,VariableRefType}
 
-# create copies of the CodeInfo definition, and any mutable fields
-function copy(c::CodeInfo)
-    cnew = ccall(:jl_copy_code_info, Ref{CodeInfo}, (Any,), c)
-    cnew.code = copy_exprargs(cnew.code)
-    cnew.slotnames = copy(cnew.slotnames)
-    cnew.slotflags = copy(cnew.slotflags)
-    cnew.codelocs  = copy(cnew.codelocs)
-    cnew.linetable = copy(cnew.linetable::Union{Vector{Any},Vector{Core.LineInfoNode}})
-    cnew.ssaflags  = copy(cnew.ssaflags)
-    cnew.edges     = cnew.edges === nothing ? nothing : copy(cnew.edges::Vector)
-    ssavaluetypes  = cnew.ssavaluetypes
-    ssavaluetypes isa Vector{Any} && (cnew.ssavaluetypes = copy(ssavaluetypes))
-    return cnew
-end
-
-
-==(x::Expr, y::Expr) = x.head === y.head && isequal(x.args, y.args)
-==(x::QuoteNode, y::QuoteNode) = isequal(x.value, y.value)
-==(stmt1::Core.PhiNode, stmt2::Core.PhiNode) = stmt1.edges == stmt2.edges && stmt1.values == stmt2.values
-
-"""
-    macroexpand(m::Module, x; recursive=true)
-
-Take the expression `x` and return an equivalent expression with all macros removed (expanded)
-for executing in module `m`.
-The `recursive` keyword controls whether deeper levels of nested macros are also expanded.
-This is demonstrated in the example below:
-```julia-repl
-julia> module M
-           macro m1()
-               42
-           end
-           macro m2()
-               :(@m1())
-           end
-       end
-M
-
-julia> macroexpand(M, :(@m2()), recursive=true)
-42
-
-julia> macroexpand(M, :(@m2()), recursive=false)
-:(#= REPL[16]:6 =# M.@m1)
-```
-"""
-function macroexpand(m::Module, @nospecialize(x); recursive=true)
-    if recursive
-        ccall(:jl_macroexpand, Any, (Any, Any), x, m)
-    else
-        ccall(:jl_macroexpand1, Any, (Any, Any), x, m)
-    end
-end
-
-"""
-    @macroexpand
-
-Return equivalent expression with all macros removed (expanded).
-
-There are differences between `@macroexpand` and [`macroexpand`](@ref).
-
-* While [`macroexpand`](@ref) takes a keyword argument `recursive`, `@macroexpand`
-  is always recursive. For a non recursive macro version, see [`@macroexpand1`](@ref).
-
-* While [`macroexpand`](@ref) has an explicit `module` argument, `@macroexpand` always
-  expands with respect to the module in which it is called.
-
-This is best seen in the following example:
-```julia-repl
-julia> module M
-           macro m()
-               1
-           end
-           function f()
-               (@macroexpand(@m),
-                macroexpand(M, :(@m)),
-                macroexpand(Main, :(@m))
-               )
-           end
-       end
-M
-
-julia> macro m()
-           2
-       end
-@m (macro with 1 method)
-
-julia> M.f()
-(1, 1, 2)
-```
-With `@macroexpand` the expression expands where `@macroexpand` appears in the code (module `M` in the example).
-With `macroexpand` the expression expands in the module given as the first argument.
-"""
-macro macroexpand(code)
-    return :(macroexpand($__module__, $(QuoteNode(code)), recursive=true))
-end
-
-
-"""
-    @macroexpand1
-
-Non recursive version of [`@macroexpand`](@ref).
-"""
-macro macroexpand1(code)
-    return :(macroexpand($__module__, $(QuoteNode(code)), recursive=false))
-end
-
-## misc syntax ##
-
-"""
-    Core.eval(m::Module, expr)
-
-Evaluate an expression in the given module and return the result.
-"""
-Core.eval
-
-"""
-    @inline
-
-Give a hint to the compiler that this function is worth inlining.
-
-Small functions typically do not need the `@inline` annotation,
-as the compiler does it automatically. By using `@inline` on bigger functions,
-an extra nudge can be given to the compiler to inline it.
-This is shown in the following example:
-
-```julia
-@inline function bigfunction(x)
-    #=
-        Function Definition
-    =#
-end
-```
-"""
-macro inline(ex)
-    esc(isa(ex, Expr) ? pushmeta!(ex, :inline) : ex)
-end
-
-"""
-    @noinline
-
-Give a hint to the compiler that it should not inline a function.
-
-Small functions are typically inlined automatically.
-By using `@noinline` on small functions, auto-inlining can be
-prevented. This is shown in the following example:
-
-```julia
-@noinline function smallfunction(x)
-    #=
-        Function Definition
-    =#
-end
-```
-
-!!! note
-    If the function is trivial (for example returning a constant) it might get inlined anyway.
-"""
-macro noinline(ex)
-    esc(isa(ex, Expr) ? pushmeta!(ex, :noinline) : ex)
-end
-
-"""
-    @pure ex
-    @pure(ex)
-
-`@pure` gives the compiler a hint for the definition of a pure function,
-helping for type inference.
-
-This macro is intended for internal compiler use and may be subject to changes.
-"""
-macro pure(ex)
-    esc(isa(ex, Expr) ? pushmeta!(ex, :pure) : ex)
-end
-
-"""
-    @aggressive_constprop ex
-    @aggressive_constprop(ex)
-
-`@aggressive_constprop` requests more aggressive interprocedural constant
-propagation for the annotated function. For a method where the return type
-depends on the value of the arguments, this can yield improved inference results
-at the cost of additional compile time.
-"""
-macro aggressive_constprop(ex)
-    esc(isa(ex, Expr) ? pushmeta!(ex, :aggressive_constprop) : ex)
-end
-
-"""
-    @propagate_inbounds
-
-Tells the compiler to inline a function while retaining the caller's inbounds context.
-"""
-macro propagate_inbounds(ex)
-    if isa(ex, Expr)
-        pushmeta!(ex, :inline)
-        pushmeta!(ex, :propagate_inbounds)
-    end
-    esc(ex)
-end
-
-"""
-    @polly
-
-Tells the compiler to apply the polyhedral optimizer Polly to a function.
-"""
-macro polly(ex)
-    esc(isa(ex, Expr) ? pushmeta!(ex, :polly) : ex)
-end
-
-## some macro utilities ##
-
-function pushmeta!(ex::Expr, sym::Symbol, args::Any...)
-    if isempty(args)
-        tag = sym
-    else
-        tag = Expr(sym, args...)::Expr
+    @testset "isequal(::GenericAffExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test isequal(x + 1, x + 1)
     end
 
-    inner = ex
-    while inner.head === :macrocall
-        inner = inner.args[end]::Expr
+    @testset "hash(::GenericAffExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test hash(x + 1) == hash(x + 1)
     end
 
-    idx, exargs = findmeta(inner)
-    if idx != 0
-        push!(exargs[idx].args, tag)
-    else
-        body = inner.args[2]::Expr
-        pushfirst!(body.args, Expr(:meta, tag))
+    @testset "drop_zeros!(::GenericAffExpr)" begin
+        m = ModelType()
+        @variable(m, x[1:2])
+        expr = x[1] + x[2] - x[2] + 1
+        @test !isequal(expr, x[1] + 1)
+        JuMP.drop_zeros!(expr)
+        @test isequal(expr, x[1] + 1)
     end
-    ex
-end
 
-popmeta!(body, sym) = _getmeta(body, sym, true)
-peekmeta(body, sym) = _getmeta(body, sym, false)
-
-function _getmeta(body::Expr, sym::Symbol, delete::Bool)
-    body.head === :block || return false, []
-    _getmeta(body.args, sym, delete)
-end
-_getmeta(arg, sym, delete::Bool) = (false, [])
-function _getmeta(body::Array{Any,1}, sym::Symbol, delete::Bool)
-    idx, blockargs = findmeta_block(body, args -> findmetaarg(args,sym)!=0)
-    if idx == 0
-        return false, []
+    @testset "iszero(::GenericAffExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test !iszero(x + 1)
+        @test !iszero(x + 0)
+        @test iszero(0 * x + 0)
+        @test iszero(x - x)
     end
-    metaargs = blockargs[idx].args
-    i = findmetaarg(blockargs[idx].args, sym)
-    if i == 0
-        return false, []
-    end
-    ret = isa(metaargs[i], Expr) ? (metaargs[i]::Expr).args : []
-    if delete
-        deleteat!(metaargs, i)
-        isempty(metaargs) && deleteat!(blockargs, idx)
-    end
-    true, ret
-end
 
-# Find index of `sym` in a meta expression argument list, or 0.
-function findmetaarg(metaargs, sym)
-    for i = 1:length(metaargs)
-        arg = metaargs[i]
-        if (isa(arg, Symbol) && (arg::Symbol)    == sym) ||
-           (isa(arg, Expr)   && (arg::Expr).head == sym)
-            return i
-        end
+    @testset "isequal(::GenericQuadExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test isequal(x^2 + 1, x^2 + 1)
     end
-    return 0
-end
 
-function is_short_function_def(ex)
-    ex.head === :(=) || return false
-    while length(ex.args) >= 1 && isa(ex.args[1], Expr)
-        (ex.args[1].head === :call) && return true
-        (ex.args[1].head === :where || ex.args[1].head === :(::)) || return false
-        ex = ex.args[1]
+    @testset "hash(::GenericQuadExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test hash(x^2 + 1) == hash(x^2 + 1)
     end
-    return false
-end
 
-function findmeta(ex::Expr)
-    if ex.head === :function || is_short_function_def(ex) || ex.head === :->
-        body = ex.args[2]::Expr
-        body.head === :block || error(body, " is not a block expression")
-        return findmeta_block(ex.args)
+    @testset "drop_zeros!(::GenericQuadExpr)" begin
+        m = ModelType()
+        @variable(m, x[1:2])
+        expr = x[1]^2 + x[2]^2 - x[2]^2 + x[1] + x[2] - x[2] + 1
+        @test !isequal(expr, x[1]^2 + x[1] + 1)
+        JuMP.drop_zeros!(expr)
+        @test isequal(expr, x[1]^2 + x[1] + 1)
     end
-    error(ex, " is not a function expression")
-end
 
-findmeta(ex::Array{Any,1}) = findmeta_block(ex)
+    @testset "iszero(::GenericQuadExpr)" begin
+        m = ModelType()
+        @variable(m, x)
+        @test !iszero(x^2 + 1)
+        @test !iszero(x^2 + 0)
+        @test !iszero(x^2 + 0 * x + 0)
+        @test iszero(0 * x^2 + 0 * x + 0)
+        @test iszero(x^2 - x^2)
+    end
 
-function findmeta_block(exargs, argsmatch=args->true)
-    for i = 1:length(exargs)
-        a = exargs[i]
-        if isa(a, Expr)
-            if a.head === :meta && argsmatch(a.args)
-                return i, exargs
-            elseif a.head === :block
-                idx, exa = findmeta_block(a.args, argsmatch)
-                if idx != 0
-                    return idx, exa
-                end
+    @testset "value for GenericAffExpr" begin
+        expr1 = JuMP.GenericAffExpr(3.0, 3 => -5.0, 2 => 4.0)
+        @test @inferred(JuMP.value(expr1, -)) == 10.0
+        expr2 = JuMP.GenericAffExpr{Int,Int}(2)
+        @test typeof(@inferred(JuMP.value(expr2, i -> 1.0))) == Float64
+        @test @inferred(JuMP.value(expr2, i -> 1.0)) == 2.0
+    end
+
+    @testset "value for GenericQuadExpr" begin
+        # 1 + 2x(1) + 3x(2)
+        affine_term = JuMP.GenericAffExpr(1.0, 1 => 2.0, 2 => 3.0)
+        # 1 + 2x(1) + 3x(2) + 4x(1)^2 + 5x(1)*x(2) + 6x(2)^2
+        expr = JuMP.GenericQuadExpr(
+            affine_term,
+            JuMP.UnorderedPair(1, 1) => 4.0,
+            JuMP.UnorderedPair(1, 2) => 5.0,
+            JuMP.UnorderedPair(2, 2) => 6.0,
+        )
+        @test typeof(@inferred(JuMP.value(expr, i -> 1.0))) == Float64
+        @test @inferred(JuMP.value(expr, i -> 1.0)) == 21
+        @test @inferred(JuMP.value(expr, i -> 2.0)) == 71
+    end
+
+    @testset "add_to_expression!(::GenericAffExpr{C,V}, ::V)" begin
+        aff = JuMP.GenericAffExpr(1.0, :a => 2.0)
+        @test JuMP.isequal_canonical(
+            JuMP.add_to_expression!(aff, :b),
+            JuMP.GenericAffExpr(1.0, :a => 2.0, :b => 1.0),
+        )
+    end
+
+    @testset "add_to_expression!(::GenericAffExpr{C,V}, ::C)" begin
+        aff = JuMP.GenericAffExpr(1.0, :a => 2.0)
+        @test JuMP.isequal_canonical(
+            JuMP.add_to_expression!(aff, 1.0),
+            JuMP.GenericAffExpr(2.0, :a => 2.0),
+        )
+    end
+
+    @testset "linear_terms(::AffExpr)" begin
+        m = ModelType()
+        @variable(m, x[1:10])
+
+        aff = 1 * x[1] + 2 * x[2]
+        k = 0
+        @test length(linear_terms(aff)) == 2
+        for (coeff, var) in linear_terms(aff)
+            if k == 0
+                @test coeff == 1
+                @test var === x[1]
+            elseif k == 1
+                @test coeff == 2
+                @test var === x[2]
             end
+            k += 1
         end
+        @test k == 2
     end
-    return 0, []
-end
 
-remove_linenums!(ex) = ex
-function remove_linenums!(ex::Expr)
-    if ex.head === :block || ex.head === :quote
-        # remove line number expressions from metadata (not argument literal or inert) position
-        filter!(ex.args) do x
-            isa(x, Expr) && x.head === :line && return false
-            isa(x, LineNumberNode) && return false
-            return true
+    @testset "linear_terms(::AffExpr) for empty expression" begin
+        k = 0
+        aff = zero(AffExprType)
+        @test length(linear_terms(aff)) == 0
+        for (coeff, var) in linear_terms(aff)
+            k += 1
         end
+        @test k == 0
     end
-    for subex in ex.args
-        subex isa Expr && remove_linenums!(subex)
+
+    @testset "coefficient(aff::AffExpr, v::VariableRef)" begin
+        m = ModelType()
+        x = @variable(m, x)
+        y = @variable(m, y)
+        aff = @expression(m, 1.0 * x)
+        @test coefficient(aff, x) == 1.0
+        @test coefficient(aff, y) == 0.0
     end
-    return ex
-end
-function remove_linenums!(src::CodeInfo)
-    src.codelocs .= 0
-    length(src.linetable) > 1 && resize!(src.linetable, 1)
-    return src
-end
 
-macro generated()
-    return Expr(:generated)
-end
-
-"""
-    @generated f
-    @generated(f)
-`@generated` is used to annotate a function which will be generated.
-In the body of the generated function, only types of arguments can be read
-(not the values). The function returns a quoted expression evaluated when the
-function is called. The `@generated` macro should not be used on functions mutating
-the global scope or depending on mutable elements.
-
-See [Metaprogramming](@ref) for further details.
-
-## Example:
-```julia
-julia> @generated function bar(x)
-           if x <: Integer
-               return :(x ^ 2)
-           else
-               return :(x)
-           end
-       end
-bar (generic function with 1 method)
-
-julia> bar(4)
-16
-
-julia> bar("baz")
-"baz"
-```
-"""
-macro generated(f)
-    if isa(f, Expr) && (f.head === :function || is_short_function_def(f))
-        body = f.args[2]
-        lno = body.args[1]
-        return Expr(:escape,
-                    Expr(f.head, f.args[1],
-                         Expr(:block,
-                              lno,
-                              Expr(:if, Expr(:generated),
-                                   body,
-                                   Expr(:block,
-                                        Expr(:meta, :generated_only),
-                                        Expr(:return, nothing))))))
-    else
-        error("invalid syntax; @generated must be used with a function definition")
+    @testset "coefficient(aff::AffExpr, v1::VariableRef, v2::VariableRef)" begin
+        m = ModelType()
+        x = @variable(m, x)
+        aff = @expression(m, 1.0 * x)
+        @test coefficient(aff, x, x) == 0.0
     end
+
+    @testset "coefficient(quad::QuadExpr, v::VariableRef)" begin
+        m = ModelType()
+        x = @variable(m, x)
+        y = @variable(m, y)
+        z = @variable(m, z)
+        quad = @expression(m, 6.0 * x^2 + 5.0 * x * y + 2.0 * y + 3.0 * x)
+        @test coefficient(quad, x) == 3.0
+        @test coefficient(quad, y) == 2.0
+        @test coefficient(quad, z) == 0.0
+    end
+
+    @testset "coefficient(quad::Quad, v1::VariableRef, v2::VariableRef)" begin
+        m = ModelType()
+        x = @variable(m, x)
+        y = @variable(m, y)
+        z = @variable(m, z)
+        quad = @expression(m, 6.0 * x^2 + 5.0 * x * y + 2.0 * y + 3.0 * x)
+        @test coefficient(quad, x, y) == 5.0
+        @test coefficient(quad, x, x) == 6.0
+        @test coefficient(quad, x, y) == coefficient(quad, y, x)
+        @test coefficient(quad, z, z) == 0.0
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::Number, x::GenericAffExpr)" begin
+        aff = MA.add_mul!(1.0, 2.0, JuMP.GenericAffExpr(1.0, :a => 1.0))
+        @test JuMP.isequal_canonical(aff, JuMP.GenericAffExpr(3.0, :a => 2.0))
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::Number, x::GenericQuadExpr) with c == 0" begin
+        quad = MA.add_mul!(2.0, 0.0, QuadExprType())
+        @test JuMP.isequal_canonical(quad, convert(QuadExprType, 2.0))
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::VariableRef, x::VariableRef)" begin
+        model = ModelType()
+        @variable(model, x)
+        @variable(model, y)
+        @test_expression_with_string MA.add_mul(5.0, x, y) "x*y + 5"
+        @test_expression_with_string MA.add_mul!(5.0, x, y) "x*y + 5"
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::T, x::T) where T<:GenericAffExpr" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(1.0, 2x, x + 1) "2 x² + 2 x + 1"
+        @test_expression_with_string MA.add_mul!(1.0, 2x, x + 1) "2 x² + 2 x + 1"
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::GenericAffExpr{C,V}, x::V) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(1.0, 2x, x) "2 x² + 1"
+        @test_expression_with_string MA.add_mul!(1.0, 2x, x) "2 x² + 1"
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::GenericQuadExpr, x::Number)" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(0.0, x^2, 1.0) "x²"
+        @test_expression_with_string MA.add_mul!(0.0, x^2, 1.0) "x²"
+    end
+
+    @testset "MA.add_mul!(ex::Number, c::GenericQuadExpr, x::Number) with c == 0" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(0.0, x^2, 0.0) "0"
+        @test_expression_with_string MA.add_mul!(0.0, x^2, 0.0) "0"
+    end
+
+    @testset "MA.add_mul!(aff::AffExpr,c::VariableRef,x::AffExpr)" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, x, x + 1) "x² + 3 x"
+        @test_expression_with_string MA.add_mul!(2x, x, x + 1) "x² + 3 x"
+    end
+
+    @testset "MA.add_mul!(aff::GenericAffExpr{C,V},c::GenericAffExpr{C,V},x::Number) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, x, 1) "3 x"
+        @test_expression_with_string MA.add_mul!(2x, x, 1) "3 x"
+    end
+
+    @testset "MA.add_mul!(aff::GenericAffExpr{C,V}, c::GenericQuadExpr{C,V}, x::Number) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, x^2, 1) "x² + 2 x"
+        @test_expression_with_string MA.add_mul!(2x, x^2, 1) "x² + 2 x"
+    end
+
+    @testset "MA.add_mul!(aff::GenericAffExpr{C,V}, c::GenericQuadExpr{C,V}, x::Number) where {C,V} with x == 0" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, x^2, 0) "2 x"
+        @test_expression_with_string MA.add_mul!(2x, x^2, 0) "2 x"
+    end
+
+    @testset "MA.add_mul!(aff::GenericAffExpr{C,V}, c::Number, x::GenericQuadExpr{C,V}) where {C,V} with c == 0" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, 0, x^2) "2 x"
+        @test_expression_with_string MA.add_mul!(2x, 0, x^2) "2 x"
+    end
+
+    @testset "MA.add_mul!(ex::GenericAffExpr{C,V}, c::GenericAffExpr{C,V}, x::GenericAffExpr{C,V}) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(2x, x + 1, x + 0) "x² + 3 x"
+        @test_expression_with_string MA.add_mul!(2x, x + 1, x + 0) "x² + 3 x"
+    end
+
+    @testset "MA.add_mul!(quad::GenericQuadExpr{C,V},c::GenericAffExpr{C,V},x::Number) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(x^2, x + 1, 1) "x² + x + 1"
+        @test_expression_with_string MA.add_mul!(x^2, x + 1, 1) "x² + x + 1"
+    end
+
+    @testset "MA.add_mul!(quad::GenericQuadExpr{C,V},c::V,x::GenericAffExpr{C,V}) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(x^2, x, x + 1) "2 x² + x"
+        @test_expression_with_string MA.add_mul!(x^2, x, x + 1) "2 x² + x"
+    end
+
+    @testset "MA.add_mul!(quad::GenericQuadExpr{C,V},c::GenericQuadExpr{C,V},x::Number) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(x^2 + x, x^2 + x, 2.0) "3 x² + 3 x"
+        @test_expression_with_string MA.add_mul!(x^2 + x, x^2 + x, 2.0) "3 x² + 3 x"
+    end
+
+    @testset "MA.add_mul!(ex::GenericQuadExpr{C,V}, c::GenericAffExpr{C,V}, x::GenericAffExpr{C,V}) where {C,V}" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string MA.add_mul(x^2 + x, x + 0, x + 1) "2 x² + 2 x"
+        @test_expression_with_string MA.add_mul!(x^2 + x, x + 0, x + 1) "2 x² + 2 x"
+    end
+
+    @testset "(+)(::AffExpr)" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string (+)(x + 1) "x + 1"
+    end
+
+    @testset "(+)(::QuadExpr)" begin
+        model = ModelType()
+        @variable(model, x)
+        @test_expression_with_string (+)(x^2 + 1) "x² + 1"
+    end
+
+    @testset "sum(::Vector{VariableRef})" begin
+        model = ModelType()
+        @variable(model, x[1:2])
+        @test_expression_with_string sum(x) "x[1] + x[2]"
+    end
+
+    @testset "expression^3 and unary*" begin
+        model = ModelType()
+        x = PowVariable(1)
+        # Calls (*)((x*x)^6)
+        y = @expression model (x * x)^3
+        @test y.pow == 6
+        z = @inferred (x * x)^3
+        @test z.pow == 6
+    end
+
+    @testset "ndims(::QuadExpr)" begin
+        model = ModelType()
+        @variable(model, x)
+        @test ndims(x^2 + 1) == 0
+    end
+end
+
+@testset "Expressions for JuMP.Model" begin
+    expressions_test(Model, VariableRef)
+end
+
+@testset "Expressions for JuMPExtension.MyModel" begin
+    expressions_test(JuMPExtension.MyModel, JuMPExtension.MyVariableRef)
 end
