@@ -29,9 +29,6 @@ Other sources of language data (currently in lang2/):
   - https://github.com/sdiehl/wiwinwlh
   - https://github.com/exercism/haskell
   
-- Java
-  - https://github.com/iluwatar/java-design-patterns
-  
 - JavaScript
   - https://github.com/freeCodeCamp/freeCodeCamp
   
