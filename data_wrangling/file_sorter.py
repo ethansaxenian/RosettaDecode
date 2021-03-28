@@ -18,7 +18,7 @@ EXT_TO_LANG = {
 LANG_TO_EXT = {l: e for e, l in EXT_TO_LANG.items()}
 
 lang = "Julia"
-directory = "JuMP.jl-master/"
+directory = "DataStructures.jl-master/"
 
 file_list = [f for f in glob.iglob(f'{directory}**', recursive=True) if os.path.isfile(f) and pathlib.Path(f).suffix in EXT_TO_LANG.keys()]
 assert len(file_list) > 0

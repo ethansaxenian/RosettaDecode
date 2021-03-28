@@ -1,1112 +1,553 @@
-#  Copyright 2017, Iain Dunning, Joey Huchette, Miles Lubin, and contributors
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
-#############################################################################
-# JuMP
-# An algebraic modeling language for Julia
-# See https://github.com/jump-dev/JuMP.jl
-#############################################################################
-
-"""
-    ConstraintRef
-
-Holds a reference to the model and the corresponding MOI.ConstraintIndex.
-"""
-struct ConstraintRef{M<:AbstractModel,C,Shape<:AbstractShape}
-    model::M
-    index::C
-    shape::Shape
-end
-
-"""
-    struct ConstraintNotOwned{C <: ConstraintRef} <: Exception
-        constraint_ref::C
+@testset "Constraints" begin
+    # Utility function for hand-setting the μ parameter
+    function setstate!(state, μ, d, constraints, method)
+        state.μ = μ
+        Optim.update_fg!(d, constraints, state, method)
+        Optim.update_h!(d, constraints, state, method)
     end
 
-The constraint `constraint_ref` was used in a model different to
-`owner_model(constraint_ref)`.
-"""
-struct ConstraintNotOwned{C<:ConstraintRef} <: Exception
-    constraint_ref::C
-end
-
-"""
-    owner_model(con_ref::ConstraintRef)
-
-Returns the model to which `con_ref` belongs.
-"""
-owner_model(con_ref::ConstraintRef) = con_ref.model
-
-"""
-    check_belongs_to_model(con_ref::ConstraintRef, model::AbstractModel)
-
-Throw `ConstraintNotOwned` if `owner_model(con_ref)` is not `model`.
-"""
-function check_belongs_to_model(con_ref::ConstraintRef, model::AbstractModel)
-    if owner_model(con_ref) !== model
-        throw(ConstraintNotOwned(con_ref))
-    end
-end
-
-Base.broadcastable(con_ref::ConstraintRef) = Ref(con_ref)
-
-"""
-    dual_start_value(con_ref::ConstraintRef)
-
-Return the dual start value (MOI attribute `ConstraintDualStart`) of the
-constraint `con_ref`.
-
-Note: If no dual start value has been set, `dual_start_value` will return
-`nothing`.
-
-See also [`set_dual_start_value`](@ref).
-"""
-function dual_start_value(con_ref::ConstraintRef{<:AbstractModel,<:_MOICON})
-    return reshape_vector(_dual_start(con_ref), dual_shape(con_ref.shape))
-end
-
-# Returns the value of MOI.ConstraintDualStart in a type-stable way
-function _dual_start(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractScalarFunction,<:MOI.AbstractScalarSet},
-    },
-)::Union{Nothing,Float64}
-    return MOI.get(owner_model(con_ref), MOI.ConstraintDualStart(), con_ref)
-end
-function _dual_start(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractVectorFunction,<:MOI.AbstractVectorSet},
-    },
-)::Union{Nothing,Vector{Float64}}
-    return MOI.get(owner_model(con_ref), MOI.ConstraintDualStart(), con_ref)
-end
-
-"""
-    set_dual_start_value(con_ref::ConstraintRef, value)
-
-Set the dual start value (MOI attribute `ConstraintDualStart`) of the constraint
-`con_ref` to `value`. To remove a dual start value set it to `nothing`.
-
-See also [`dual_start_value`](@ref).
-"""
-function set_dual_start_value(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractVectorFunction,<:MOI.AbstractVectorSet},
-    },
-    value,
-)
-    vectorized_value = vectorize(value, dual_shape(con_ref.shape))
-    MOI.set(
-        owner_model(con_ref),
-        MOI.ConstraintDualStart(),
-        con_ref,
-        vectorized_value,
-    )
-    return
-end
-function set_dual_start_value(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractVectorFunction,<:MOI.AbstractVectorSet},
-    },
-    ::Nothing,
-)
-    MOI.set(owner_model(con_ref), MOI.ConstraintDualStart(), con_ref, nothing)
-    return
-end
-function set_dual_start_value(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractScalarFunction,<:MOI.AbstractScalarSet},
-    },
-    value,
-)
-    MOI.set(owner_model(con_ref), MOI.ConstraintDualStart(), con_ref, value)
-    return
-end
-
-"""
-    name(con_ref::ConstraintRef)
-
-Get a constraint's name attribute.
-"""
-function name(con_ref::ConstraintRef{<:AbstractModel,<:_MOICON})
-    return MOI.get(con_ref.model, MOI.ConstraintName(), con_ref)::String
-end
-
-"""
-    set_name(con_ref::ConstraintRef, s::AbstractString)
-
-Set a constraint's name attribute.
-"""
-function set_name(con_ref::ConstraintRef{<:AbstractModel,<:_MOICON}, s::String)
-    return MOI.set(con_ref.model, MOI.ConstraintName(), con_ref, s)
-end
-
-"""
-    constraint_by_name(model::AbstractModel,
-                       name::String)::Union{ConstraintRef, Nothing}
-
-Returns the reference of the constraint with name attribute `name` or `Nothing`
-if no constraint has this name attribute. Throws an error if several
-constraints have `name` as their name attribute.
-
-    constraint_by_name(model::AbstractModel,
-                       name::String,
-                       F::Type{<:Union{AbstractJuMPScalar,
-                                       Vector{<:AbstractJuMPScalar},
-                                       MOI.AbstactFunction}},
-                       S::Type{<:MOI.AbstractSet})::Union{ConstraintRef, Nothing}
-
-Similar to the method above, except that it throws an error if the constraint is
-not an `F`-in-`S` contraint where `F` is either the JuMP or MOI type of the
-function, and `S` is the MOI type of the set. This method is recommended if you
-know the type of the function and set since its returned type can be inferred
-while for the method above (i.e. without `F` and `S`), the exact return type of
-the constraint index cannot be inferred.
-
-```jldoctest objective_function; setup = :(using JuMP), filter = r"Stacktrace:.*"s
-julia> using JuMP
-
-julia> model = Model()
-A JuMP Model
-Feasibility problem with:
-Variables: 0
-Model mode: AUTOMATIC
-CachingOptimizer state: NO_OPTIMIZER
-Solver name: No optimizer attached.
-
-julia> @variable(model, x)
-x
-
-julia> @constraint(model, con, x^2 == 1)
-con : x² = 1.0
-
-julia> constraint_by_name(model, "kon")
-
-julia> constraint_by_name(model, "con")
-con : x² = 1.0
-
-julia> constraint_by_name(model, "con", AffExpr, MOI.EqualTo{Float64})
-
-julia> constraint_by_name(model, "con", QuadExpr, MOI.EqualTo{Float64})
-con : x² = 1.0
-```
-"""
-function constraint_by_name end
-
-function constraint_by_name(model::Model, name::String)
-    index = MOI.get(backend(model), MOI.ConstraintIndex, name)
-    if index isa Nothing
-        return nothing
-    else
-        return constraint_ref_with_index(model, index)
-    end
-end
-
-function constraint_by_name(
-    model::Model,
-    name::String,
-    F::Type{<:MOI.AbstractFunction},
-    S::Type{<:MOI.AbstractSet},
-)
-    index = MOI.get(backend(model), MOI.ConstraintIndex{F,S}, name)
-    if index isa Nothing
-        return nothing
-    else
-        return constraint_ref_with_index(model, index)
-    end
-end
-function constraint_by_name(
-    model::Model,
-    name::String,
-    F::Type{<:Union{ScalarType,Vector{ScalarType}}},
-    S::Type,
-) where {ScalarType<:AbstractJuMPScalar}
-    return constraint_by_name(model, name, moi_function_type(F), S)
-end
-
-# Creates a ConstraintRef with default shape
-function constraint_ref_with_index(
-    model::AbstractModel,
-    index::MOI.ConstraintIndex{
-        <:MOI.AbstractScalarFunction,
-        <:MOI.AbstractScalarSet,
-    },
-)
-    return ConstraintRef(model, index, ScalarShape())
-end
-function constraint_ref_with_index(
-    model::AbstractModel,
-    index::MOI.ConstraintIndex{
-        <:MOI.AbstractVectorFunction,
-        <:MOI.AbstractVectorSet,
-    },
-)
-    return ConstraintRef(model, index, get(model.shapes, index, VectorShape()))
-end
-
-"""
-    delete(model::Model, con_ref::ConstraintRef)
-
-Delete the constraint associated with `constraint_ref` from the model `model`.
-
-See also: [`unregister`](@ref)
-"""
-function delete(model::Model, con_ref::ConstraintRef)
-    if model !== con_ref.model
-        error(
-            "The constraint reference you are trying to delete does not " *
-            "belong to the model.",
-        )
-    end
-    return MOI.delete(backend(model), index(con_ref))
-end
-
-"""
-    delete(model::Model, con_refs::Vector{<:ConstraintRef})
-
-Delete the constraints associated with `con_refs` from the model `model`.
-Solvers may implement specialized methods for deleting multiple constraints of
-the same concrete type, i.e., when `isconcretetype(eltype(con_refs))`. These
-may be more efficient than repeatedly calling the single constraint delete
-method.
-
-See also: [`unregister`](@ref)
-"""
-function delete(
-    model::Model,
-    con_refs::Vector{<:ConstraintRef{<:AbstractModel}},
-)
-    if any(c -> model !== c.model, con_refs)
-        error("A constraint reference you are trying to delete does not" * "
-            belong to the model.")
-    end
-    MOI.delete(backend(model), index.(con_refs))
-    return
-end
-
-"""
-    is_valid(model::Model, con_ref::ConstraintRef{<:AbstractModel})
-
-Return `true` if `constraint_ref` refers to a valid constraint in `model`.
-"""
-function is_valid(model::Model, con_ref::ConstraintRef{<:AbstractModel})
-    return (
-        model === con_ref.model && MOI.is_valid(backend(model), con_ref.index)
-    )
-end
-
-#############################################################################
-# AbstractConstraint
-"""
-    abstract type AbstractConstraint
-
-An abstract base type for all constraint types. `AbstractConstraint`s store the
-function and set directly, unlike [`ConstraintRef`](@ref)s that are merely
-references to constraints stored in a model. `AbstractConstraint`s do not need
-to be attached to a model.
-"""
-abstract type AbstractConstraint end
-
-"""
-    struct BridgeableConstraint{C, B} <: AbstractConstraint
-        constraint::C
-        bridge_type::B
-    end
-
-Constraint `constraint` that can be bridged by the bridge of type `bridge_type`.
-Adding this constraint to a model is equivalent to
-```julia
-add_bridge(model, bridge_type)
-add_constraint(model, constraint)
-```
-
-## Examples
-
-Given a new scalar set type `CustomSet` with a bridge `CustomBridge` that can
-bridge `F`-in-`CustomSet` constraints, when the user does
-```julia
-model = Model()
-@variable(model, x)
-@constraint(model, x + 1 in CustomSet())
-optimize!(model)
-```
-with an optimizer that does not support `F`-in-`CustomSet` constraints, the
-constraint will not be bridged unless he manually calls `add_bridge(model,
-CustomBridge)`. In order to automatically add the `CustomBridge` to any model to
-which an `F`-in-`CustomSet` is added, simply add the following method:
-```julia
-function JuMP.build_constraint(_error::Function, func::AbstractJuMPScalar,
-                               set::CustomSet)
-    constraint = ScalarConstraint(func, set)
-    return JuMP.BridgeableConstraint(constraint, CustomBridge)
-end
-```
-
-### Note
-
-JuMP extensions should extend `JuMP.build_constraint` only if they also defined
-`CustomSet`, for three
-reasons:
-1. It is problematic if multiple extensions overload the same JuMP method.
-2. A missing method will not inform the users that they forgot to load the
-   extension module defining the `build_constraint` method.
-3. Defining a method where neither the function nor any of the argument types
-   are defined in the package is called [*type piracy*](https://docs.julialang.org/en/v1/manual/style-guide/index.html#Avoid-type-piracy-1)
-   and is discouraged in the Julia style guide.
-"""
-struct BridgeableConstraint{C,B} <: AbstractConstraint
-    constraint::C
-    bridge_type::B
-end
-
-function add_constraint(
-    model::Model,
-    con::BridgeableConstraint,
-    name::String = "",
-)
-    add_bridge(model, con.bridge_type)
-    return add_constraint(model, con.constraint, name)
-end
-
-"""
-    jump_function(constraint::AbstractConstraint)
-
-Return the function of the constraint `constraint` in the function-in-set form
-as a `AbstractJuMPScalar` or `Vector{AbstractJuMPScalar}`.
-"""
-jump_function(constraint::AbstractConstraint) = constraint.func
-
-"""
-    moi_function(constraint::AbstractConstraint)
-
-Return the function of the constraint `constraint` in the function-in-set form
-as a `MathOptInterface.AbstractFunction`.
-"""
-function moi_function(constraint::AbstractConstraint)
-    return moi_function(jump_function(constraint))
-end
-
-"""
-    moi_set(constraint::AbstractConstraint)
-
-Return the set of the constraint `constraint` in the function-in-set form as a
-`MathOptInterface.AbstractSet`.
-
-    moi_set(s::AbstractVectorSet, dim::Int)
-
-Returns the MOI set of dimension `dim` corresponding to the JuMP set `s`.
-"""
-moi_set(constraint::AbstractConstraint) = constraint.set
-
-"""
-    constraint_object(con_ref::ConstraintRef)
-
-Return the underlying constraint data for the constraint referenced by `ref`.
-"""
-function constraint_object end
-
-"""
-    struct ScalarConstraint
-
-The data for a scalar constraint. The `func` field containts a JuMP object
-representing the function and the `set` field contains the MOI set.
-See also the [documentation](@ref Constraints) on JuMP's representation of
-constraints for more background.
-"""
-struct ScalarConstraint{F<:AbstractJuMPScalar,S<:MOI.AbstractScalarSet} <:
-       AbstractConstraint
-    func::F
-    set::S
-end
-
-reshape_set(set::MOI.AbstractScalarSet, ::ScalarShape) = set
-shape(::ScalarConstraint) = ScalarShape()
-
-function constraint_object(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{FuncType,SetType}},
-) where {FuncType<:MOI.AbstractScalarFunction,SetType<:MOI.AbstractScalarSet}
-    model = con_ref.model
-    f = MOI.get(model, MOI.ConstraintFunction(), con_ref)::FuncType
-    s = MOI.get(model, MOI.ConstraintSet(), con_ref)::SetType
-    return ScalarConstraint(jump_function(model, f), s)
-end
-function check_belongs_to_model(con::ScalarConstraint, model)
-    return check_belongs_to_model(con.func, model)
-end
-
-"""
-    struct VectorConstraint
-
-The data for a vector constraint. The `func` field containts a JuMP object
-representing the function and the `set` field contains the MOI set. The
-`shape` field contains an [`AbstractShape`](@ref) matching the form in which
-the constraint was constructed (e.g., by using matrices or flat vectors).
-See also the [documentation](@ref Constraints) on JuMP's representation of
-constraints.
-"""
-struct VectorConstraint{
-    F<:AbstractJuMPScalar,
-    S<:MOI.AbstractVectorSet,
-    Shape<:AbstractShape,
-} <: AbstractConstraint
-    func::Vector{F}
-    set::S
-    shape::Shape
-end
-function VectorConstraint(
-    func::Vector{<:AbstractJuMPScalar},
-    set::MOI.AbstractVectorSet,
-)
-    if length(func) != MOI.dimension(set)
-        throw(
-            DimensionMismatch(
-                "Dimension of the function $(length(func)) does not match the " *
-                "dimension of the set $(set).",
-            ),
-        )
-    end
-    return VectorConstraint(func, set, VectorShape())
-end
-
-function VectorConstraint(
-    func::AbstractVector{<:AbstractJuMPScalar},
-    set::MOI.AbstractVectorSet,
-)
-    return VectorConstraint(collect(func), set)
-end
-
-reshape_set(set::MOI.AbstractVectorSet, ::VectorShape) = set
-shape(con::VectorConstraint) = con.shape
-function constraint_object(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{FuncType,SetType}},
-) where {FuncType<:MOI.AbstractVectorFunction,SetType<:MOI.AbstractVectorSet}
-    model = con_ref.model
-    f = MOI.get(model, MOI.ConstraintFunction(), con_ref)::FuncType
-    s = MOI.get(model, MOI.ConstraintSet(), con_ref)::SetType
-    return VectorConstraint(jump_function(model, f), s, con_ref.shape)
-end
-function check_belongs_to_model(con::VectorConstraint, model)
-    for func in con.func
-        check_belongs_to_model(func, model)
-    end
-end
-
-function moi_add_constraint(
-    model::MOI.ModelLike,
-    f::MOI.AbstractFunction,
-    s::MOI.AbstractSet,
-)
-    if !MOI.supports_constraint(model, typeof(f), typeof(s))
-        if moi_mode(model) == DIRECT
-            bridge_message = "."
-        elseif moi_bridge_constraints(model)
-            error(
-                sprint(
-                    io -> MOI.Bridges.debug(
-                        model.optimizer,
-                        typeof(f),
-                        typeof(s);
-                        io = io,
-                    ),
-                ),
-            )
-        else
-            bridge_message = ", try using `bridge_constraints=true` in the `JuMP.Model` constructor if you believe the constraint can be reformulated to constraints supported by the solver."
+    @testset "Bounds parsing" begin
+        b = Optim.ConstraintBounds([0.0, 0.5, 2.0], [1.0, 1.0, 2.0], [5.0, 3.8], [5.0, 4.0])
+        @test b.eqx == [3]
+        @test b.valx == [2.0]
+        @test b.ineqx == [1,1,2,2]
+        @test b.σx == [1,-1,1,-1]
+        @test b.bx == [0.0,1.0,0.5,1.0]
+        @test b.eqc == [1]
+        @test b.valc == [5]
+        @test b.ineqc == [2,2]
+        @test b.σc == [1,-1]
+        @test b.bc == [3.8,4.0]
+        io = IOBuffer()
+        show(io, b)
+        @test String(take!(io)) == "ConstraintBounds:\n  Variables:\n    x[3]=2.0\n    x[1]≥0.0, x[1]≤1.0, x[2]≥0.5, x[2]≤1.0\n  Linear/nonlinear constraints:\n    c_1=5.0\n    c_2≥3.8, c_2≤4.0"
+
+        b = Optim.ConstraintBounds(Float64[], Float64[], [5.0, 3.8], [5.0, 4.0])
+        for fn in (:eqx, :valx, :ineqx, :σx, :bx)
+            @test isempty(getfield(b, fn))
         end
-        error(
-            "Constraints of type $(typeof(f))-in-$(typeof(s)) are not supported by the solver" *
-            bridge_message,
-        )
+        @test b.eqc == [1]
+        @test b.valc == [5]
+        @test b.ineqc == [2,2]
+        @test b.σc == [1,-1]
+        @test b.bc == [3.8,4.0]
+
+        ba = Optim.ConstraintBounds([], [], [5.0, 3.8], [5.0, 4.0])
+        @test eltype(ba) == Float64
+
+        @test_throws ArgumentError Optim.ConstraintBounds([0.0, 0.5, 2.0], [1.0, 1.0, 2.0], [5.0, 4.8], [5.0, 4.0])
+        @test_throws DimensionMismatch Optim.ConstraintBounds([0.0, 0.5, 2.0], [1.0, 1.0], [5.0, 4.8], [5.0, 4.0])
     end
-    return MOI.add_constraint(model, f, s)
-end
 
-"""
-    add_constraint(model::Model, con::AbstractConstraint, name::String="")
+    @testset "IPNewton computations" begin
+        # Compare hand-computed gradient against that from automatic differentiation
+        function check_autodiff(d, bounds, x, cfun::Function, bstate, μ)
+            c = cfun(x)
+            J = Optim.NLSolversBase.ForwardDiff.jacobian(cfun, x)
+            p = Optim.pack_vec(x, bstate)
+            ftot! = (storage, p)->Optim.lagrangian_fgvec!(p, storage, gx, bgrad, d, bounds, x, c, J, bstate, μ)
+            pgrad = similar(p)
+            ftot!(pgrad, p)
+            chunksize = min(8, length(p))
+            TD = Optim.NLSolversBase.ForwardDiff.Dual{Optim.ForwardDiff.Tag{Nothing,Float64},eltype(p),chunksize}
+            xd = similar(x, TD)
+            bstated = Optim.BarrierStateVars{TD}(bounds)
+            pcmp = similar(p)
+            ftot = p->Optim.lagrangian_vec(p, d, bounds, xd, cfun, bstated, μ)
+            #ForwardDiff.gradient!(pcmp, ftot, p, Optim.ForwardDiff.{chunksize}())
+            Optim.NLSolversBase.ForwardDiff.gradient!(pcmp, ftot, p)
+            @test pcmp ≈ pgrad
+        end
+        # Basic setup (using two objectives, one equal to zero and the other a Gaussian)
+        μ = 0.2345678
+        d0 = TwiceDifferentiable(x->0.0, (g,x)->fill!(g, 0.0), (h,x)->fill!(h,0), rand(3))
+        A = randn(3,3); H = A'*A
+        dg = TwiceDifferentiable(x->(x'*H*x)[1]/2, (g,x)->(g[:] = H*x), (h,x)->(h[:,:]=H), rand(3))
+        x = clamp.(randn(3), -0.99, 0.99)
+        gx = similar(x)
+        cfun = x->Float64[]
+        c = Float64[]
+        J = Array{Float64}(undef, 0,0)
+        method = Optim.IPNewton(μ0 = μ)
+        options = Optim.Options(; Optim.default_options(method)...)
+        ## In the code, variable constraints are special-cased (for
+        ## reasons of user-convenience and efficiency).  It's
+        ## important to check that the special-casing yields the same
+        ## result as the general case. So in the first three
+        ## constrained cases below, we compare variable constraints
+        ## against the same kind of constraint applied generically.
+        cvar! = (c, x) -> copyto!(c, x)
+        cvarJ! = (J, x) -> copyto!(J, Matrix{Float64}(I, size(J)...))
+        cvarh! = (h, x, λ) -> h  # h! adds to h, it doesn't replace it
 
-Add a constraint `con` to `Model model` and sets its name.
-"""
-function add_constraint(
-    model::Model,
-    con::AbstractConstraint,
-    name::String = "",
-)
-    # The type of backend(model) is unknown so we directly redirect to another
-    # function.
-    check_belongs_to_model(con, model)
-    cindex = moi_add_constraint(backend(model), moi_function(con), moi_set(con))
-    cshape = shape(con)
-    if !(cshape isa ScalarShape) && !(cshape isa VectorShape)
-        model.shapes[cindex] = cshape
+        ## No constraints
+        bounds = Optim.ConstraintBounds(Float64[], Float64[], Float64[], Float64[])
+        bstate = Optim.BarrierStateVars(bounds, x)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, dg, bounds, x, Float64[], Array{Float64}(undef, 0,0), bstate, μ)
+        @test f_x == L == dg.f(x)
+        @test gx == H*x
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->nothing, (J,x)->nothing, (H,x,λ)->nothing, bounds)
+        state = Optim.initial_state(method, options, dg, constraints, x)
+        @test Optim.gf(bounds, state) ≈ gx
+        @test Optim.Hf(constraints, state) ≈ H
+        stateconvert = convert(Optim.IPNewtonState{Float64, Vector{Float64}}, state)
+        @test Optim.gf(bounds, stateconvert) ≈ gx
+        @test Optim.Hf(constraints, stateconvert) ≈ H
+        ## Pure equality constraints on variables
+        xbar = fill(0.2, length(x))
+        bounds = Optim.ConstraintBounds(xbar, xbar, [], [])
+        bstate = Optim.BarrierStateVars(bounds)
+        rand!(bstate.λxE)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, d0, bounds, x, c, J, bstate, μ)
+        @test f_x == 0
+        @test L ≈ dot(bstate.λxE, xbar-x)
+        @test gx == -bstate.λxE
+        @test bgrad.λxE == xbar-x
+
+
+        # TODO: Fix autodiff check
+        #check_autodiff(d0, bounds, x, cfun, bstate, μ)
+
+
+
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->nothing, (J,x)->nothing, (H,x,λ)->nothing, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.λxE, bstate.λxE)
+        setstate!(state, μ, d0, constraints, method)
+        @test Optim.gf(bounds, state) ≈ [gx; xbar-x]
+        n = length(x)
+        eyen = Matrix{Float64}(I, n, n)
+        @test Optim.Hf(constraints, state) ≈ [eyen -eyen; -eyen zeros(n,n)]
+        # Now again using the generic machinery
+        bounds = Optim.ConstraintBounds([], [], xbar, xbar)
+        constraints = TwiceDifferentiableConstraints(cvar!, cvarJ!, cvarh!, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.λcE, bstate.λxE)
+        setstate!(state, μ, d0, constraints, method)
+        @test Optim.gf(bounds, state) ≈ [gx; xbar-x]
+        n = length(x)
+        eyen = Matrix{Float64}(I, n, n)
+        @test Optim.Hf(constraints, state) ≈ [eyen -eyen; -eyen zeros(n,n)]
+        ## Nonnegativity constraints
+        bounds = Optim.ConstraintBounds(zeros(length(x)), fill(Inf,length(x)), [], [])
+        y = rand(length(x))
+        bstate = Optim.BarrierStateVars(bounds, y)
+        rand!(bstate.λx)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, d0, bounds, y, Float64[], Array{Float64}(undef, 0,0), bstate, μ)
+        @test f_x == 0
+        @test L ≈ -μ*sum(log, y)
+        @test bgrad.slack_x == -μ./y + bstate.λx
+        @test gx == -bstate.λx
+        # TODO: Fix autodiff check
+        #check_autodiff(d0, bounds, y, cfun, bstate, μ)
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->nothing, (J,x)->nothing, (H,x,λ)->nothing, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, y)
+        setstate!(state, μ, d0, constraints, method)
+        @test Optim.gf(bounds, state) ≈ -μ./y
+        @test Optim.Hf(constraints, state) ≈ μ*Diagonal(1 ./ y.^2)
+        # Now again using the generic machinery
+        bounds = Optim.ConstraintBounds([], [], zeros(length(x)), fill(Inf,length(x)))
+        constraints = TwiceDifferentiableConstraints(cvar!, cvarJ!, cvarh!, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, y)
+        setstate!(state, μ, d0, constraints, method)
+        @test Optim.gf(bounds, state) ≈ -μ./y
+        @test Optim.Hf(constraints, state) ≈ μ*Diagonal(1 ./ y.^2)
+        ## General inequality constraints on variables
+        lb, ub = rand(length(x)).-2, rand(length(x)).+1
+        bounds = Optim.ConstraintBounds(lb, ub, [], [])
+        bstate = Optim.BarrierStateVars(bounds, x)
+        rand!(bstate.slack_x)  # intentionally displace from the correct value
+        rand!(bstate.λx)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, d0, bounds, x, Float64[], Array{Float64}(undef, 0,0), bstate, μ)
+        @test f_x == 0
+        s = bounds.σx .* (x[bounds.ineqx] - bounds.bx)
+        Ltarget = -μ*sum(log, bstate.slack_x) +
+            dot(bstate.λx, bstate.slack_x - s)
+        @test L ≈ Ltarget
+        dx = similar(gx); fill!(dx, 0)
+        for (i,j) in enumerate(bounds.ineqx)
+            dx[j] -= bounds.σx[i]*bstate.λx[i]
+        end
+        @test gx ≈ dx
+        @test bgrad.slack_x == -μ./bstate.slack_x + bstate.λx
+        # TODO: Fix autodiff check
+        #check_autodiff(d0, bounds, x, cfun, bstate, μ)
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->nothing, (J,x)->nothing, (H,x,λ)->nothing, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.slack_x, bstate.slack_x)
+        copyto!(state.bstate.λx, bstate.λx)
+        setstate!(state, μ, d0, constraints, method)
+        gxs, hxs = zeros(length(x)), zeros(length(x))
+        s, λ = state.bstate.slack_x, state.bstate.λx
+        for (i,j) in enumerate(bounds.ineqx)
+            # # Primal
+            # gxs[j] += -2*μ*bounds.σx[i]/s[i] + μ*(x[j]-bounds.bx[i])/s[i]^2
+            # hxs[j] += μ/s[i]^2
+            # Primal-dual
+            gstmp = -μ/s[i] + λ[i]
+            gλtmp = s[i] - bounds.σx[i]*(x[j]-bounds.bx[i])
+            htmp = λ[i]/s[i]
+            hxs[j] += htmp
+            gxs[j] += bounds.σx[i]*(gstmp - λ[i]) - bounds.σx[i]*htmp*gλtmp
+        end
+        @test Optim.gf(bounds, state) ≈ gxs
+        @test Optim.Hf(constraints, state) ≈ Diagonal(hxs)
+        # Now again using the generic machinery
+        bounds = Optim.ConstraintBounds([], [], lb, ub)
+        constraints = TwiceDifferentiableConstraints(cvar!, cvarJ!, cvarh!, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.slack_c, bstate.slack_x)
+        copyto!(state.bstate.λc, bstate.λx)
+        setstate!(state, μ, d0, constraints, method)
+        @test Optim.gf(bounds, state) ≈ gxs
+        @test Optim.Hf(constraints, state) ≈ Diagonal(hxs)
+        ## Nonlinear equality constraints
+        cfun = x->[x[1]^2+x[2]^2, x[2]*x[3]^2]
+        cfun! = (c, x) -> copyto!(c, cfun(x))
+        cJ! = (J, x) -> copyto!(J, [2*x[1] 2*x[2] 0;
+                                  0 x[3]^2 2*x[2]*x[3]])
+        ch! = function(h, x, λ)
+            h[1,1] += 2*λ[1]
+            h[2,2] += 2*λ[1]
+            h[3,3] += 2*λ[2]*x[2]
+        end
+        c = cfun(x)
+        J = Optim.NLSolversBase.ForwardDiff.jacobian(cfun, x)
+        Jtmp = similar(J); @test cJ!(Jtmp, x) ≈ J  # just to check we did it right
+        cbar = rand(length(c))
+        bounds = Optim.ConstraintBounds([], [], cbar, cbar)
+        bstate = Optim.BarrierStateVars(bounds, x, c)
+        rand!(bstate.λcE)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, d0, bounds, x, c, J, bstate, μ)
+        @test f_x == 0
+        @test L ≈ dot(bstate.λcE, cbar-c)
+        @test gx ≈ -J'*bstate.λcE
+        @test bgrad.λcE == cbar-c
+        # TODO: Fix autodiff check
+        #check_autodiff(d0, bounds, x, cfun, bstate, μ)
+        constraints = TwiceDifferentiableConstraints(cfun!, cJ!, ch!, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.λcE, bstate.λcE)
+        setstate!(state, μ, d0, constraints, method)
+        heq = zeros(length(x), length(x))
+        ch!(heq, x, bstate.λcE)
+        @test Optim.gf(bounds, state) ≈ [gx; cbar-c]
+        @test Optim.Hf(constraints, state) ≈ [Matrix(cholesky(Positive, heq)) -J';
+                                                  -J zeros(size(J,1), size(J,1))]
+        ## Nonlinear inequality constraints
+        bounds = Optim.ConstraintBounds([], [], .-rand(length(c)).-1, rand(length(c)).+2)
+        bstate = Optim.BarrierStateVars(bounds, x, c)
+        rand!(bstate.slack_c)  # intentionally displace from the correct value
+        rand!(bstate.λc)
+        bgrad = similar(bstate)
+        f_x, L = Optim.lagrangian_fg!(gx, bgrad, d0, bounds, x, c, J, bstate, μ)
+        @test f_x == 0
+        Ltarget = -μ*sum(log, bstate.slack_c) +
+            dot(bstate.λc, bstate.slack_c - bounds.σc.*(c[bounds.ineqc]-bounds.bc))
+        @test L ≈ Ltarget
+        @test gx ≈ -J[bounds.ineqc,:]'*(bstate.λc.*bounds.σc)
+        @test bgrad.slack_c == -μ./bstate.slack_c + bstate.λc
+        @test bgrad.λc == bstate.slack_c - bounds.σc .* (c[bounds.ineqc] - bounds.bc)
+        # TODO: Fix autodiff check
+        #check_autodiff(d0, bounds, x, cfun, bstate, μ)
+        constraints = TwiceDifferentiableConstraints(cfun!, cJ!, ch!, bounds)
+        state = Optim.initial_state(method, options, d0, constraints, x)
+        copyto!(state.bstate.slack_c, bstate.slack_c)
+        copyto!(state.bstate.λc, bstate.λc)
+        setstate!(state, μ, d0, constraints, method)
+        hineq = zeros(length(x), length(x))
+        λ = zeros(size(J, 1))
+        for (i,j) in enumerate(bounds.ineqc)
+            λ[j] += bstate.λc[i]*bounds.σc[i]
+        end
+        ch!(hineq, x, λ)
+        JI = J[bounds.ineqc,:]
+        # # Primal
+        # hxx = μ*JI'*Diagonal(1 ./ bstate.slack_c.^2)*JI - hineq
+        # gf = -JI'*(bounds.σc .* bstate.λc) + JI'*Diagonal(bounds.σc)*(bgrad.slack_c - μ(bgrad.λc ./ bstate.slack_c.^2))
+        # Primal-dual
+        #        hxx = full(cholesky(Positive, -hineq)) + JI'*Diagonal(bstate.λc./bstate.slack_c)*JI
+        hxx = -hineq + JI'*Diagonal(bstate.λc./bstate.slack_c)*JI
+        gf = -JI'*(bounds.σc .* bstate.λc) + JI'*Diagonal(bounds.σc)*(bgrad.slack_c - (bgrad.λc .* bstate.λc ./ bstate.slack_c))
+        @test Optim.gf(bounds, state) ≈ gf
+        @test Optim.Hf(constraints, state) ≈ Matrix(cholesky(Positive, hxx, Val{true}))
     end
-    con_ref = ConstraintRef(model, cindex, cshape)
-    if !isempty(name)
-        set_name(con_ref, name)
+
+    @testset "IPNewton initialization" begin
+        method = IPNewton()
+        options = Optim.Options(; Optim.default_options(method)...)
+        x = [1.0,0.1,0.3,0.4]
+        ## A linear objective function (hessian is zero)
+        f_g = [1.0,2.0,3.0,4.0]
+        d = TwiceDifferentiable(x->dot(x, f_g), (g,x)->copyto!(g, f_g), (h,x)->fill!(h, 0), x)
+        # Variable bounds
+        constraints = TwiceDifferentiableConstraints([0.5, 0.0, -Inf, -Inf], [Inf, Inf, 1.0, 0.8])
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        @test norm(f_g - state.g) ≈ 0.01*norm(f_g)
+        # Nonlinear inequalities
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->(c[1]=x[1]*x[2]; c[2]=3*x[3]+x[4]^2),
+            (J,x)->(J[:,:] = [x[2] x[1] 0 0; 0 0 3 2*x[4]]),
+            (h,x,λ)->(h[4,4] += λ[2]*2),
+            [], [], [0.05, 0.4], [0.15, 4.4])
+        @test Optim.isinterior(constraints, x)
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        @test norm(f_g - state.g) ≈ 0.01*norm(f_g)
+        # Mixed equalities and inequalities
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->(c[1]=x[1]*x[2]; c[2]=3*x[3]+x[4]^2),
+            (J,x)->(J .= [x[2] x[1] 0 0; 0 0 3 2*x[4]]),
+            (h,x,λ)->(h[4,4] += λ[2]*2),
+            [], [], [0.1, 0.4], [0.1, 4.4])
+        @test Optim.isfeasible(constraints, x)
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        J = zeros(2,4)
+        constraints.jacobian!(J, x)
+        eqnormal = vec(J[1,:]); eqnormal = eqnormal/norm(eqnormal)
+        @test abs(dot(state.g, eqnormal)) < 1e-12  # orthogonal to equality constraint
+        Pfg = f_g - dot(f_g, eqnormal)*eqnormal
+        Pg = state.g - dot(state.g, eqnormal)*eqnormal
+        @test norm(Pfg - Pg) ≈ 0.01*norm(Pfg)
+        ## An objective function with a nonzero hessian
+        hd = [1.0, 100.0, 0.01, 2.0]   # diagonal terms of hessian
+        d = TwiceDifferentiable(x->sum(hd.*x.^2)/2, (g,x)->copyto!(g, hd.*x), (h,x)->copyto!(h, Diagonal(hd)), x)
+        NLSolversBase.gradient!(d, x)
+        gx = NLSolversBase.gradient(d)
+        hx = Diagonal(hd)
+        # Variable bounds
+        constraints = TwiceDifferentiableConstraints([0.5, 0.0, -Inf, -Inf], [Inf, Inf, 1.0, 0.8])
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        @test abs(dot(gx, state.g)/dot(gx,gx) - 1) <= 0.011
+        Optim.update_h!(d, constraints, state, method)
+        @test abs(dot(gx, state.H*gx)/dot(gx, hx*gx) - 1) <= 0.011
+        # Nonlinear inequalities
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->(c[1]=x[1]*x[2]; c[2]=3*x[3]+x[4]^2),
+            (J,x)->(J[:,:] = [x[2] x[1] 0 0; 0 0 3 2*x[4]]),
+            (h,x,λ)->(h[4,4] += λ[2]*2),
+            [], [], [0.05, 0.4], [0.15, 4.4])
+        @test Optim.isinterior(constraints, x)
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        @test abs(dot(gx, state.g)/dot(gx,gx) - 1) <= 0.011
+        Optim.update_h!(d, constraints, state, method)
+        @test abs(dot(gx, state.H*gx)/dot(gx, hx*gx) - 1) <= 0.011
+        # Mixed equalities and inequalities
+        constraints = TwiceDifferentiableConstraints(
+            (c,x)->(c[1]=x[1]*x[2]; c[2]=3*x[3]+x[4]^2),
+            (J,x)->(J[:,:] = [x[2] x[1] 0 0; 0 0 3 2*x[4]]),
+            (h,x,λ)->(h[4,4] += λ[2]*2),
+            [], [], [0.1, 0.4], [0.1, 4.4])
+        @test Optim.isfeasible(constraints, x)
+        state = Optim.initial_state(method, options, d, constraints, x)
+        Optim.update_fg!(d, constraints, state, method)
+        J = zeros(2,4)
+        constraints.jacobian!(J, x)
+        eqnormal = vec(J[1,:]); eqnormal = eqnormal/norm(eqnormal)
+        @test abs(dot(state.g, eqnormal)) < 1e-12  # orthogonal to equality constraint
+        Pgx = gx - dot(gx, eqnormal)*eqnormal
+        @test abs(dot(Pgx, state.g)/dot(Pgx,Pgx) - 1) <= 0.011
+        Optim.update_h!(d, constraints, state, method)
+        @test abs(dot(Pgx, state.H*Pgx)/dot(Pgx, hx*Pgx) - 1) <= 0.011
     end
-    return con_ref
-end
 
-"""
-    set_normalized_coefficient(con_ref::ConstraintRef, variable::VariableRef, value)
+    @testset "IPNewton step" begin
+        function autoqp(d, constraints, state)
+            # Note that state must be fully up-to-date, and you must
+            # have also called Optim.solve_step!
+            p = Optim.pack_vec(state.x, state.bstate)
+            chunksize = 1 #min(8, length(p))
 
-Set the coefficient of `variable` in the constraint `constraint` to `value`.
+            # TODO: How do we deal with the new Tags in ForwardDiff?
 
-Note that prior to this step, JuMP will aggregate multiple terms containing the
-same variable. For example, given a constraint `2x + 3x <= 2`,
-`set_normalized_coefficient(con, x, 4)` will create the constraint `4x <= 2`.
+            # TD = ForwardDiff.Dual{chunksize, eltype(y)}
+            TD = Optim.NLSolversBase.ForwardDiff.Dual{Optim.NLSolversBase.ForwardDiff.Tag{Nothing,Float64}, eltype(p), chunksize}
 
-```jldoctest; setup = :(using JuMP), filter=r"≤|<="
-model = Model()
-@variable(model, x)
-@constraint(model, con, 2x + 3x <= 2)
-set_normalized_coefficient(con, x, 4)
-con
+            # TODO: It doesn't seem like it is possible to to create a dual where the values are duals?
+            # TD2 = ForwardDiff.Dual{chunksize, ForwardDiff.Dual{chunksize, eltype(p)}}
+            # TD2 = ForwardDiff.Dual{ForwardDiff.Tag{Nothing,Float64}, typeof(TD), chunksize}
+            Tx = typeof(state.x)
+            stated = convert(Optim.IPNewtonState{TD, Tx,1}, state)
+            # TODO: Uncomment
+            #stated2 = convert(Optim.IPNewtonState{TD2, Tx, 1}, state)
 
-# output
+            ϕd = αs->Optim.lagrangian_linefunc(αs, d, constraints, stated)
+            # TODO: Uncomment
+            #ϕd2 = αs->Optim.lagrangian_linefunc(αs, d, constraints, stated2)
 
-con : 4 x <= 2.0
-```
-"""
-function set_normalized_coefficient(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-    variable,
-    value,
-) where {
-    S,
-    T,
-    F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
-}
-    MOI.modify(
-        backend(owner_model(con_ref)),
-        index(con_ref),
-        MOI.ScalarCoefficientChange(index(variable), convert(T, value)),
-    )
-    return
-end
-@deprecate set_coefficient set_normalized_coefficient
+            #ForwardDiff.gradient(ϕd, zeros(4)), ForwardDiff.hessian(ϕd2, zeros(4))
+            Optim.NLSolversBase.ForwardDiff.gradient(ϕd, [0.0])#, ForwardDiff.hessian(ϕd2, [0.0])
+        end
+        F = 1000
+        d = TwiceDifferentiable(x->F*x[1], (g, x) -> (g[1] = F), (h, x) -> (h[1,1] = 0), [0.0,])
+        μ = 1e-20
+        method = Optim.IPNewton(μ0=μ)
+        options = Optim.Options(; Optim.default_options(method)...)
+        x0 = μ/F*10  # minimum is at μ/F
+        # Nonnegativity (the case that doesn't require slack variables)
+        constraints = TwiceDifferentiableConstraints([0.0], [])
+        state = Optim.initial_state(method, options, d, constraints, [x0])
+        qp = Optim.solve_step!(state, constraints, options)
+        @test state.s[1] ≈ -(F-μ/x0)/(state.bstate.λx[1]/x0)
+        # TODO: Fix ForwardDiff
+        #g0, H0 = autoqp(d, constraints, state)
 
-"""
-    normalized_coefficient(con_ref::ConstraintRef, variable::VariableRef)
+        @test qp[1] ≈ F*x0-μ*log(x0)
+        # TODO: Fix ForwardDiff
+        #@test [qp[2]] ≈ g0 #-(F-μ/x0)^2*x0^2/μ
+        # TODO: Fix ForwardDiff
+        #@test [qp[3]] ≈ H0 # μ/x0^2*(x0 - F*x0^2/μ)^2
+        bstate, bstep, bounds = state.bstate, state.bstep, constraints.bounds
+        αmax = Optim.estimate_maxstep(Inf, state.x[bounds.ineqx].*bounds.σx,
+                                          state.s[bounds.ineqx].*bounds.σx)
+        ϕ = Optim.linesearch_anon(d, constraints, state, method)
+        val0 = ϕ(0.0)
+        val0 = isa(val0, Tuple) ? val0[1] : val0
+        @test val0 ≈ qp[1]
+        α = method.linesearch!(ϕ, 1.0, αmax, qp)
+        @test α > 1e-3
 
-Return the coefficient associated with `variable` in `constraint` after JuMP has
-normalized the constraint into its standard form. See also
-[`set_normalized_coefficient`](@ref).
-"""
-function normalized_coefficient(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-    variable,
-) where {
-    S,
-    T,
-    F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
-}
-    con = JuMP.constraint_object(con_ref)
-    return _affine_coefficient(con.func, variable)
-end
-
-"""
-    set_normalized_rhs(con_ref::ConstraintRef, value)
-
-Set the right-hand side term of `constraint` to `value`.
-
-Note that prior to this step, JuMP will aggregate all constant terms onto the
-right-hand side of the constraint. For example, given a constraint `2x + 1 <=
-2`, `set_normalized_rhs(con, 4)` will create the constraint `2x <= 4`, not `2x +
-1 <= 4`.
-
-```jldoctest; setup = :(using JuMP; model = Model(); @variable(model, x)), filter=r"≤|<="
-julia> @constraint(model, con, 2x + 1 <= 2)
-con : 2 x <= 1.0
-
-julia> set_normalized_rhs(con, 4)
-
-julia> con
-con : 2 x <= 4.0
-```
-"""
-function set_normalized_rhs(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-    value,
-) where {
-    T,
-    S<:Union{MOI.LessThan{T},MOI.GreaterThan{T},MOI.EqualTo{T}},
-    F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
-}
-    MOI.set(
-        owner_model(con_ref),
-        MOI.ConstraintSet(),
-        con_ref,
-        S(convert(T, value)),
-    )
-    return
-end
-
-"""
-    normalized_rhs(con_ref::ConstraintRef)
-
-Return the right-hand side term of `con_ref` after JuMP has converted the
-constraint into its normalized form. See also [`set_normalized_rhs`](@ref).
-"""
-function normalized_rhs(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-) where {
-    T,
-    S<:Union{MOI.LessThan{T},MOI.GreaterThan{T},MOI.EqualTo{T}},
-    F<:Union{MOI.ScalarAffineFunction{T},MOI.ScalarQuadraticFunction{T}},
-}
-    con = constraint_object(con_ref)
-    return MOI.constant(con.set)
-end
-
-function moi_add_to_function_constant(
-    model::MOI.ModelLike,
-    ci::MOI.ConstraintIndex{
-        <:MOI.AbstractScalarFunction,
-        <:MOI.AbstractScalarSet,
-    },
-    value,
-)
-    set = MOI.get(model, MOI.ConstraintSet(), ci)
-    new_set = MOIU.shift_constant(set, convert(Float64, -value))
-    return MOI.set(model, MOI.ConstraintSet(), ci, new_set)
-end
-function moi_add_to_function_constant(
-    model::MOI.ModelLike,
-    ci::MOI.ConstraintIndex{
-        <:Union{MOI.VectorAffineFunction,MOI.VectorQuadraticFunction},
-        <:MOI.AbstractVectorSet,
-    },
-    value,
-)
-    func = MOI.get(model, MOI.ConstraintFunction(), ci)
-    new_constant = value + MOI.constant(func)
-    return MOI.modify(model, ci, MOI.VectorConstantChange(new_constant))
-end
-
-"""
-    add_to_function_constant(constraint::ConstraintRef, value)
-
-Add `value` to the function constant term.
-
-Note that for scalar constraints, JuMP will aggregate all constant terms onto the
-right-hand side of the constraint so instead of modifying the function, the set
-will be translated by `-value`. For example, given a constraint `2x <=
-3`, `add_to_function_constant(c, 4)` will modify it to `2x <= -1`.
-
-## Examples
-
-For scalar constraints, the set is translated by `-value`:
-```jldoctest; setup = :(using JuMP; model = Model(); @variable(model, x)), filter=r"≤|<="
-julia> @constraint(model, con, 0 <= 2x - 1 <= 2)
-con : 2 x ∈ [1.0, 3.0]
-
-julia> add_to_function_constant(con, 4)
-
-julia> con
-con : 2 x ∈ [-3.0, -1.0]
-```
-
-For vector constraints, the constant is added to the function:
-```jldoctest; setup = :(using JuMP; model = Model(); @variable(model, x); @variable(model, y)), filter=r"≤|<="
-julia> @constraint(model, con, [x + y, x, y] in SecondOrderCone())
-con : [x + y, x, y] ∈ MathOptInterface.SecondOrderCone(3)
-
-julia> add_to_function_constant(con, [1, 2, 2])
-
-julia> con
-con : [x + y + 1, x + 2, y + 2] ∈ MathOptInterface.SecondOrderCone(3)
-```
-
-"""
-function add_to_function_constant(
-    constraint::ConstraintRef{<:AbstractModel},
-    value,
-)
-    # The type of `backend(model)` is not type-stable, so we use a function
-    # barrier (`moi_add_to_function_constant`) to improve performance.
-    moi_add_to_function_constant(
-        backend(owner_model(constraint)),
-        index(constraint),
-        value,
-    )
-    return
-end
-
-"""
-    value(con_ref::ConstraintRef; result::Int = 1)
-
-Return the primal value of constraint `con_ref` associated with result index
-`result` of the most-recent solution returned by the solver.
-
-That is, if `con_ref` is the reference of a constraint `func`-in-`set`, it
-returns the value of `func` evaluated at the value of the variables (given by
-[`value(::VariableRef)`](@ref)).
-
-Use [`has_values`](@ref) to check if a result exists before asking for values.
-
-See also: [`result_count`](@ref).
-
-## Note
-
-For scalar contraints, the constant is moved to the `set` so it is not taken
-into account in the primal value of the constraint. For instance, the constraint
-`@constraint(model, 2x + 3y + 1 == 5)` is transformed into
-`2x + 3y`-in-`MOI.EqualTo(4)` so the value returned by this function is the
-evaluation of `2x + 3y`.
-```
-"""
-function value(
-    con_ref::ConstraintRef{<:AbstractModel,<:_MOICON};
-    result::Int = 1,
-)
-    return reshape_vector(_constraint_primal(con_ref, result), con_ref.shape)
-end
-
-"""
-    value(con_ref::ConstraintRef, var_value::Function)
-
-Evaluate the primal value of the constraint `con_ref` using `var_value(v)`
-as the value for each variable `v`.
-"""
-function value(
-    con_ref::ConstraintRef{<:AbstractModel,<:_MOICON},
-    var_value::Function,
-)
-    f = jump_function(constraint_object(con_ref))
-    return reshape_vector(value.(f, var_value), con_ref.shape)
-end
-
-# Returns the value of MOI.ConstraintPrimal in a type-stable way
-function _constraint_primal(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractScalarFunction,<:MOI.AbstractScalarSet},
-    },
-    result::Int,
-)::Float64
-    return MOI.get(con_ref.model, MOI.ConstraintPrimal(result), con_ref)
-end
-function _constraint_primal(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractVectorFunction,<:MOI.AbstractVectorSet},
-    },
-    result,
-)::Vector{Float64}
-    return MOI.get(con_ref.model, MOI.ConstraintPrimal(result), con_ref)
-end
-
-"""
-    has_duals(model::Model; result::Int = 1)
-
-Return `true` if the solver has a dual solution in result index `result`
-available to query, otherwise return `false`.
-
-See also [`dual`](@ref), [`shadow_price`](@ref), and [`result_count`](@ref).
-"""
-function has_duals(model::Model; result::Int = 1)
-    return dual_status(model; result = result) != MOI.NO_SOLUTION
-end
-
-"""
-    dual(con_ref::ConstraintRef; result::Int = 1)
-
-Return the dual value of constraint `con_ref` associated with result index
-`result` of the most-recent solution returned by the solver.
-
-Use `has_dual` to check if a result exists before asking for values.
-
-See also: [`result_count`](@ref), [`shadow_price`](@ref).
-"""
-function dual(
-    con_ref::ConstraintRef{<:AbstractModel,<:_MOICON};
-    result::Int = 1,
-)
-    return reshape_vector(
-        _constraint_dual(con_ref, result),
-        dual_shape(con_ref.shape),
-    )
-end
-
-# Returns the value of MOI.ConstraintPrimal in a type-stable way
-function _constraint_dual(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractScalarFunction,<:MOI.AbstractScalarSet},
-    },
-    result::Int,
-)::Float64
-    return MOI.get(con_ref.model, MOI.ConstraintDual(result), con_ref)
-end
-function _constraint_dual(
-    con_ref::ConstraintRef{
-        <:AbstractModel,
-        <:_MOICON{<:MOI.AbstractVectorFunction,<:MOI.AbstractVectorSet},
-    },
-    result::Int,
-)::Vector{Float64}
-    return MOI.get(con_ref.model, MOI.ConstraintDual(result), con_ref)
-end
-
-"""
-    shadow_price(con_ref::ConstraintRef)
-
-Return the change in the objective from an infinitesimal relaxation of the
-constraint.
-
-This value is computed from [`dual`](@ref) and can be queried only when
-`has_duals` is `true` and the objective sense is `MIN_SENSE` or `MAX_SENSE`
-(not `FEASIBILITY_SENSE`). For linear constraints, the shadow prices differ at
-most in sign from the `dual` value depending on the objective sense.
-
-See also [`reduced_cost`](@ref JuMP.reduced_cost).
-
-## Notes
-
-- The function simply translates signs from `dual` and does not validate
-  the conditions needed to guarantee the sensitivity interpretation of the
-  shadow price. The caller is responsible, e.g., for checking whether the solver
-  converged to an optimal primal-dual pair or a proof of infeasibility.
-- The computation is based on the current objective sense of the model. If this
-  has changed since the last solve, the results will be incorrect.
-- Relaxation of equality constraints (and hence the shadow price) is defined
-  based on which sense of the equality constraint is active.
-"""
-function shadow_price(con_ref::ConstraintRef{<:AbstractModel,<:_MOICON})
-    return error(
-        "The shadow price is not defined or not implemented for this type " *
-        "of constraint.",
-    )
-end
-
-function _shadow_price_less_than(dual_value, sense::MOI.OptimizationSense)
-    # When minimizing, the shadow price is nonpositive and when maximizing the
-    # shadow price is nonnegative (because relaxing a constraint can only
-    # improve the objective). By MOI convention, a feasible dual on a LessThan
-    # set is nonpositive, so we flip the sign when maximizing.
-    if sense == MOI.MAX_SENSE
-        return -dual_value
-    elseif sense == MOI.MIN_SENSE
-        return dual_value
-    else
-        error(
-            "The shadow price is not available because the objective sense " *
-            "$sense is not minimization or maximization.",
-        )
+        # TODO: Add linesearch_anon tests for IPNewton(linesearch! = backtracking_constrained)
     end
-end
 
-function _shadow_price_greater_than(dual_value, sense::MOI.OptimizationSense)
-    # By MOI convention, a feasible dual on a GreaterThan set is nonnegative,
-    # so we flip the sign when minimizing. (See comment in the method above).
-    if sense == MOI.MAX_SENSE
-        return dual_value
-    elseif sense == MOI.MIN_SENSE
-        return -dual_value
-    else
-        error(
-            "The shadow price is not available because the objective sense " *
-            "$sense is not minimization or maximization.",
-        )
+    @testset "Slack" begin
+        σswap(σ, a, b) = σ == 1 ? (a, b) : (b, a)
+        # Test that we achieve a high-precision minimum for fixed
+        # μ. For anything other than nonnegativity/nonpositivity
+        # constraints, this tests whether the slack variables are
+        # solving the problem they were designed to address (the
+        # possibility that adjacent floating-point numbers are too
+        # widely spaced to accurately satisfy the KKT equations near a
+        # boundary).
+        F0 = 1000
+        μ = 1e-20   # smaller than eps(1.0)
+        method = Optim.IPNewton(μ0=μ)
+        options = Optim.Options(; Optim.default_options(method)...)
+        for σ in (1, -1)
+            F = σ*F0
+            # Nonnegativity/nonpositivity (the case that doesn't require slack variables)
+            d = TwiceDifferentiable(x->F*x[1], (g, x) -> (g[1] = F), (h, x) -> (h[1,1] = 0), [0.0,])
+            constraints = TwiceDifferentiableConstraints(σswap(σ, [0.0], [])...)
+            state = Optim.initial_state(method, options, d, constraints, [μ/F*10])
+            for i = 1:10
+                Optim.update_state!(d, constraints, state, method, options)
+                state.μ = μ
+                Optim.update_fg!(d, constraints, state, method)
+                Optim.update_h!(d, constraints, state, method)
+            end
+            @test isapprox(first(state.x), μ/F, rtol=1e-4)
+            # |x| ≥ 1, and check that we get slack precision better than eps(1.0)
+            d = TwiceDifferentiable(x->F*(x[1]-σ), (g, x) -> (g[1] = F), (h, x) -> (h[1,1] = 0), [0.0,])
+            constraints = TwiceDifferentiableConstraints(σswap(σ, [Float64(σ)], [])...)
+            state = Optim.initial_state(method, options, d, constraints, [(1+eps(1.0))*σ])
+            for i = 1:10
+                Optim.update_state!(d, constraints, state, method, options)
+                state.μ = μ
+                Optim.update_fg!(d, constraints, state, method)
+                Optim.update_h!(d, constraints, state, method)
+            end
+            @test state.x[1] == σ
+            @test state.bstate.slack_x[1] < eps(float(σ))
+            # |x| >= 1 using the linear/nonlinear constraints
+            d = TwiceDifferentiable(x->F*(x[1]-σ), (g, x) -> (g[1] = F), (h, x) -> (h[1,1] = 0), [0.0,])
+            constraints = TwiceDifferentiableConstraints(
+                (c,x)->(c[1] = x[1]),
+                (J,x)->(J[1,1] = 1.0),
+                (h,x,λ)->nothing,
+                [], [], σswap(σ, [Float64(σ)], [])...)
+            state = Optim.initial_state(method, options, d, constraints, [(1+eps(1.0))*σ])
+            for i = 1:10
+                Optim.update_state!(d, constraints, state, method, options)
+                Optim.update_fg!(d, constraints, state, method)
+                Optim.update_h!(d, constraints, state, method)
+            end
+            @test state.x[1] ≈ σ
+            @test state.bstate.slack_c[1] < eps(float(σ))
+        end
     end
-end
 
-function shadow_price(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-) where {S<:MOI.LessThan,F}
-    model = con_ref.model
-    if !has_duals(model)
-        error(
-            "The shadow price is not available because no dual result is " *
-            "available.",
-        )
+    @testset "Constrained optimization" begin
+        # TODO: Add more problems
+        mcvp = MVP.ConstrainedProblems.examples
+        method = IPNewton()
+
+        for (name, prob) in mcvp
+            debug_printing && printstyled("Problem: ", name, "\n", color=:green)
+            df = TwiceDifferentiable(MVP.objective(prob), MVP.gradient(prob),
+                                     MVP.objective_gradient(prob), MVP.hessian(prob), prob.initial_x)
+
+            cd = prob.constraintdata
+            constraints = TwiceDifferentiableConstraints(
+                cd.c!, cd.jacobian!, cd.h!,
+                cd.lx, cd.ux, cd.lc, cd.uc)
+
+            options = Optim.Options(; Optim.default_options(method)...)
+
+            minval = NLSolversBase.value(df, prob.solutions)
+
+            results = optimize(df,constraints, prob.initial_x, method, options)
+            @test isa(summary(results), String)
+            @test Optim.converged(results)
+            @test Optim.minimum(results) < minval + sqrt(eps(minval))
+
+            debug_printing && printstyled("Iterations: $(Optim.iterations(results))\n", color=:red)
+            debug_printing && printstyled("f-calls: $(Optim.f_calls(results))\n", color=:red)
+            debug_printing && printstyled("g-calls: $(Optim.g_calls(results))\n", color=:red)
+            debug_printing && printstyled("h-calls: $(Optim.h_calls(results))\n", color=:red)
+
+            results = optimize(MVP.objective(prob),constraints, prob.initial_x, method, options)
+            @test isa(summary(results), String)
+            @test Optim.converged(results)
+            @test Optim.minimum(results) < minval + sqrt(eps(minval))
+        end
+
+        # Test constraints on both x and c
+        prob = mcvp["HS9"]
+        df = TwiceDifferentiable(MVP.objective(prob), MVP.gradient(prob),
+                                 MVP.objective_gradient(prob), MVP.hessian(prob), prob.initial_x)
+
+        cd = prob.constraintdata
+        lx = [5,5]; ux = [15,15]
+        constraints = TwiceDifferentiableConstraints(
+            cd.c!, cd.jacobian!, cd.h!,
+            lx, ux, cd.lc, cd.uc)
+
+        options = Optim.Options(; Optim.default_options(method)...)
+
+        xsol = [9.,12.]
+        x0   = [12. 14.0]
+        minval = NLSolversBase.value(df, xsol)
+
+        results = optimize(df,constraints, [12, 14.0], method, options)
+        @test isa(Optim.summary(results), String)
+        @test Optim.converged(results)
+        @test Optim.minimum(results) < minval + sqrt(eps(minval))
+
+        # Test the tracing
+        # TODO: Update this when show_linesearch becomes part of Optim.Options
+        method = IPNewton(show_linesearch = true)
+        options = Optim.Options(iterations = 2,
+                          show_trace = true, extended_trace=true, store_trace = true;
+                          Optim.default_options(method)...)
+        results = optimize(df,constraints, [12, 14.0], method, options)
+
+        io = IOBuffer()
+        show(io, results.trace)
+        @test startswith(String(take!(io)), "Iter     Lagrangian value Function value   Gradient norm    |==constr.|      μ\n------   ---------------- --------------   --------------   --------------   --------\n")
+
+        # TODO: Add test where we start with an infeasible point
     end
-    return _shadow_price_less_than(dual(con_ref), objective_sense(model))
-end
-
-function shadow_price(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-) where {S<:MOI.GreaterThan,F}
-    model = con_ref.model
-    if !has_duals(model)
-        error(
-            "The shadow price is not available because no dual result is " *
-            "available.",
-        )
-    end
-    return _shadow_price_greater_than(dual(con_ref), objective_sense(model))
-end
-
-function shadow_price(
-    con_ref::ConstraintRef{<:AbstractModel,_MOICON{F,S}},
-) where {S<:MOI.EqualTo,F}
-    model = con_ref.model
-    if !has_duals(model)
-        error(
-            "The shadow price is not available because no dual result is " *
-            "available.",
-        )
-    end
-    sense = objective_sense(model)
-    dual_val = dual(con_ref)
-    if dual_val > 0
-        # Treat the equality constraint as if it were a GreaterThan constraint.
-        return _shadow_price_greater_than(dual_val, sense)
-    else
-        # Treat the equality constraint as if it were a LessThan constraint.
-        return _shadow_price_less_than(dual_val, sense)
-    end
-end
-
-function _error_if_not_concrete_type(t)
-    if !isconcretetype(t)
-        error("`$t` is not a concrete type. Did you miss a type parameter?")
-    end
-    return
-end
-# `isconcretetype(Vector{Integer})` is `true`
-function _error_if_not_concrete_type(t::Type{Vector{ElT}}) where {ElT}
-    return _error_if_not_concrete_type(ElT)
-end
-
-"""
-    num_constraints(model::Model, function_type, set_type)::Int64
-
-Return the number of constraints currently in the model where the function
-has type `function_type` and the set has type `set_type`.
-
-See also [`list_of_constraint_types`](@ref) and [`all_constraints`](@ref).
-
-# Example
-```jldoctest; setup=:(using JuMP)
-julia> model = Model();
-
-julia> @variable(model, x >= 0, Bin);
-
-julia> @variable(model, y);
-
-julia> @constraint(model, y in MOI.GreaterThan(1.0));
-
-julia> @constraint(model, y <= 1.0);
-
-julia> @constraint(model, 2x <= 1);
-
-julia> num_constraints(model, VariableRef, MOI.GreaterThan{Float64})
-2
-
-julia> num_constraints(model, VariableRef, MOI.ZeroOne)
-1
-
-julia> num_constraints(model, AffExpr, MOI.LessThan{Float64})
-2
-```
-"""
-function num_constraints(
-    model::Model,
-    function_type::Type{
-        <:Union{AbstractJuMPScalar,Vector{<:AbstractJuMPScalar}},
-    },
-    set_type::Type{<:MOI.AbstractSet},
-)::Int64
-    _error_if_not_concrete_type(function_type)
-    _error_if_not_concrete_type(set_type)
-    # TODO: Support JuMP's set helpers like SecondOrderCone().
-    f_type = moi_function_type(function_type)
-    return MOI.get(model, MOI.NumberOfConstraints{f_type,set_type}())
-end
-
-"""
-    all_constraints(model::Model, function_type, set_type)::Vector{<:ConstraintRef}
-
-Return a list of all constraints currently in the model where the function
-has type `function_type` and the set has type `set_type`. The constraints are
-ordered by creation time.
-
-See also [`list_of_constraint_types`](@ref) and [`num_constraints`](@ref).
-
-# Example
-```jldoctest; setup=:(using JuMP)
-julia> model = Model();
-
-julia> @variable(model, x >= 0, Bin);
-
-julia> @constraint(model, 2x <= 1);
-
-julia> all_constraints(model, VariableRef, MOI.GreaterThan{Float64})
-1-element Array{ConstraintRef{Model,MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.GreaterThan{Float64}},ScalarShape},1}:
- x ≥ 0.0
-
-julia> all_constraints(model, VariableRef, MOI.ZeroOne)
-1-element Array{ConstraintRef{Model,MathOptInterface.ConstraintIndex{MathOptInterface.SingleVariable,MathOptInterface.ZeroOne},ScalarShape},1}:
- x binary
-
-julia> all_constraints(model, AffExpr, MOI.LessThan{Float64})
-1-element Array{ConstraintRef{Model,MathOptInterface.ConstraintIndex{MathOptInterface.ScalarAffineFunction{Float64},MathOptInterface.LessThan{Float64}},ScalarShape},1}:
- 2 x ≤ 1.0
-```
-"""
-function all_constraints(
-    model::Model,
-    function_type::Type{
-        <:Union{AbstractJuMPScalar,Vector{<:AbstractJuMPScalar}},
-    },
-    set_type::Type{<:MOI.AbstractSet},
-)
-    _error_if_not_concrete_type(function_type)
-    _error_if_not_concrete_type(set_type)
-    # TODO: Support JuMP's set helpers like SecondOrderCone().
-    f_type = moi_function_type(function_type)
-    if set_type <: MOI.AbstractScalarSet
-        constraint_ref_type =
-            ConstraintRef{Model,_MOICON{f_type,set_type},ScalarShape}
-    else
-        constraint_ref_type = ConstraintRef{Model,_MOICON{f_type,set_type}}
-    end
-    result = constraint_ref_type[]
-    for idx in MOI.get(model, MOI.ListOfConstraintIndices{f_type,set_type}())
-        push!(result, constraint_ref_with_index(model, idx))
-    end
-    return result
-end
-
-# TODO: Support vector function types. This is blocked by not having the shape
-# information available.
-
-"""
-    list_of_constraint_types(model::Model)::Vector{Tuple{DataType, DataType}}
-
-Return a list of tuples of the form `(F, S)` where `F` is a JuMP function type
-and `S` is an MOI set type such that `all_constraints(model, F, S)` returns
-a nonempty list.
-
-# Example
-```jldoctest; setup=:(using JuMP)
-julia> model = Model();
-
-julia> @variable(model, x >= 0, Bin);
-
-julia> @constraint(model, 2x <= 1);
-
-julia> list_of_constraint_types(model)
-3-element Array{Tuple{DataType,DataType},1}:
- (GenericAffExpr{Float64,VariableRef}, MathOptInterface.LessThan{Float64})
- (VariableRef, MathOptInterface.GreaterThan{Float64})
- (VariableRef, MathOptInterface.ZeroOne)
-```
-"""
-function list_of_constraint_types(
-    model::Model,
-)::Vector{Tuple{DataType,DataType}}
-    # We include an annotated return type here because Julia fails terribly at
-    # inferring it, even though we annotate the type of the return vector.
-    return Tuple{DataType,DataType}[
-        (jump_function_type(model, F), S) for
-        (F, S) in MOI.get(model, MOI.ListOfConstraints())
-    ]
 end

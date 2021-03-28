@@ -1,35 +1,23 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
-
-# Like Set, but using IdDict
-mutable struct IdSet{T} <: AbstractSet{T}
-    dict::IdDict{T,Nothing}
-
-    IdSet{T}() where {T} = new(IdDict{T,Nothing}())
-    IdSet{T}(s::IdSet{T}) where {T} = new(copy(s.dict))
+struct IdSet{T} <: AbstractSet{T}
+  dict::IdDict{T,Nothing}
+  IdSet{T}() where T = new(IdDict{T,Nothing}())
 end
 
-IdSet{T}(itr) where {T} = union!(IdSet{T}(), itr)
+Base.eltype(::IdSet{T}) where T = T
+
 IdSet() = IdSet{Any}()
 
-copymutable(s::IdSet) = typeof(s)(s)
-copy(s::IdSet) = typeof(s)(s)
+Base.push!(s::IdSet{T}, x::T) where T = (s.dict[x] = nothing; s)
+Base.delete!(s::IdSet{T}, x::T) where T = (delete!(s.dict, x); s)
+Base.in(x, s::IdSet) = haskey(s.dict, x)
 
-isempty(s::IdSet) = isempty(s.dict)
-length(s::IdSet)  = length(s.dict)
-in(@nospecialize(x), s::IdSet) = haskey(s.dict, x)
-push!(s::IdSet, @nospecialize(x)) = (s.dict[x] = nothing; s)
-pop!(s::IdSet, @nospecialize(x)) = (pop!(s.dict, x); x)
-pop!(s::IdSet, @nospecialize(x), @nospecialize(default)) = (x in s ? pop!(s, x) : default)
-delete!(s::IdSet, @nospecialize(x)) = (delete!(s.dict, x); s)
+IdSet{T}(xs) where T = push!(IdSet{T}(), xs...)
 
-sizehint!(s::IdSet, newsz) = (sizehint!(s.dict, newsz); s)
-empty!(s::IdSet) = (empty!(s.dict); s)
+IdSet(xs) = IdSet{eltype(xs)}(xs)
 
-filter!(f, d::IdSet) = unsafe_filter!(f, d)
+Base.collect(s::IdSet) = Base.collect(keys(s.dict))
+Base.similar(s::IdSet, T::Type) = IdSet{T}()
 
-function iterate(s::IdSet, state...)
-    y = iterate(s.dict, state...)
-    y === nothing && return nothing
-    ((k, _), i) = y
-    return (k, i)
-end
+@forward IdSet.dict Base.length
+
+Base.iterate(s::IdSet, st...) = iterate(keys(s.dict), st...)

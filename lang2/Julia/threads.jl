@@ -1,35 +1,33 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
+using Zygote, Test
+using Zygote: bufferfrom
+using Base.Threads: @spawn
 
-"""
-Multithreading support.
-"""
-module Threads
+function threads1(x)
+  ch = Channel(0)
+  @sync begin
+    @spawn put!(ch, x^2)
+    take!(ch)
+  end
+end
 
-global Condition # we'll define this later, make sure we don't import Base.Condition
+@test gradient(threads1, 5) == (10,)
 
-include("threadingconstructs.jl")
-include("atomics.jl")
-include("locks-mt.jl")
-
-
-"""
-    resize_nthreads!(A, copyvalue=A[1])
-
-Resize the array `A` to length [`nthreads()`](@ref).   Any new
-elements that are allocated are initialized to `deepcopy(copyvalue)`,
-where `copyvalue` defaults to `A[1]`.
-
-This is typically used to allocate per-thread variables, and
-should be called in `__init__` if `A` is a global constant.
-"""
-function resize_nthreads!(A::AbstractVector, copyvalue=A[1])
-    nthr = nthreads()
-    nold = length(A)
-    resize!(A, nthr)
-    for i = nold+1:nthr
-        A[i] = deepcopy(copyvalue)
+function threads2(xs)
+  n = length(xs)
+  chunks = view(xs, 1:n÷2), view(xs, n÷2+1:n)
+  p = bufferfrom([0.0, 0.0])
+  @sync begin
+    for i = 1:2
+      @spawn begin
+        s = zero(eltype(chunks[i]))
+        for j = 1:length(chunks[i])
+          s += chunks[i][j]
+        end
+        p[i] = s
+      end
     end
-    return A
+  end
+  return p[1]+p[2]
 end
 
-end
+@test gradient(threads2, [1, 2, 3, 4]) == ([1, 1, 1, 1],)

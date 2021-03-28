@@ -1,39 +1,52 @@
-# This file is a part of Julia. License is MIT: https://julialang.org/license
+grad_mut(b::Buffer) = fill!(similar(b.data, Any), nothing)
+grad_mut(b::Buffer{T}) where T<:Number = fill!(similar(b.data, float(T)), 0)
 
-# Data buffer for pipes.
-mutable struct Buffer
-    data::Vector{UInt8}
-    ptr::Ptr{UInt8}
-    size::Int
+@nograd Buffer
 
-    function Buffer(bufsize)
-        data = Vector{UInt8}(undef, bufsize)
-        return new(data, pointer(data), 0)
-    end
-end
-
-Base.empty!(buffer::Buffer) = buffer.size = 0
-Base.getindex(buffer::Buffer, i::Integer) = unsafe_load(buffer.ptr, i)
-Base.setindex!(buffer::Buffer, v::UInt8, i::Integer) = unsafe_store!(buffer.ptr, v, i)
-Base.firstindex(buffer::Buffer) = 1
-Base.lastindex(buffer::Buffer) = buffer.size
-Base.pointer(buffer::Buffer) = buffer.ptr
-capacity(buffer::Buffer) = Int(pointer(buffer.data, lastindex(buffer.data) + 1) - buffer.ptr)
-
-function consumed!(buffer::Buffer, n::Integer)
-    @assert n ≤ buffer.size
-    buffer.ptr += n
-    buffer.size -= n
-end
-
-function read_to_buffer(io::IO, buffer::Buffer)
-    offset = buffer.ptr - pointer(buffer.data)
-    copyto!(buffer.data, 1, buffer.data, offset + 1, buffer.size)
-    buffer.ptr = pointer(buffer.data)
-    if !eof(io)
-        n = min(bytesavailable(io), capacity(buffer) - buffer.size)
-        unsafe_read(io, buffer.ptr + buffer.size, n)
-        buffer.size += n
-    end
+@adjoint function getindex(b::Buffer, i...)
+  b[i...], function (Δ)
+    grad = grad_mut(__context__, b)
+    grad[i...] = accum(grad[i...], Δ)
     return
+  end
+end
+
+@adjoint! function setindex!(b::Buffer, v, i...)
+  setindex!(b, v, i...), function (_)
+    grad = grad_mut(__context__, b)
+    v̄ = grad[i...]
+    zero = eltype(grad) <: Number ? 0 : nothing
+    if i isa NTuple{N,Integer} where N
+      grad[i...] = zero
+    else
+      grad[i...] .= zero
+    end
+    (nothing, v̄, map(_->nothing, i)...)
+  end
+end
+
+@adjoint! function copyto!(b::Buffer, xs)
+  copyto!(b, xs), function (_)
+    grad = grad_mut(__context__, b)
+    x̄s = copy(grad)
+    grad .= eltype(grad) <: Number ? 0 : nothing
+    return (nothing, x̄s)
+  end
+end
+
+@adjoint! function push!(b::Buffer, x)
+  push!(b, x), function (y)
+    grad = grad_mut(__context__, b)
+    return (nothing, pop!(grad))
+  end
+end
+
+_pullback(cx::AContext, ::typeof(Broadcast.materialize!), b::Buffer, x::AbstractArray) =
+  _pullback(cx, copyto!, b, x)
+
+@adjoint function copy(b::Buffer)
+  copy(b), function (b̄)
+    grad_mut(__context__, b)[:] = b̄
+    return
+  end
 end

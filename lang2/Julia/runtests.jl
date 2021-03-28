@@ -1,39 +1,53 @@
-#  Copyright 2017, Iain Dunning, Joey Huchette, Miles Lubin, and contributors
-#  This Source Code Form is subject to the terms of the Mozilla Public
-#  License, v. 2.0. If a copy of the MPL was not distributed with this
-#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
-#############################################################################
-# JuMP
-# An algebraic modeling language for Julia
-# See https://github.com/jump-dev/JuMP.jl
-#############################################################################
-# test/runtests.jl
-#############################################################################
-
+using DataStructures
 using Test
+using Random
+using Serialization
 
-t = time()
-include("Containers/Containers.jl")
-println("Containers.jl took $(round(time() - t; digits = 1)) seconds.")
+import DataStructures: IntSet
 
-for file in filter(f -> endswith(f, ".jl"), readdir(@__DIR__))
-    if file in [
-        "runtests.jl",
-        "utilities.jl",
-        "JuMPExtension.jl",
-        "nlp_solver.jl",
-        "hygiene.jl",
-    ]
-        continue
-    end
+@test [] == detect_ambiguities(Base, Core, DataStructures)
 
-    @testset "$(file)" begin
-        t = time()
-        include(file)
-        println("$(file) took $(round(time() - t; digits = 1)) seconds.")
-    end
+tests = ["deprecations",
+         "int_set",
+         "sparse_int_set",
+         "deque",
+         "circ_deque",
+         "sorted_containers",
+         "stack",
+         "queue",
+         "accumulator",
+         "disjoint_set",
+         "binheap",
+         "mutable_binheap",
+         "minmax_heap",
+         "default_dict",
+         "trie",
+         "list",
+         "mutable_list",
+         "multi_dict",
+         "circular_buffer",
+         "sorting",
+         "priority_queue",
+         "fenwick",
+         "robin_dict",
+         "ordered_robin_dict",
+         "dibit_vector",
+         "swiss_dict",
+         "avl_tree",
+         "red_black_tree", 
+         "splay_tree"
+        ]
+
+if length(ARGS) > 0
+    tests = ARGS
 end
 
-# TODO: The hygiene test should run in a separate Julia instance where JuMP
-# hasn't been loaded via `using`.
-include("hygiene.jl")
+@testset "DataStructures" begin
+
+for t in tests
+    fp = joinpath(dirname(@__FILE__), "test_$t.jl")
+    println("$fp ...")
+    include(fp)
+end
+
+end # @testset
