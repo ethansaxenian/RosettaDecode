@@ -14,12 +14,11 @@ Bag-of-words model
 import json
 import os
 import re
-
-import unidecode
 from collections import Counter
 from typing import Callable
 
-from data_wrangling.file_path_storer import generate_file_paths
+import unidecode
+
 from data_wrangling.language_info import get_language_from_filename
 
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
@@ -39,18 +38,18 @@ CHAR_MAPPING = {"'": 0, '~': 1, '`': 2, '!': 3, '@': 4, '#': 5, '$': 6, '%': 7, 
                 'y': 56, 'z': 57, '_': 58, '1': 59, '2': 60, '3': 61, '4': 62, '5': 63, '6': 64, '7': 65, '8': 66,
                 '9': 67, '0': 68}
 
-RESERVED_KEYWORDS = ['abstract', 'and', 'as', 'assert', 'begin', 'bool', 'boolean', 'break', 'byte', 'case', 'catch',
-                     'chan', 'char', 'class', 'const', 'continue', 'def', 'default', 'defer', 'del', 'delete',
-                     'deriving', 'die', 'do', 'double', 'elif', 'else', 'elseif', 'elsif', 'end', 'enum', 'eq', 'eval',
-                     'except', 'exit', 'extends', 'false', 'final', 'finally', 'float', 'for', 'foreach', 'friend',
-                     'from', 'func', 'function', 'global', 'go', 'goto', 'if', 'implements', 'import', 'in', 'inline',
-                     'instanceof', 'int', 'interface', 'is', 'lambda', 'let', 'local', 'long', 'map', 'module', 'my',
-                     'namespace', 'new', 'nil', 'none', 'not', 'null', 'of', 'operator', 'or', 'package', 'pass',
-                     'print', 'private', 'proc', 'protected', 'public', 'qualified', 'raise', 'range', 'ref', 'require',
-                     'rescue', 'return', 'self', 'short', 'signed', 'sizeof', 'static', 'struct', 'super', 'switch',
-                     'template', 'then', 'this', 'throw', 'throws', 'true', 'try', 'type', 'typedef', 'typename',
-                     'typeof', 'undef', 'undefined', 'unless', 'unsigned', 'until', 'use', 'using', 'var', 'virtual',
-                     'void', 'when', 'where', 'while', 'with', 'yield']
+RESERVED_KEYWORDS = ['__end__', 'and', 'any', 'as', 'assert', 'auto', 'begin', 'bool', 'boolean', 'break', 'byte',
+                     'case', 'catch', 'char', 'check', 'class', 'const', 'continue', 'cout', 'data', 'def', 'default',
+                     'delete', 'deriving', 'do', 'double', 'elif', 'else', 'elseif', 'elsif', 'end', 'endl', 'error',
+                     'eval', 'except', 'export', 'extends', 'extern', 'false', 'final', 'float64', 'for', 'foreach',
+                     'from', 'func', 'function', 'go', 'goto', 'if', 'implements', 'import', 'in', 'include',
+                     'instance', 'int', 'int64', 'interface', 'iostream', 'is', 'lambda', 'last', 'let', 'local',
+                     'long', 'main', 'map', 'module', 'my', 'namespace', 'new', 'next', 'nil', 'none', 'not', 'nothing',
+                     'null', 'of', 'operator', 'or', 'our', 'package', 'print', 'private', 'public', 'qualified',
+                     'raise', 'range', 'return', 'self', 'sizeof', 'static', 'std', 'string', 'struct', 'switch',
+                     'template', 'then', 'this', 'thread', 'throw', 'throws', 'true', 'try', 'type', 'typedef',
+                     'typename', 'typeof', 'undef', 'union', 'unless', 'unsigned', 'use', 'using', 'var', 'void',
+                     'when', 'where', 'while', 'with']
 
 
 def remove_spaces(code: str) -> str:
@@ -144,5 +143,5 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
 
 
 if __name__ == '__main__':
-    generate_file_paths()
-    compile_dataset("features_data", binary_counts=True)
+    # generate_file_paths()
+    compile_dataset("features_data")
