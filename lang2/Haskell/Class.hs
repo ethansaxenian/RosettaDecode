@@ -1,33 +1,40 @@
--- |
--- A class for monads supporting a supply of fresh names
---
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
-module Control.Monad.Supply.Class where
+module Class where
 
-import Prelude.Compat
+import Language.Haskell.TH
 
-import Control.Monad.Supply
-import Control.Monad.State
-import Control.Monad.Writer
-import Data.Text (Text, pack)
+class Pretty a where
+  ppr :: a -> String
 
-class Monad m => MonadSupply m where
-  fresh :: m Integer
-  peek :: m Integer
-  default fresh :: (MonadTrans t, MonadSupply n, m ~ t n) => m Integer
-  fresh = lift fresh
-  default peek :: (MonadTrans t, MonadSupply n, m ~ t n) => m Integer
-  peek = lift peek
+normalCons :: Con -> Name
+normalCons (NormalC n _) = n
 
-instance Monad m => MonadSupply (SupplyT m) where
-  fresh = SupplyT $ do
-    n <- get
-    put (n + 1)
-    return n
-  peek = SupplyT get
+getCons :: Info -> [Name]
+getCons cons = case cons of
+    TyConI (DataD    _ _ _ tcons _) -> map normalCons tcons
+    con -> error $ "Can't derive for:" ++ (show con)
 
-instance MonadSupply m => MonadSupply (StateT s m)
-instance (Monoid w, MonadSupply m) => MonadSupply (WriterT w m)
+pretty :: Name -> Q [Dec]
+pretty dt = do
+  info <- reify dt
+  Just cls <- lookupTypeName "Pretty"
+  let datatypeStr = nameBase dt
+  let cons = getCons info
+  let dtype = mkName (datatypeStr)
+  let mkInstance xs =
+        InstanceD
+        []                              -- Context
+        (AppT
+          (ConT cls)                    -- Instance
+          (ConT dtype))                 -- Head
+        [(FunD (mkName "ppr") xs)]      -- Methods
+  let methods = map cases cons
+  return $ [mkInstance methods]
 
-freshName :: MonadSupply m => m Text
-freshName = fmap (("$" <> ) . pack . show) fresh
+-- Pattern matches on the ``ppr`` method
+cases :: Name -> Clause
+cases a = Clause [ConP a []] (NormalB (LitE (StringL (nameBase a)))) []

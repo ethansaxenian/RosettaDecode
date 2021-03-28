@@ -1,28 +1,57 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DoAndIfThenElse #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PackageImports #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Main (main) where
+module Main where
 
-import Prelude.Compat
+import Database.Selda
+import Database.Selda.SQLite
 
-import Test.Tasty
+data Employee
+  = Employee
+      { id :: ID Employee,
+        name :: Text,
+        title :: Text,
+        companyId :: ID Company
+      }
+  deriving (Generic)
 
-import qualified TestCst
+data Company
+  = Company
+      { id :: ID Company,
+        name :: Text
+      }
+  deriving (Generic)
 
-import System.IO (hSetEncoding, stdout, stderr, utf8)
+instance SqlRow Employee
+
+instance SqlRow Company
+
+-- Generate tables for Haskell datatypes
+employees :: Table Employee
+employees = table "employees" [#id :- autoPrimary, #companyId :- foreignKey companies #id]
+
+companies :: Table Company
+companies = table "companies" [#id :- autoPrimary]
+
+exampleSelect :: IO ([Employee], [Company])
+exampleSelect = withSQLite "company.sqlite" $ do
+  xs <- query (select employees)
+  ys <- query (select companies)
+  pure (xs, ys)
 
 main :: IO ()
-main = do
-  hSetEncoding stdout utf8
-  hSetEncoding stderr utf8
-
-  cstTests <- TestCst.main
-
-  defaultMain $
-    testGroup
-      "Tests"
-      [ cstTests
-      ]
+main = withSQLite "company.sqlite" $ do
+  createTable employees
+  createTable companies
+  -- Populate companies
+  insert_
+    companies
+    [Company (toId 0) "Dunder Mifflin Inc."]
+  -- Populate employees
+  insert_
+    employees
+    [ Employee (toId 0) "Michael Scott" "Director" (toId 0),
+      Employee (toId 1) "Dwight Schrute" "Regional Manager" (toId 0)
+    ]

@@ -18,10 +18,28 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 | Ruby        | 1125        |
 
 Other sources of language data (currently in lang2/):
-[Go](https://github.com/golang/go),
-[Haskell](https://github.com/purescript/purescript),
-[JavaScript](https://github.com/freeCodeCamp/freeCodeCamp),
-[Julia](https://github.com/JuliaLang/julia), 
-[Perl](https://github.com/Perl/perl5), 
-[Ruby](https://github.com/ruby/ruby),
-[The Algorithms](https://github.com/TheAlgorithms)
+- C++
+  - https://github.com/facebook/folly
+  
+- Go
+  - https://github.com/golang/go
+  
+- Haskell
+  - https://github.com/purescript/purescript
+  - https://github.com/sdiehl/wiwinwlh
+  - https://github.com/exercism/haskell
+  
+- JavaScript
+  - https://github.com/freeCodeCamp/freeCodeCamp
+  
+- Julia
+  - https://github.com/JuliaLang/julia
+  
+- Perl
+  - https://github.com/Perl/perl5
+  
+- Ruby
+  - https://github.com/ruby/ruby
+  
+- Misc.
+  - https://github.com/TheAlgorithms

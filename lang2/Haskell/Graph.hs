@@ -1,57 +1,24 @@
-module Language.PureScript.Graph (graph) where
+import Data.Tree
+import Data.Graph
 
-import Prelude.Compat
+data Grph node key = Grph
+  { _graph :: Graph
+  , _vertices :: Vertex -> (node, key, [key])
+  }
 
-import qualified Data.Aeson as Json
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.Map as Map
+fromList :: Ord key => [(node, key, [key])] -> Grph node key
+fromList = uncurry Grph . graphFromEdges'
 
-import           Control.Monad (forM)
-import           Data.Aeson ((.=))
-import           Data.Foldable (foldl')
-import           Data.Map (Map)
-import           Data.Maybe (fromMaybe)
-import           Data.Text (Text)
-import           System.IO.UTF8 (readUTF8FileT)
+vertexLabels :: Functor f => Grph b t -> (f Vertex) -> f b
+vertexLabels g = fmap (vertexLabel g)
 
-import qualified Language.PureScript.Crash as Crash
-import qualified Language.PureScript.CST as CST
-import qualified Language.PureScript.Make as Make
-import qualified Language.PureScript.ModuleDependencies as Dependencies
-import qualified Language.PureScript.Options as Options
+vertexLabel :: Grph b t -> Vertex -> b
+vertexLabel g = (\(vi, _, _) -> vi) . (_vertices g)
 
-import           Language.PureScript.Errors (MultipleErrors)
-import           Language.PureScript.Names (ModuleName, runModuleName)
+-- Topologically sort graph
+topo' :: Grph node key -> [node]
+topo' g = vertexLabels g $ topSort (_graph g)
 
-
--- | Given a set of filepaths, try to build the dependency graph and return
---   that as its JSON representation (or a bunch of errors, if any)
-graph :: [FilePath] -> IO (Either MultipleErrors Json.Value, MultipleErrors)
-graph input = do
-  moduleFiles <- readInput input
-  Make.runMake Options.defaultOptions $ do
-    ms <- CST.parseModulesFromFiles id moduleFiles
-    let parsedModuleSig = Dependencies.moduleSignature . CST.resPartial
-    (_sorted, moduleGraph) <- Dependencies.sortModules Dependencies.Direct (parsedModuleSig . snd) ms
-    let pathMap = Map.fromList $
-          map (\(p, m) -> (Dependencies.sigModuleName (parsedModuleSig m), p)) ms
-    pure (moduleGraphToJSON pathMap moduleGraph)
-
-moduleGraphToJSON
-  :: Map ModuleName FilePath
-  -> Dependencies.ModuleGraph
-  -> Json.Value
-moduleGraphToJSON paths = Json.Object . foldl' insert mempty
-  where
-  insert :: Json.Object -> (ModuleName, [ModuleName]) -> Json.Object
-  insert obj (mn, depends) = HashMap.insert (runModuleName mn) value obj
-    where
-      path = fromMaybe (Crash.internalError "missing module name in graph") $ Map.lookup mn paths
-      value = Json.object
-        [ "path"  .= path
-        , "depends" .= fmap runModuleName depends
-        ]
-
-readInput :: [FilePath] -> IO [(FilePath, Text)]
-readInput inputFiles =
-  forM inputFiles $ \inFile -> (inFile, ) <$> readUTF8FileT inFile
+-- Strongly connected components of graph
+scc' :: Grph node key -> [[node]]
+scc' g = fmap (vertexLabels g . flatten) $ scc (_graph g)

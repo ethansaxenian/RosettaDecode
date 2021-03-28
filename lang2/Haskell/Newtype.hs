@@ -1,7 +1,26 @@
-module Language.PureScript.Constants.Data.Newtype where
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-import Prelude.Compat
-import Language.PureScript.Names
+newtype Quantity v a = Quantity a
+  deriving (Eq, Ord, Num, Show)
 
-pattern Newtype :: Qualified (ProperName 'ClassName)
-pattern Newtype = Qualified (Just (ModuleName "Data.Newtype")) (ProperName "Newtype")
+data Haskeller
+type Haskellers = Quantity Haskeller Int
+
+a = Quantity 2 :: Haskellers
+b = Quantity 6 :: Haskellers
+
+totalHaskellers :: Haskellers
+totalHaskellers = a + b
+
+newtype Velocity = Velocity { unVelocity :: Double }
+  deriving (Eq, Ord)
+
+v :: Velocity
+v = Velocity 2.718
+
+x :: Double
+x = 2.718
+
+-- Type error is caught at compile time even though
+-- they are the same value at runtime!
+err = v + x
