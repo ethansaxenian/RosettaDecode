@@ -7,7 +7,7 @@ from data_wrangling.language_info import EXT_TO_LANG
 
 if __name__ == '__main__':
     # reserved_keywords = set()
-    # with open("words.txt", "r") as file:
+    # with open("keywords.txt", "r") as file:
     #     for line in file:
     #         word = line.strip("\n")
     #         if word:
