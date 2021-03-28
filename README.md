@@ -41,6 +41,7 @@ Other sources of language data (currently in lang2/):
   - https://github.com/jump-dev/JuMP.jl
   - https://github.com/JuliaNLSolvers/Optim.jl
   - https://github.com/FluxML/Zygote.jl
+  - https://github.com/JuliaCollections/DataStructures.jl
   
 - Perl
   - https://github.com/Perl/perl5
