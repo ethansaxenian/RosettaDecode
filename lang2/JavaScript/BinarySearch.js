@@ -1,70 +1,44 @@
-/* Binary Search: https://en.wikipedia.org/wiki/Binary_search_algorithm
+import Comparator from '../../../utils/comparator/Comparator';
+
+/**
+ * Binary search implementation.
  *
- * Search a sorted array by repeatedly dividing the search interval
- * in half. Begin with an interval covering the whole array. If the value of the
- * search key is less than the item in the middle of the interval, narrow the interval
- * to the lower half. Otherwise narrow it to the upper half. Repeatedly check until the
- * value is found or the interval is empty.
+ * @param {*[]} sortedArray
+ * @param {*} seekElement
+ * @param {function(a, b)} [comparatorCallback]
+ * @return {number}
  */
 
-function binarySearch (arr, x, low = 0, high = arr.length - 1) {
-  const mid = Math.floor(low + (high - low) / 2)
+export default function binarySearch(sortedArray, seekElement, comparatorCallback) {
+  // Let's create comparator from the comparatorCallback function.
+  // Comparator object will give us common comparison methods like equal() and lessThen().
+  const comparator = new Comparator(comparatorCallback);
 
-  if (high >= low) {
-    if (arr[mid] === x) {
-      // item found => return its index
-      return mid
+  // These two indices will contain current array (sub-array) boundaries.
+  let startIndex = 0;
+  let endIndex = sortedArray.length - 1;
+
+  // Let's continue to split array until boundaries are collapsed
+  // and there is nothing to split anymore.
+  while (startIndex <= endIndex) {
+    // Let's calculate the index of the middle element.
+    const middleIndex = startIndex + Math.floor((endIndex - startIndex) / 2);
+
+    // If we've found the element just return its position.
+    if (comparator.equal(sortedArray[middleIndex], seekElement)) {
+      return middleIndex;
     }
 
-    if (x < arr[mid]) {
-      // arr[mid] is an upper bound for x, so if x is in arr => low <= x < mid
-      return binarySearch(arr, x, low, mid - 1)
+    // Decide which half to choose for seeking next: left or right one.
+    if (comparator.lessThan(sortedArray[middleIndex], seekElement)) {
+      // Go to the right half of the array.
+      startIndex = middleIndex + 1;
     } else {
-      // arr[mid] is a lower bound for x, so if x is in arr => mid < x <= high
-      return binarySearch(arr, x, mid + 1, high)
+      // Go to the left half of the array.
+      endIndex = middleIndex - 1;
     }
-  } else {
-    // if low > high => we have searched the whole array without finding the item
-    return -1
   }
+
+  // Return -1 if we have not found anything.
+  return -1;
 }
-
-/* ---------------------------------- Test ---------------------------------- */
-
-const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-const stringArr = [
-  'Alpha',
-  'Bravo',
-  'Charlie',
-  'Delta',
-  'Echo',
-  'Foxtrot',
-  'Golf',
-  'Hotel',
-  'India',
-  'Juliet',
-  'Kilo',
-  'Lima',
-  'Mike',
-  'November',
-  'Oscar',
-  'Papa',
-  'Quebec',
-  'Romeo',
-  'Sierra',
-  'Tango',
-  'Uniform',
-  'Victor',
-  'Whiskey',
-  'X-Ray',
-  'Yankee',
-  'Zulu'
-]
-
-console.log(binarySearch(arr, 3))
-console.log(binarySearch(arr, 7))
-console.log(binarySearch(arr, 13))
-
-console.log(binarySearch(stringArr, 'Charlie'))
-console.log(binarySearch(stringArr, 'Zulu'))
-console.log(binarySearch(stringArr, 'Sierra'))

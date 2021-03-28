@@ -1,36 +1,41 @@
-/*
- * Shell Sort sorts an array based on  insertion sort algorithm
- * more information: https://en.wikipedia.org/wiki/Shellsort
- *
- */
-function shellSort (items) {
-  var interval = 1
+import Sort from '../Sort';
 
-  while (interval < items.length / 3) {
-    interval = interval * 3 + 1
-  }
+export default class ShellSort extends Sort {
+  sort(originalArray) {
+    // Prevent original array from mutations.
+    const array = [...originalArray];
 
-  while (interval > 0) {
-    for (var outer = interval; outer < items.length; outer++) {
-      var value = items[outer]
-      var inner = outer
+    // Define a gap distance.
+    let gap = Math.floor(array.length / 2);
 
-      while (inner > interval - 1 && items[inner - interval] >= value) {
-        items[inner] = items[inner - interval]
-        inner = inner - interval
+    // Until gap is bigger then zero do elements comparisons and swaps.
+    while (gap > 0) {
+      // Go and compare all distant element pairs.
+      for (let i = 0; i < (array.length - gap); i += 1) {
+        let currentIndex = i;
+        let gapShiftedIndex = i + gap;
+
+        while (currentIndex >= 0) {
+          // Call visiting callback.
+          this.callbacks.visitingCallback(array[currentIndex]);
+
+          // Compare and swap array elements if needed.
+          if (this.comparator.lessThan(array[gapShiftedIndex], array[currentIndex])) {
+            const tmp = array[currentIndex];
+            array[currentIndex] = array[gapShiftedIndex];
+            array[gapShiftedIndex] = tmp;
+          }
+
+          gapShiftedIndex = currentIndex;
+          currentIndex -= gap;
+        }
       }
-      items[inner] = value
+
+      // Shrink the gap.
+      gap = Math.floor(gap / 2);
     }
-    interval = (interval - 1) / 3
+
+    // Return sorted copy of an original array.
+    return array;
   }
-  return items
 }
-
-// Implementation of shellSort
-
-var ar = [5, 6, 7, 8, 1, 2, 12, 14]
-// Array before Sort
-console.log(ar)
-shellSort(ar)
-// Array after sort
-console.log(ar)

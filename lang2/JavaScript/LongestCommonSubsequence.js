@@ -1,33 +1,60 @@
-/*
-    * Given two sequences, find the length of longest subsequence present in both of them.
-    * A subsequence is a sequence that appears in the same relative order, but not necessarily contiguous.
-    * For example, “abc”, “abg”, “bdf”, “aeg”, ‘”acefg”, .. etc are subsequences of “abcdefg”
-*/
+/**
+ * @param {string[]} set1
+ * @param {string[]} set2
+ * @return {string[]}
+ */
+export default function longestCommonSubsequence(set1, set2) {
+  // Init LCS matrix.
+  const lcsMatrix = Array(set2.length + 1).fill(null).map(() => Array(set1.length + 1).fill(null));
 
-function longestCommonSubsequence (x, y, str1, str2, dp) {
-  if (x === -1 || y === -1) {
-    return 0
-  } else {
-    if (dp[x][y] !== 0) {
-      return dp[x][y]
-    } else {
-      if (str1[x] === str2[y]) {
-        dp[x][y] = 1 + longestCommonSubsequence(x - 1, y - 1, str1, str2, dp)
-        return dp[x][y]
+  // Fill first row with zeros.
+  for (let columnIndex = 0; columnIndex <= set1.length; columnIndex += 1) {
+    lcsMatrix[0][columnIndex] = 0;
+  }
+
+  // Fill first column with zeros.
+  for (let rowIndex = 0; rowIndex <= set2.length; rowIndex += 1) {
+    lcsMatrix[rowIndex][0] = 0;
+  }
+
+  // Fill rest of the column that correspond to each of two strings.
+  for (let rowIndex = 1; rowIndex <= set2.length; rowIndex += 1) {
+    for (let columnIndex = 1; columnIndex <= set1.length; columnIndex += 1) {
+      if (set1[columnIndex - 1] === set2[rowIndex - 1]) {
+        lcsMatrix[rowIndex][columnIndex] = lcsMatrix[rowIndex - 1][columnIndex - 1] + 1;
       } else {
-        dp[x][y] = Math.max(longestCommonSubsequence(x - 1, y, str1, str2, dp), longestCommonSubsequence(x, y - 1, str1, str2, dp))
-        return dp[x][y]
+        lcsMatrix[rowIndex][columnIndex] = Math.max(
+          lcsMatrix[rowIndex - 1][columnIndex],
+          lcsMatrix[rowIndex][columnIndex - 1],
+        );
       }
     }
   }
-}
 
-function main () {
-  const str1 = 'ABCDGH'
-  const str2 = 'AEDFHR'
-  const dp = new Array(str1.length + 1).fill(0).map(x => new Array(str2.length + 1).fill(0))
-  const res = longestCommonSubsequence(str1.length - 1, str2.length - 1, str1, str2, dp)
-  console.log(res)
-}
+  // Calculate LCS based on LCS matrix.
+  if (!lcsMatrix[set2.length][set1.length]) {
+    // If the length of largest common string is zero then return empty string.
+    return [''];
+  }
 
-main()
+  const longestSequence = [];
+  let columnIndex = set1.length;
+  let rowIndex = set2.length;
+
+  while (columnIndex > 0 || rowIndex > 0) {
+    if (set1[columnIndex - 1] === set2[rowIndex - 1]) {
+      // Move by diagonal left-top.
+      longestSequence.unshift(set1[columnIndex - 1]);
+      columnIndex -= 1;
+      rowIndex -= 1;
+    } else if (lcsMatrix[rowIndex][columnIndex] === lcsMatrix[rowIndex][columnIndex - 1]) {
+      // Move left.
+      columnIndex -= 1;
+    } else {
+      // Move up.
+      rowIndex -= 1;
+    }
+  }
+
+  return longestSequence;
+}

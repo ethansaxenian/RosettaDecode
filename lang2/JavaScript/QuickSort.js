@@ -1,51 +1,48 @@
-/*
-* Quick sort is a comparison sorting algorithm that uses a divide and conquer strategy.
-* For more information see here: https://en.wikipedia.org/wiki/Quicksort
-*/
+import Sort from '../Sort';
 
-/*
-*  Doctests
-*
-*  > quickSort([5, 4, 3, 10, 2, 1])
-*  [1, 2, 3, 4, 5, 10]
-*  > quickSort([])
-*  []
-* > quickSort([5, 4])
-*  [4, 5]
-*  > quickSort([1, 2, 3])
-*  [1, 2, 3]
-*/
+export default class QuickSort extends Sort {
+  /**
+   * @param {*[]} originalArray
+   * @return {*[]}
+   */
+  sort(originalArray) {
+    // Clone original array to prevent it from modification.
+    const array = [...originalArray];
 
-function quickSort (items) {
-  var length = items.length
-
-  if (length <= 1) {
-    return items
-  }
-  var PIVOT = items[0]
-  var GREATER = []
-  var LESSER = []
-
-  for (var i = 1; i < length; i++) {
-    if (items[i] > PIVOT) {
-      GREATER.push(items[i])
-    } else {
-      LESSER.push(items[i])
+    // If array has less than or equal to one elements then it is already sorted.
+    if (array.length <= 1) {
+      return array;
     }
+
+    // Init left and right arrays.
+    const leftArray = [];
+    const rightArray = [];
+
+    // Take the first element of array as a pivot.
+    const pivotElement = array.shift();
+    const centerArray = [pivotElement];
+
+    // Split all array elements between left, center and right arrays.
+    while (array.length) {
+      const currentElement = array.shift();
+
+      // Call visiting callback.
+      this.callbacks.visitingCallback(currentElement);
+
+      if (this.comparator.equal(currentElement, pivotElement)) {
+        centerArray.push(currentElement);
+      } else if (this.comparator.lessThan(currentElement, pivotElement)) {
+        leftArray.push(currentElement);
+      } else {
+        rightArray.push(currentElement);
+      }
+    }
+
+    // Sort left and right arrays.
+    const leftArraySorted = this.sort(leftArray);
+    const rightArraySorted = this.sort(rightArray);
+
+    // Let's now join sorted left array with center array and with sorted right array.
+    return leftArraySorted.concat(centerArray, rightArraySorted);
   }
-
-  var sorted = quickSort(LESSER)
-  sorted.push(PIVOT)
-  sorted = sorted.concat(quickSort(GREATER))
-
-  return sorted
 }
-
-// Implementation of quick sort
-
-var ar = [0, 5, 3, 2, 2]
-// Array before Sort
-console.log(ar)
-ar = quickSort(ar)
-// Array after sort
-console.log(ar)

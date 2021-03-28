@@ -1,69 +1,60 @@
-/**
- * Merge Sort is an algorithm where the main list is divided down into two half
- * sized lists, which then have merge sort called on these two smaller lists
- * recursively until there is only a sorted list of one.
- *
- * On the way up the recursive calls, the lists will be merged together inserting
- * the smaller value first, creating a larger sorted list.
- */
+import Sort from '../Sort';
 
-/**
- * Sort and merge two given arrays
- * @param {Array} list1 - sublist to break down
- * @param {Array} list2 - sublist to break down
- * @return {Array} merged list
- */
-/*
-*  Doctests
-* > merge([5, 4],[ 1, 2, 3])
-*  [1, 2, 3, 5, 4]
-* > merge([],[1, 2])
-*  [1, 2]
-* > merge([1, 2, 3], [1])
-*  [1, 1, 2, 3]
-* > merge([], [])
-*  []
-*
-* > mergeSort([5, 4])
-*  [4, 5]
-* > mergeSort([8, 4, 10, 15, 9])
-*  [4, 8, 9, 10, 15]
-* > mergeSort([1, 2, 3])
-*  [1, 2, 3]
-* > mergeSort([ ])
-*  [ ]
-*/
+export default class MergeSort extends Sort {
+  sort(originalArray) {
+    // Call visiting callback.
+    this.callbacks.visitingCallback(null);
 
-function merge (list1, list2) {
-  var results = []
-
-  while (list1.length && list2.length) {
-    if (list1[0] <= list2[0]) {
-      results.push(list1.shift())
-    } else {
-      results.push(list2.shift())
+    // If array is empty or consists of one element then return this array since it is sorted.
+    if (originalArray.length <= 1) {
+      return originalArray;
     }
+
+    // Split array on two halves.
+    const middleIndex = Math.floor(originalArray.length / 2);
+    const leftArray = originalArray.slice(0, middleIndex);
+    const rightArray = originalArray.slice(middleIndex, originalArray.length);
+
+    // Sort two halves of split array
+    const leftSortedArray = this.sort(leftArray);
+    const rightSortedArray = this.sort(rightArray);
+
+    // Merge two sorted arrays into one.
+    return this.mergeSortedArrays(leftSortedArray, rightSortedArray);
   }
-  return results.concat(list1, list2)
+
+  mergeSortedArrays(leftArray, rightArray) {
+    const sortedArray = [];
+
+    // Use array pointers to exclude old elements after they have been added to the sorted array.
+    let leftIndex = 0;
+    let rightIndex = 0;
+
+    while (leftIndex < leftArray.length && rightIndex < rightArray.length) {
+      let minElement = null;
+
+      // Find the minimum element between the left and right array.
+      if (this.comparator.lessThanOrEqual(leftArray[leftIndex], rightArray[rightIndex])) {
+        minElement = leftArray[leftIndex];
+        // Increment index pointer to the right
+        leftIndex += 1;
+      } else {
+        minElement = rightArray[rightIndex];
+        // Increment index pointer to the right
+        rightIndex += 1;
+      }
+
+      // Add the minimum element to the sorted array.
+      sortedArray.push(minElement);
+
+      // Call visiting callback.
+      this.callbacks.visitingCallback(minElement);
+    }
+
+    // There will be elements remaining from either the left OR the right
+    // Concatenate the remaining elements into the sorted array
+    return sortedArray
+      .concat(leftArray.slice(leftIndex))
+      .concat(rightArray.slice(rightIndex));
+  }
 }
-
-/**
- * Break down the lists into smaller pieces to be merged
- * @param {Array} list - list to be sorted
- * @return {Array} sorted list
- */
-function mergeSort (list) {
-  if (list.length < 2) return list
-
-  var listHalf = Math.floor(list.length / 2)
-  var subList1 = list.slice(0, listHalf)
-  var subList2 = list.slice(listHalf, list.length)
-
-  return merge(mergeSort(subList1), mergeSort(subList2))
-}
-
-// Merge Sort Example
-var unsortedArray = [10, 5, 3, 8, 2, 6, 4, 7, 9, 1]
-var sortedArray = mergeSort(unsortedArray)
-
-console.log('Before:', unsortedArray, 'After:', sortedArray)

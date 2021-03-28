@@ -1,35 +1,51 @@
-/* The Jump Search algorithm allows to combine a linear search with a speed optimization.
-  * This means that instead of going 1 by 1, we will increase the step of √n and increase that
-  * step of √n which make the step getting bigger and bigger.
-  * The asymptotic analysis of Jump Search is o(√n). Like the binary search, it needs to be sorted.
-  * The advantage against binary search is that Jump Search traversed back only once.
+import Comparator from '../../../utils/comparator/Comparator';
+
+/**
+ * Jump (block) search implementation.
+ *
+ * @param {*[]} sortedArray
+ * @param {*} seekElement
+ * @param {function(a, b)} [comparatorCallback]
+ * @return {number}
  */
+export default function jumpSearch(sortedArray, seekElement, comparatorCallback) {
+  const comparator = new Comparator(comparatorCallback);
+  const arraySize = sortedArray.length;
 
-const jumpSearch = (arr, value) => {
-  const length = arr.length
-  let step = Math.floor(Math.sqrt(length))
-  let lowerBound = 0
-  while (arr[Math.min(step, length) - 1] < value) {
-    lowerBound = step
-    step += step
-    if (lowerBound >= length) {
-      return -1
+  if (!arraySize) {
+    // We can't find anything in empty array.
+    return -1;
+  }
+
+  // Calculate optimal jump size.
+  // Total number of comparisons in the worst case will be ((arraySize/jumpSize) + jumpSize - 1).
+  // The value of the function ((arraySize/jumpSize) + jumpSize - 1) will be minimum
+  // when jumpSize = √array.length.
+  const jumpSize = Math.floor(Math.sqrt(arraySize));
+
+  // Find the block where the seekElement belong to.
+  let blockStart = 0;
+  let blockEnd = jumpSize;
+  while (comparator.greaterThan(seekElement, sortedArray[Math.min(blockEnd, arraySize) - 1])) {
+    // Jump to the next block.
+    blockStart = blockEnd;
+    blockEnd += jumpSize;
+
+    // If our next block is out of array then we couldn't found the element.
+    if (blockStart > arraySize) {
+      return -1;
     }
   }
 
-  const upperBound = Math.min(step, length)
-  while (arr[lowerBound] < value) {
-    lowerBound++
-    if (lowerBound === upperBound) {
-      return -1
+  // Do linear search for seekElement in subarray starting from blockStart.
+  let currentIndex = blockStart;
+  while (currentIndex < Math.min(blockEnd, arraySize)) {
+    if (comparator.equal(sortedArray[currentIndex], seekElement)) {
+      return currentIndex;
     }
+
+    currentIndex += 1;
   }
-  if (arr[lowerBound] === value) {
-    return lowerBound
-  }
-  return -1
+
+  return -1;
 }
-const arr = [0, 0, 4, 7, 10, 23, 34, 40, 55, 68, 77, 90]
-jumpSearch(arr, 4)
-jumpSearch(arr, 34)
-jumpSearch(arr, 77)

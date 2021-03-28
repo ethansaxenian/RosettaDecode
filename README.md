@@ -31,6 +31,7 @@ Other sources of language data (currently in lang2/):
   
 - JavaScript
   - https://github.com/freeCodeCamp/freeCodeCamp
+  - https://github.com/trekhleb/javascript-algorithms
   
 - Julia
   - https://github.com/JuliaLang/julia

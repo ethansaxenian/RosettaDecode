@@ -1,64 +1,75 @@
-/*
-Breadth-first search is an algorithm for traversing a graph. It's discovers all nodes reachable from the starting position by exploring all of the neighbor nodes at the present depth prior to moving on to the nodes at the next depth level.
-(description adapted from https://en.wikipedia.org/wiki/Breadth-first_search )
-(see also: https://www.koderdojo.com/blog/breadth-first-search-and-shortest-path-in-csharp-and-net-core )
-*/
+import Queue from '../../../data-structures/queue/Queue';
 
-/*
-Doctests
-> Array.from(breadthFirstSearch(graph, "C"))
-[ 'C', 'D', 'A', 'B', 'E' ]
-> Array.from(breadthFirstSearch(graph, "A"))
-[ 'A', 'B', 'D', 'E' ]
-> Array.from(breadthFirstSearch(graph, "F"))
-[ 'F', 'G' ]
-*/
+/**
+ * @typedef {Object} Callbacks
+ *
+ * @property {function(vertices: Object): boolean} [allowTraversal] -
+ *   Determines whether DFS should traverse from the vertex to its neighbor
+ *   (along the edge). By default prohibits visiting the same vertex again.
+ *
+ * @property {function(vertices: Object)} [enterVertex] - Called when BFS enters the vertex.
+ *
+ * @property {function(vertices: Object)} [leaveVertex] - Called when BFS leaves the vertex.
+ */
 
-function breadthFirstSearch (graph, startingNode) {
-  // visited keeps track of all nodes visited
-  const visited = new Set()
+/**
+ * @param {Callbacks} [callbacks]
+ * @returns {Callbacks}
+ */
+function initCallbacks(callbacks = {}) {
+  const initiatedCallback = callbacks;
 
-  // queue contains the nodes to be explored in the future
-  const queue = [startingNode]
+  const stubCallback = () => {};
 
-  while (queue.length > 0) {
-    // start with the queue's first node
-    const node = queue.shift()
-
-    if (!visited.has(node)) {
-      // mark the node as visited
-      visited.add(node)
-      const neighbors = graph[node]
-
-      // put all its neighbors into the queue
-      for (let i = 0; i < neighbors.length; i++) {
-        queue.push(neighbors[i])
-      }
+  const allowTraversalCallback = (
+    () => {
+      const seen = {};
+      return ({ nextVertex }) => {
+        if (!seen[nextVertex.getKey()]) {
+          seen[nextVertex.getKey()] = true;
+          return true;
+        }
+        return false;
+      };
     }
+  )();
+
+  initiatedCallback.allowTraversal = callbacks.allowTraversal || allowTraversalCallback;
+  initiatedCallback.enterVertex = callbacks.enterVertex || stubCallback;
+  initiatedCallback.leaveVertex = callbacks.leaveVertex || stubCallback;
+
+  return initiatedCallback;
+}
+
+/**
+ * @param {Graph} graph
+ * @param {GraphVertex} startVertex
+ * @param {Callbacks} [originalCallbacks]
+ */
+export default function breadthFirstSearch(graph, startVertex, originalCallbacks) {
+  const callbacks = initCallbacks(originalCallbacks);
+  const vertexQueue = new Queue();
+
+  // Do initial queue setup.
+  vertexQueue.enqueue(startVertex);
+
+  let previousVertex = null;
+
+  // Traverse all vertices from the queue.
+  while (!vertexQueue.isEmpty()) {
+    const currentVertex = vertexQueue.dequeue();
+    callbacks.enterVertex({ currentVertex, previousVertex });
+
+    // Add all neighbors to the queue for future traversals.
+    graph.getNeighbors(currentVertex).forEach((nextVertex) => {
+      if (callbacks.allowTraversal({ previousVertex, currentVertex, nextVertex })) {
+        vertexQueue.enqueue(nextVertex);
+      }
+    });
+
+    callbacks.leaveVertex({ currentVertex, previousVertex });
+
+    // Memorize current vertex before next loop.
+    previousVertex = currentVertex;
   }
-
-  return visited
 }
-
-const graph = {
-  A: ['B', 'D'],
-  B: ['E'],
-  C: ['D'],
-  D: ['A'],
-  E: ['D'],
-  F: ['G'],
-  G: []
-}
-/*
-      A <-> B
-      ʌ     |
-      |     |
-      v     v
-C --> D <-- E
-
-F --> G
-*/
-
-console.log(breadthFirstSearch(graph, 'C'))
-console.log(breadthFirstSearch(graph, 'A'))
-console.log(breadthFirstSearch(graph, 'F'))

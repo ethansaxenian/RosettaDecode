@@ -1,22 +1,60 @@
-import { selectionSort } from './SelectionSort'
+import SelectionSort from '../SelectionSort';
+import {
+  equalArr,
+  notSortedArr,
+  reverseArr,
+  sortedArr,
+  SortTester,
+} from '../../SortTester';
 
-describe('selectionSort', () => {
-  it('expects to return the array sorted in ascending order', () => {
-    var toSort = [5, 6, 7, 8, 1, 2, 12, 14]
-    const expected = [1, 2, 5, 6, 7, 8, 12, 14]
+// Complexity constants.
+const SORTED_ARRAY_VISITING_COUNT = 209;
+const NOT_SORTED_ARRAY_VISITING_COUNT = 209;
+const REVERSE_SORTED_ARRAY_VISITING_COUNT = 209;
+const EQUAL_ARRAY_VISITING_COUNT = 209;
 
-    expect(selectionSort(toSort)).toEqual(expected)
-  })
+describe('SelectionSort', () => {
+  it('should sort array', () => {
+    SortTester.testSort(SelectionSort);
+  });
 
-  it('expects to throw if it is not a valid array', () => {
-    expect(() => selectionSort('abc')).toThrow('Given input is not an array')
-    expect(() => selectionSort(123)).toThrow('Given input is not an array')
-    expect(() => selectionSort({})).toThrow('Given input is not an array')
-    expect(() => selectionSort(null)).toThrow('Given input is not an array')
-    expect(() => selectionSort()).toThrow('Given input is not an array')
-  })
+  it('should sort array with custom comparator', () => {
+    SortTester.testSortWithCustomComparator(SelectionSort);
+  });
 
-  it('expects to throw if one of the elements in the array is not a number', () => {
-    expect(() => selectionSort([1, 'x', 2])).toThrow('One of the items in your array is not a number')
-  })
-})
+  it('should sort negative numbers', () => {
+    SortTester.testNegativeNumbersSort(SelectionSort);
+  });
+
+  it('should visit EQUAL array element specified number of times', () => {
+    SortTester.testAlgorithmTimeComplexity(
+      SelectionSort,
+      equalArr,
+      EQUAL_ARRAY_VISITING_COUNT,
+    );
+  });
+
+  it('should visit SORTED array element specified number of times', () => {
+    SortTester.testAlgorithmTimeComplexity(
+      SelectionSort,
+      sortedArr,
+      SORTED_ARRAY_VISITING_COUNT,
+    );
+  });
+
+  it('should visit NOT SORTED array element specified number of times', () => {
+    SortTester.testAlgorithmTimeComplexity(
+      SelectionSort,
+      notSortedArr,
+      NOT_SORTED_ARRAY_VISITING_COUNT,
+    );
+  });
+
+  it('should visit REVERSE SORTED array element specified number of times', () => {
+    SortTester.testAlgorithmTimeComplexity(
+      SelectionSort,
+      reverseArr,
+      REVERSE_SORTED_ARRAY_VISITING_COUNT,
+    );
+  });
+});

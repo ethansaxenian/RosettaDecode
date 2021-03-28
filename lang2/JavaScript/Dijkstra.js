@@ -1,76 +1,80 @@
-/**
- * Author: Samarth Jain
- * Dijkstra's Algorithm implementation in JavaScript
- * Dijkstra's Algorithm calculates the minimum distance between two nodes.
- * It is used to find the shortes path.
- * It uses graph data structure.
- */
-
-function createGraph (V, E) {
-  // V - Number of vertices in graph
-  // E - Number of edges in graph (u,v,w)
-  const adjList = [] // Adjacency list
-  for (let i = 0; i < V; i++) {
-    adjList.push([])
-  }
-  for (let i = 0; i < E.length; i++) {
-    adjList[E[i][0]].push([E[i][1], E[i][2]])
-    adjList[E[i][1]].push([E[i][0], E[i][2]])
-  }
-  return adjList
-}
-
-function djikstra (graph, V, src) {
-  const vis = Array(V).fill(0)
-  const dist = []
-  for (let i = 0; i < V; i++) dist.push([10000, -1])
-  dist[src][0] = 0
-
-  for (let i = 0; i < V - 1; i++) {
-    let mn = -1
-    for (let j = 0; j < V; j++) {
-      if (vis[j] === 0) {
-        if (mn === -1 || dist[j][0] < dist[mn][0]) mn = j
-      }
-    }
-
-    vis[mn] = 1
-    for (let j = 0; j < graph[mn].length; j++) {
-      const edge = graph[mn][j]
-      if (vis[edge[0]] === 0 && dist[edge[0]][0] > dist[mn][0] + edge[1]) {
-        dist[edge[0]][0] = dist[mn][0] + edge[1]
-        dist[edge[0]][1] = mn
-      }
-    }
-  }
-
-  return dist
-}
-
-const V = 9
-const E = [
-  [0, 1, 4],
-  [0, 7, 8],
-  [1, 7, 11],
-  [1, 2, 8],
-  [7, 8, 7],
-  [6, 7, 1],
-  [2, 8, 2],
-  [6, 8, 6],
-  [5, 6, 2],
-  [2, 5, 4],
-  [2, 3, 7],
-  [3, 5, 14],
-  [3, 4, 9],
-  [4, 5, 10]
-]
-
-const graph = createGraph(V, E)
-const distances = djikstra(graph, V, 0)
+import PriorityQueue from '../../../data-structures/priority-queue/PriorityQueue';
 
 /**
- * The first value in the array determines the minimum distance and the
- * second value represents the parent node from which the minimum distance has been calculated
+ * @typedef {Object} ShortestPaths
+ * @property {Object} distances - shortest distances to all vertices
+ * @property {Object} previousVertices - shortest paths to all vertices.
  */
 
-console.log(distances)
+/**
+ * Implementation of Dijkstra algorithm of finding the shortest paths to graph nodes.
+ * @param {Graph} graph - graph we're going to traverse.
+ * @param {GraphVertex} startVertex - traversal start vertex.
+ * @return {ShortestPaths}
+ */
+export default function dijkstra(graph, startVertex) {
+  // Init helper variables that we will need for Dijkstra algorithm.
+  const distances = {};
+  const visitedVertices = {};
+  const previousVertices = {};
+  const queue = new PriorityQueue();
+
+  // Init all distances with infinity assuming that currently we can't reach
+  // any of the vertices except the start one.
+  graph.getAllVertices().forEach((vertex) => {
+    distances[vertex.getKey()] = Infinity;
+    previousVertices[vertex.getKey()] = null;
+  });
+
+  // We are already at the startVertex so the distance to it is zero.
+  distances[startVertex.getKey()] = 0;
+
+  // Init vertices queue.
+  queue.add(startVertex, distances[startVertex.getKey()]);
+
+  // Iterate over the priority queue of vertices until it is empty.
+  while (!queue.isEmpty()) {
+    // Fetch next closest vertex.
+    const currentVertex = queue.poll();
+
+    // Iterate over every unvisited neighbor of the current vertex.
+    currentVertex.getNeighbors().forEach((neighbor) => {
+      // Don't visit already visited vertices.
+      if (!visitedVertices[neighbor.getKey()]) {
+        // Update distances to every neighbor from current vertex.
+        const edge = graph.findEdge(currentVertex, neighbor);
+
+        const existingDistanceToNeighbor = distances[neighbor.getKey()];
+        const distanceToNeighborFromCurrent = distances[currentVertex.getKey()] + edge.weight;
+
+        // If we've found shorter path to the neighbor - update it.
+        if (distanceToNeighborFromCurrent < existingDistanceToNeighbor) {
+          distances[neighbor.getKey()] = distanceToNeighborFromCurrent;
+
+          // Change priority of the neighbor in a queue since it might have became closer.
+          if (queue.hasValue(neighbor)) {
+            queue.changePriority(neighbor, distances[neighbor.getKey()]);
+          }
+
+          // Remember previous closest vertex.
+          previousVertices[neighbor.getKey()] = currentVertex;
+        }
+
+        // Add neighbor to the queue for further visiting.
+        if (!queue.hasValue(neighbor)) {
+          queue.add(neighbor, distances[neighbor.getKey()]);
+        }
+      }
+    });
+
+    // Add current vertex to visited ones to avoid visiting it again later.
+    visitedVertices[currentVertex.getKey()] = currentVertex;
+  }
+
+  // Return the set of shortest distances to all vertices and the set of
+  // shortest paths to all vertices in a graph.
+  return {
+    distances,
+    previousVertices,
+  };
+}

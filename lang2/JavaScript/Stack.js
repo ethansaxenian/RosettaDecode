@@ -1,72 +1,67 @@
-/* Stack!!
-* A stack is exactly what it sounds like. An element gets added to the top of
-* the stack and only the element on the top may be removed. This is an example
-* of an array implementation of a Stack. So an element can only be added/removed
-* from the end of the array.
-*/
+import LinkedList from '../linked-list/LinkedList';
 
-// Functions: push, pop, peek, view, length
-
-// Creates a stack constructor
-var Stack = (function () {
-  function Stack () {
-    // The top of the Stack
-    this.top = 0
-    // The array representation of the stack
-    this.stack = []
+export default class Stack {
+  constructor() {
+    // We're going to implement Stack based on LinkedList since these
+    // structures are quite similar. Compare push/pop operations of the Stack
+    // with prepend/deleteHead operations of LinkedList.
+    this.linkedList = new LinkedList();
   }
 
-  // Adds a value onto the end of the stack
-  Stack.prototype.push = function (value) {
-    this.stack[this.top] = value
-    this.top++
+  /**
+   * @return {boolean}
+   */
+  isEmpty() {
+    // The stack is empty if its linked list doesn't have a head.
+    return !this.linkedList.head;
   }
 
-  // Removes and returns the value at the end of the stack
-  Stack.prototype.pop = function () {
-    if (this.top === 0) {
-      return 'Stack is Empty'
+  /**
+   * @return {*}
+   */
+  peek() {
+    if (this.isEmpty()) {
+      // If the linked list is empty then there is nothing to peek from.
+      return null;
     }
 
-    this.top--
-    var result = this.stack[this.top]
-    this.stack = this.stack.splice(0, this.top)
-    return result
+    // Just read the value from the start of linked list without deleting it.
+    return this.linkedList.head.value;
   }
 
-  // Returns the size of the stack
-  Stack.prototype.size = function () {
-    return this.top
+  /**
+   * @param {*} value
+   */
+  push(value) {
+    // Pushing means to lay the value on top of the stack. Therefore let's just add
+    // the new value at the start of the linked list.
+    this.linkedList.prepend(value);
   }
 
-  // Returns the value at the end of the stack
-  Stack.prototype.peek = function () {
-    return this.stack[this.top - 1]
+  /**
+   * @return {*}
+   */
+  pop() {
+    // Let's try to delete the first node (the head) from the linked list.
+    // If there is no head (the linked list is empty) just return null.
+    const removedHead = this.linkedList.deleteHead();
+    return removedHead ? removedHead.value : null;
   }
 
-  // To see all the elements in the stack
-  Stack.prototype.view = function () {
-    for (var i = 0; i < this.top; i++) { console.log(this.stack[i]) }
+  /**
+   * @return {*[]}
+   */
+  toArray() {
+    return this.linkedList
+      .toArray()
+      .map((linkedListNode) => linkedListNode.value);
   }
 
-  return Stack
-}())
-
-// Implementation
-var myStack = new Stack()
-
-myStack.push(1)
-myStack.push(5)
-myStack.push(76)
-myStack.push(69)
-myStack.push(32)
-myStack.push(54)
-console.log(myStack.size())
-console.log(myStack.peek())
-console.log(myStack.pop())
-console.log(myStack.peek())
-console.log(myStack.pop())
-console.log(myStack.peek())
-myStack.push(55)
-console.log(myStack.peek())
-myStack.view()
+  /**
+   * @param {function} [callback]
+   * @return {string}
+   */
+  toString(callback) {
+    return this.linkedList.toString(callback);
+  }
+}

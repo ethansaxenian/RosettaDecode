@@ -1,26 +1,29 @@
-import levenshteinDistance from './LevenshteinDistance'
+import levenshteinDistance from '../levenshteinDistance';
 
 describe('levenshteinDistance', () => {
   it('should calculate edit distance between two strings', () => {
-    expect(levenshteinDistance('', '')).toBe(0)
-    expect(levenshteinDistance('a', '')).toBe(1)
-    expect(levenshteinDistance('', 'a')).toBe(1)
-    expect(levenshteinDistance('abc', '')).toBe(3)
-    expect(levenshteinDistance('', 'abc')).toBe(3)
+    expect(levenshteinDistance('', '')).toBe(0);
+    expect(levenshteinDistance('a', '')).toBe(1);
+    expect(levenshteinDistance('', 'a')).toBe(1);
+    expect(levenshteinDistance('abc', '')).toBe(3);
+    expect(levenshteinDistance('', 'abc')).toBe(3);
 
     // Should just add I to the beginning.
-    expect(levenshteinDistance('igloo', 'gloo')).toBe(1)
+    expect(levenshteinDistance('islander', 'slander')).toBe(1);
 
-    // Should just substitute i with o, m with g and insert e at end
-    expect(levenshteinDistance('firm', 'forge')).toBe(3)
+    // Needs to substitute M by K, T by M and add an A to the end
+    expect(levenshteinDistance('mart', 'karma')).toBe(3);
 
-    // Should just substitute i with s, g with i, h with t and delete f from front
-    expect(levenshteinDistance('fighting', 'sitting')).toBe(4)
+    // Substitute K by S, E by I and insert G at the end.
+    expect(levenshteinDistance('kitten', 'sitting')).toBe(3);
 
-    // Should add 4 letters b, a, s and e at the beginning.
-    expect(levenshteinDistance('ball', 'baseball')).toBe(4)
+    // Should add 4 letters FOOT at the beginning.
+    expect(levenshteinDistance('ball', 'football')).toBe(4);
 
-    // Should delete 4 letters b, a, s and e at the beginning.
-    expect(levenshteinDistance('baseball', 'foot')).toBe(4)
-  })
-})
+    // Should delete 4 letters FOOT at the beginning.
+    expect(levenshteinDistance('football', 'foot')).toBe(4);
+
+    // Needs to substitute the first 5 chars: INTEN by EXECU
+    expect(levenshteinDistance('intention', 'execution')).toBe(5);
+  });
+});

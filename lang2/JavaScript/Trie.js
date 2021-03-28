@@ -1,137 +1,110 @@
-var TrieNode = function TrieNode (key, parent) {
-  this.key = key
-  this.count = 0
-  this.children = Object.create(null)
-  if (parent === undefined) {
-    this.parent = null
-  } else {
-    this.parent = parent
+import TrieNode from './TrieNode';
+
+// Character that we will use for trie tree root.
+const HEAD_CHARACTER = '*';
+
+export default class Trie {
+  constructor() {
+    this.head = new TrieNode(HEAD_CHARACTER);
+  }
+
+  /**
+   * @param {string} word
+   * @return {Trie}
+   */
+  addWord(word) {
+    const characters = Array.from(word);
+    let currentNode = this.head;
+
+    for (let charIndex = 0; charIndex < characters.length; charIndex += 1) {
+      const isComplete = charIndex === characters.length - 1;
+      currentNode = currentNode.addChild(characters[charIndex], isComplete);
+    }
+
+    return this;
+  }
+
+  /**
+   * @param {string} word
+   * @return {Trie}
+   */
+  deleteWord(word) {
+    const depthFirstDelete = (currentNode, charIndex = 0) => {
+      if (charIndex >= word.length) {
+        // Return if we're trying to delete the character that is out of word's scope.
+        return;
+      }
+
+      const character = word[charIndex];
+      const nextNode = currentNode.getChild(character);
+
+      if (nextNode == null) {
+        // Return if we're trying to delete a word that has not been added to the Trie.
+        return;
+      }
+
+      // Go deeper.
+      depthFirstDelete(nextNode, charIndex + 1);
+
+      // Since we're going to delete a word let's un-mark its last character isCompleteWord flag.
+      if (charIndex === (word.length - 1)) {
+        nextNode.isCompleteWord = false;
+      }
+
+      // childNode is deleted only if:
+      // - childNode has NO children
+      // - childNode.isCompleteWord === false
+      currentNode.removeChild(character);
+    };
+
+    // Start depth-first deletion from the head node.
+    depthFirstDelete(this.head);
+
+    return this;
+  }
+
+  /**
+   * @param {string} word
+   * @return {string[]}
+   */
+  suggestNextCharacters(word) {
+    const lastCharacter = this.getLastCharacterNode(word);
+
+    if (!lastCharacter) {
+      return null;
+    }
+
+    return lastCharacter.suggestChildren();
+  }
+
+  /**
+   * Check if complete word exists in Trie.
+   *
+   * @param {string} word
+   * @return {boolean}
+   */
+  doesWordExist(word) {
+    const lastCharacter = this.getLastCharacterNode(word);
+
+    return !!lastCharacter && lastCharacter.isCompleteWord;
+  }
+
+  /**
+   * @param {string} word
+   * @return {TrieNode}
+   */
+  getLastCharacterNode(word) {
+    const characters = Array.from(word);
+    let currentNode = this.head;
+
+    for (let charIndex = 0; charIndex < characters.length; charIndex += 1) {
+      if (!currentNode.hasChild(characters[charIndex])) {
+        return null;
+      }
+
+      currentNode = currentNode.getChild(characters[charIndex]);
+    }
+
+    return currentNode;
   }
 }
-
-function Trie () {
-  // create only root with null key and parent
-  this.root = new TrieNode(null, null)
-}
-
-// Recursively finds the occurence of all words in a given node
-Trie.findAllWords = function (root, word, output) {
-  if (root === null) return
-  if (root.count > 0) {
-    if (typeof output === 'object') { output.push({ word: word, count: root.count }) }
-  }
-  var key
-  for (key in root.children) {
-    word += key
-    this.findAllWords(root.children[key], word, output)
-    word = word.slice(0, -1)
-  }
-}
-
-Trie.prototype.insert = function (word) {
-  if (typeof word !== 'string') return
-  if (word === '') {
-    this.root.count += 1
-    return
-  }
-  var node = this.root
-  var len = word.length
-  var i
-  for (i = 0; i < len; i++) {
-    if (node.children[word.charAt(i)] === undefined) { node.children[word.charAt(i)] = new TrieNode(word.charAt(i), node) }
-    node = node.children[word.charAt(i)]
-  }
-  node.count += 1
-}
-
-Trie.prototype.findPrefix = function (word) {
-  if (typeof word !== 'string') return null
-  var node = this.root
-  var len = word.length
-  var i
-  // After end of this loop node will be at desired prefix
-  for (i = 0; i < len; i++) {
-    if (node.children[word.charAt(i)] === undefined) return null // No such prefix exists
-    node = node.children[word.charAt(i)]
-  }
-  return node
-}
-
-Trie.prototype.remove = function (word, count) {
-  if (typeof word !== 'string') return
-  if (typeof count !== 'number') count = 1
-  else if (count <= 0) return
-
-  // for empty string just delete count of root
-  if (word === '') {
-    if (this.root.count >= count) this.root.count -= count
-    else this.root.count = 0
-    return
-  }
-
-  var child = this.root
-  var len = word.length
-  var i, key
-  // child: node which is to be deleted
-  for (i = 0; i < len; i++) {
-    key = word.charAt(i)
-    if (child.children[key] === undefined) return
-    child = child.children[key]
-  }
-
-  // Delete no of occurences specified
-  if (child.count >= count) child.count -= count
-  else child.count = 0
-
-  // If some occurences are left we dont delete it or else
-  // if the object forms some other objects prefix we dont delete it
-  // For checking an empty object
-  // https://stackoverflow.com/questions/679915/how-do-i-test-for-an-empty-javascript-object
-  if (child.count <= 0 && (Object.keys(child.children).length && child.childre.constructor === Object)) {
-    child.parent.children[child.key] = undefined
-  }
-}
-
-Trie.prototype.findAllWords = function (prefix) {
-  var output = []
-  // find the node with provided prefix
-  var node = this.findPrefix(prefix)
-  // No such prefix exists
-  if (node === null) return output
-  Trie.findAllWords(node, prefix, output)
-  return output
-}
-
-Trie.prototype.contains = function (word) {
-  // find the node with given prefix
-  var node = this.findPrefix(word)
-  // No such word exists
-  if (node === null || node.count === 0) return false
-  return true
-}
-
-Trie.prototype.findOccurences = function (word) {
-  // find the node with given prefix
-  var node = this.findPrefix(word)
-  // No such word exists
-  if (node === null) return 0
-  return node.count
-};
-
-// To test
-(function demo () {
-  var x = new Trie()
-  x.insert('sheldon')
-  x.insert('hello')
-  x.insert('anyword')
-  x.insert('sheldoncooper')
-  console.log(x.findOccurences('sheldon'))
-  x.remove('anything')
-  x.insert('sheldon')
-  console.log(x.findOccurences('sheldon'))
-  console.log(x.findAllWords('sheldon'))
-  x.insert('anything')
-  x.remove('sheldoncooper')
-  console.log(x.contains('sheldoncooper'))
-  console.log(x.findAllWords('sheldon'))
-})()

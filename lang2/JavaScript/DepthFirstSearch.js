@@ -1,76 +1,68 @@
-/*
- * Author: Surendra Kumar
- * DFS Algorithm implementation in JavaScript
- * DFS Algorithm for traversing or searching graph data structures.
-*/
+/**
+ * @typedef {Object} Callbacks
+ *
+ * @property {function(vertices: Object): boolean} [allowTraversal] -
+ *  Determines whether DFS should traverse from the vertex to its neighbor
+ *  (along the edge). By default prohibits visiting the same vertex again.
+ *
+ * @property {function(vertices: Object)} [enterVertex] - Called when DFS enters the vertex.
+ *
+ * @property {function(vertices: Object)} [leaveVertex] - Called when DFS leaves the vertex.
+ */
 
-function traverseDFS (root) {
-  const stack = [root]
-  const res = []
+/**
+ * @param {Callbacks} [callbacks]
+ * @returns {Callbacks}
+ */
+function initCallbacks(callbacks = {}) {
+  const initiatedCallback = callbacks;
 
-  while (stack.length) {
-    const curr = stack.pop()
-    res.push(curr.key)
+  const stubCallback = () => {};
 
-    if (curr.right) {
-      stack.push(curr.right)
+  const allowTraversalCallback = (
+    () => {
+      const seen = {};
+      return ({ nextVertex }) => {
+        if (!seen[nextVertex.getKey()]) {
+          seen[nextVertex.getKey()] = true;
+          return true;
+        }
+        return false;
+      };
     }
+  )();
 
-    if (curr.left) {
-      stack.push(curr.left)
-    }
-  }
+  initiatedCallback.allowTraversal = callbacks.allowTraversal || allowTraversalCallback;
+  initiatedCallback.enterVertex = callbacks.enterVertex || stubCallback;
+  initiatedCallback.leaveVertex = callbacks.leaveVertex || stubCallback;
 
-  return res.reverse()
+  return initiatedCallback;
 }
 
-function searchDFS (tree, value) {
-  var stack = []
+/**
+ * @param {Graph} graph
+ * @param {GraphVertex} currentVertex
+ * @param {GraphVertex} previousVertex
+ * @param {Callbacks} callbacks
+ */
+function depthFirstSearchRecursive(graph, currentVertex, previousVertex, callbacks) {
+  callbacks.enterVertex({ currentVertex, previousVertex });
 
-  stack.push(tree[0])
-
-  while (stack.length !== 0) {
-    for (let i = 0; i < stack.length; i++) {
-      var node = stack.pop()
-
-      if (node.value === value) {
-        return node
-      }
-      if (node.right) {
-        stack.push(tree[node.right])
-      }
-      if (node.left) {
-        stack.push(tree[node.left])
-      }
+  graph.getNeighbors(currentVertex).forEach((nextVertex) => {
+    if (callbacks.allowTraversal({ previousVertex, currentVertex, nextVertex })) {
+      depthFirstSearchRecursive(graph, nextVertex, currentVertex, callbacks);
     }
-  }
-  return null
+  });
+
+  callbacks.leaveVertex({ currentVertex, previousVertex });
 }
 
-var tree = [
-  { value: 6, left: 1, right: 2 },
-  { value: 5, left: 3, right: 4 },
-  { value: 7, left: null, right: 5 },
-  { value: 3, left: 6, right: null },
-  { value: 4, left: null, right: null },
-  { value: 9, left: 7, right: 8 },
-  { value: 2, left: 9, right: null },
-  { value: 8, left: null, right: null },
-  { value: 10, left: null, right: null },
-  { value: 1, left: null, right: null }
-]
-
-searchDFS(tree, 9)
-searchDFS(tree, 10)
-
-traverseDFS(6)
-
-//            6
-//           / \
-//          5   7
-//         / \   \
-//        3   4   9
-//       /       / \
-//      2       8   10
-//     /
-//    1
+/**
+ * @param {Graph} graph
+ * @param {GraphVertex} startVertex
+ * @param {Callbacks} [callbacks]
+ */
+export default function depthFirstSearch(graph, startVertex, callbacks) {
+  const previousVertex = null;
+  depthFirstSearchRecursive(graph, startVertex, previousVertex, initCallbacks(callbacks));
+}

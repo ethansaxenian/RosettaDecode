@@ -1,46 +1,52 @@
 /**
- * Interpolation Search
+ * Interpolation search implementation.
  *
- * Time Complexity:
- * -Best case: O(1)
- * -Worst case: O(n)
- * -O((log(log(n))) If the data are uniformly distributed
- *
- *
+ * @param {*[]} sortedArray - sorted array with uniformly distributed values
+ * @param {*} seekElement
+ * @return {number}
  */
+export default function interpolationSearch(sortedArray, seekElement) {
+  let leftIndex = 0;
+  let rightIndex = sortedArray.length - 1;
 
-function interpolationSearch (arr, key) {
-  const length = arr.length - 1
-  let low = 0
-  let high = length
-  let position = -1
-  let delta = -1
+  while (leftIndex <= rightIndex) {
+    const rangeDelta = sortedArray[rightIndex] - sortedArray[leftIndex];
+    const indexDelta = rightIndex - leftIndex;
+    const valueDelta = seekElement - sortedArray[leftIndex];
 
-  // Because the array is sorted the key must be between low and high
-  while (low <= high && key >= arr[low] && key <= arr[high]) {
-    delta = (key - arr[low]) / (arr[high] - arr[low])
-    position = low + Math.floor((high - low) * delta)
-
-    // Target found return its position
-    if (arr[position] === key) {
-      return position
+    // If valueDelta is less then zero it means that there is no seek element
+    // exists in array since the lowest element from the range is already higher
+    // then seek element.
+    if (valueDelta < 0) {
+      return -1;
     }
 
-    // If the key is larger then it is in the upper part of the array
-    if (arr[position] < key) {
-      low = position + 1
-      // If the key is smaller then it is in the lower part of the array
+    // If range delta is zero then subarray contains all the same numbers
+    // and thus there is nothing to search for unless this range is all
+    // consists of seek number.
+    if (!rangeDelta) {
+      // By doing this we're also avoiding division by zero while
+      // calculating the middleIndex later.
+      return sortedArray[leftIndex] === seekElement ? leftIndex : -1;
+    }
+
+    // Do interpolation of the middle index.
+    const middleIndex = leftIndex + Math.floor((valueDelta * indexDelta) / rangeDelta);
+
+    // If we've found the element just return its position.
+    if (sortedArray[middleIndex] === seekElement) {
+      return middleIndex;
+    }
+
+    // Decide which half to choose for seeking next: left or right one.
+    if (sortedArray[middleIndex] < seekElement) {
+      // Go to the right half of the array.
+      leftIndex = middleIndex + 1;
     } else {
-      high = position - 1
+      // Go to the left half of the array.
+      rightIndex = middleIndex - 1;
     }
   }
 
-  return -1
+  return -1;
 }
-
-const arr = [2, 6, 8, 10, 12, 14, 16, 18, 20, 22, 26, 34, 39]
-
-console.log('Found at position :' + interpolationSearch(arr, 2))
-console.log('Found at position :' + interpolationSearch(arr, 12))
-console.log('Found at position :' + interpolationSearch(arr, 1000))
-console.log('Found at position :' + interpolationSearch(arr, 39))
