@@ -1,1 +1,1 @@
-:def pasteCode (\_ -> loop >> return ":load foo.hs")
+:def pasteCode (\_ -> loop >> return ":load foo.hs")

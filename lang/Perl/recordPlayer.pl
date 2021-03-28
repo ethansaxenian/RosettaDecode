@@ -1,9 +1,3 @@
-#############################################
-# This plugin is licensed under the GNU GPL #
-# Copyright 2005 original plugin by iseo    #
-# Adapted by Alison and KeplerBR            #
-#############################################
-
 package playerRecord;
 	use strict;
 	use warnings; 
@@ -20,7 +14,7 @@ package playerRecord;
 		['charNameUpdate', \&write_player],					# Escrever os dados gerais
 		['packet/show_eq', \&write_player_equips],			# Escrever os dados dos equipamentos
 		['packet/character_name', \&list_player_id_name],	# Salvar na lista o ID <-> Nick do char
-		['mainLoop::setTitle',  \&change_title, undef],		# Alterar o título da janela
+		['mainLoop::setTitle',  \&change_title, undef],
 		# Dos Top10
 		['packet/top10_alchemist_rank', \&top10_main, 'topalchemist'],
 		['packet/top10_blacksmith_rank', \&top10_main, 'topblacksmith'],
@@ -295,8 +289,8 @@ package playerRecord;
 			my $analiseEquips = 1;
 			my $novidade = 0;
 
-			# * Will begin on the column of equipment (3°, but as the count starts at 0, it is 2);
-			# * The table "equips" has 66 columns, but the analysis is only of 3° to 65°;
+			# * Will begin on the column of equipment (3ï¿½, but as the count starts at 0, it is 2);
+			# * The table "equips" has 66 columns, but the analysis is only of 3ï¿½ to 65ï¿½;
 			# * As the analysis will be performed in blocks of equipment, and each machine has
 			#   about 6 columns, will go from 6 to 6;
 			# * As there are only three equips visual then left them. So it has a special space

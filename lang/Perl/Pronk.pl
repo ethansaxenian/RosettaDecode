@@ -1,4 +1,3 @@
-
 =head1 NAME
 
 Zonk::Pronk -- blorpoesu
@@ -10,27 +9,27 @@ This is just a test file.
 This is a test Pod document in Latin-1. Its content is the last two
 paragraphs of Baudelaire's I<Le Joujou du pauvre>.
 
-A travers ces barreaux symboliques séparant deux mondes, la grande route
-et le château, l'enfant pauvre montrait à l'enfant riche son propre
+A travers ces barreaux symboliques sï¿½parant deux mondes, la grande route
+et le chï¿½teau, l'enfant pauvre montrait ï¿½ l'enfant riche son propre
 joujou, que celui-ci examinait avidement comme un objet rare et inconnu.
-Or, ce joujou, que le petit souillon agaçait, agitait et secouait dans
-une boîte grillée, c'était un rat vivantE<160>! Les parents, par économie
-sans doute, avaient tiré le joujou de la vie elle-même. 
+Or, ce joujou, que le petit souillon agaï¿½ait, agitait et secouait dans
+une boï¿½te grillï¿½e, c'ï¿½tait un rat vivantE<160>! Les parents, par ï¿½conomie
+sans doute, avaient tirï¿½ le joujou de la vie elle-mï¿½me. 
 
-Et les deux enfants se riaient l'un à l'autre fraternellement, avec des
-dents d'une I<égale> blancheur.
+Et les deux enfants se riaient l'un ï¿½ l'autre fraternellement, avec des
+dents d'une I<ï¿½gale> blancheur.
 
 =head2 As Verbatim
 
- A travers ces barreaux symboliques séparant deux mondes, la grande route
- et le château, l'enfant pauvre montrait à l'enfant riche son propre
+ A travers ces barreaux symboliques sï¿½parant deux mondes, la grande route
+ et le chï¿½teau, l'enfant pauvre montrait ï¿½ l'enfant riche son propre
  joujou, que celui-ci examinait avidement comme un objet rare et inconnu.
- Or, ce joujou, que le petit souillon agaçait, agitait et secouait dans
- une boîte grillée, c'était un rat vivant !  Les parents, par économie
- sans doute, avaient tiré le joujou de la vie elle-même. 
+ Or, ce joujou, que le petit souillon agaï¿½ait, agitait et secouait dans
+ une boï¿½te grillï¿½e, c'ï¿½tait un rat vivantï¿½!  Les parents, par ï¿½conomie
+ sans doute, avaient tirï¿½ le joujou de la vie elle-mï¿½me. 
 
- Et les deux enfants se riaient l'un à l'autre fraternellement, avec des
- dents d'une égale blancheur.
+ Et les deux enfants se riaient l'un ï¿½ l'autre fraternellement, avec des
+ dents d'une ï¿½gale blancheur.
 
 [end]
 
@@ -40,4 +39,3 @@ dents d'une I<égale> blancheur.
 
 print "HOOBOY!\n";
 1;
-

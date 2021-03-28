@@ -83,12 +83,19 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
 if __name__ == '__main__':
     data_path = "../data/features_data_bc.jsonl"
     X, y = parse_features_data(data_path)
+    print(X.shape, y.shape)
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
     trained_models = []
     for model, params in MODELS.items():
         trained_models.append(train_model(model, params, X_train, y_train))
+
+    # for model in trained_models:
+    #     acc, prec, rec = validate_model(model, X_vali, y_vali)
+    #     print(acc)
+    #     print(prec)
+    #     print(rec)
 
     with open("../data/training_data.txt", "a+") as file:
         file.write("=====================================================\n")

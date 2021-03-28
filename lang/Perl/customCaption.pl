@@ -34,8 +34,6 @@
 #	This is OpenKore's default caption syntax, you can use it as windowTitle value:
 #		%n: B%basel (%baseperc), %jobl (%jobperc) : p%w : %pos %map - OpenKore
 #
-# 01:52 quinta-feira, 8 de março de 2012
-# 	- released !			
 #
 # TODO: maybe we should add more "variables".
 #																			
