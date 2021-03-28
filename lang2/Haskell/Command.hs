@@ -1,189 +1,274 @@
------------------------------------------------------------------------------
---
--- Module      : Language.PureScript.Ide.Command
--- Description : Datatypes for the commands psc-ide accepts
--- Copyright   : Christoph Hegemann 2016
--- License     : MIT (http://opensource.org/licenses/MIT)
---
--- Maintainer  : Christoph Hegemann <christoph.hegemann1337@gmail.com>
--- Stability   : experimental
---
--- |
--- Datatypes for the commands psc-ide accepts
------------------------------------------------------------------------------
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 
-module Language.PureScript.Ide.Command where
+module Unison.Codebase.Editor.Command (
+  Command(..),
+  AmbientAbilities,
+  LexedSource,
+  Source,
+  SourceName,
+  TypecheckingResult,
+  LoadSourceResult(..),
+  commandName
+  ) where
 
-import           Protolude
+import Unison.Prelude
 
-import           Control.Monad.Fail (fail)
-import           Data.Aeson
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import qualified Language.PureScript               as P
-import           Language.PureScript.Ide.CaseSplit
-import           Language.PureScript.Ide.Completion
-import           Language.PureScript.Ide.Filter
-import           Language.PureScript.Ide.Matcher
-import           Language.PureScript.Ide.Types
+-- TODO: Don't import backend, but move dependencies to own modules
+import           Unison.Server.Backend          ( DefinitionResults
+                                                , ShallowListEntry
+                                                , BackendError
+                                                )
+import           Data.Configurator.Types        ( Configured )
 
-data Command
-    = Load [P.ModuleName]
-    | LoadSync [P.ModuleName] -- used in tests
-    | Type
-      { typeSearch        :: Text
-      , typeFilters       :: [Filter]
-      , typeCurrentModule :: Maybe P.ModuleName
-      }
-    | Complete
-      { completeFilters       :: [Filter]
-      , completeMatcher       :: Matcher IdeDeclarationAnn
-      , completeCurrentModule :: Maybe P.ModuleName
-      , completeOptions       :: CompletionOptions
-      }
-    | CaseSplit
-      { caseSplitLine        :: Text
-      , caseSplitBegin       :: Int
-      , caseSplitEnd         :: Int
-      , caseSplitAnnotations :: WildcardAnnotations
-      , caseSplitType        :: Text
-      }
-    | AddClause
-      { addClauseLine        :: Text
-      , addClauseAnnotations :: WildcardAnnotations
-      }
-    | FindUsages
-      { usagesModule :: P.ModuleName
-      , usagesIdentifier :: Text
-      , usagesNamespace :: IdeNamespace
-      }
-      -- Import InputFile OutputFile
-    | Import FilePath (Maybe FilePath) [Filter] ImportCommand
-    | List { listType :: ListType }
-    | Rebuild FilePath (Maybe FilePath) (Set P.CodegenTarget)
-    | RebuildSync FilePath (Maybe FilePath) (Set P.CodegenTarget)
-    | Cwd
-    | Reset
-    | Quit
+import           Unison.Codebase.Editor.Output
+import           Unison.Codebase.Editor.RemoteRepo
 
-commandName :: Command -> Text
-commandName c = case c of
-  Load{} -> "Load"
-  LoadSync{} -> "LoadSync"
-  Type{} -> "Type"
-  Complete{} -> "Complete"
-  CaseSplit{} -> "CaseSplit"
-  AddClause{} -> "AddClause"
-  FindUsages{} -> "FindUsages"
-  Import{} -> "Import"
-  List{} -> "List"
-  Rebuild{} -> "Rebuild"
-  RebuildSync{} -> "RebuildSync"
-  Cwd{} -> "Cwd"
-  Reset{} -> "Reset"
-  Quit{} -> "Quit"
+import           Unison.Codebase.Branch         ( Branch )
+import qualified Unison.Codebase.Branch        as Branch
+import           Unison.Codebase.GitError
+import qualified Unison.Codebase.Reflog        as Reflog
+import           Unison.Codebase.SyncMode       ( SyncMode )
+import           Unison.Names3                  ( Names, Names0 )
+import           Unison.Parser                  ( Ann )
+import           Unison.Referent                ( Referent )
+import           Unison.Reference               ( Reference )
+import           Unison.Result                  ( Note
+                                                , Result)
+import           Unison.DataDeclaration         ( Decl )
+import qualified Unison.Codebase.Runtime       as Runtime
+import qualified Unison.PrettyPrintEnv         as PPE
+import qualified Unison.Reference              as Reference
+import           Unison.Term                    ( Term )
+import qualified Unison.UnisonFile             as UF
+import qualified Unison.Lexer                  as L
+import qualified Unison.Parser                 as Parser
+import           Unison.ShortHash               ( ShortHash )
+import           Unison.Type                    ( Type )
+import           Unison.Codebase.ShortBranchHash
+                                                ( ShortBranchHash )
+import Unison.Codebase.Editor.AuthorInfo (AuthorInfo)
+import Unison.Codebase.Path (Path)
+import qualified Unison.Codebase.Path as Path
+import qualified Unison.HashQualified as HQ
+import Unison.Name (Name)
+import Unison.Server.QueryResult (QueryResult)
+import qualified Unison.Server.SearchResult as SR
+import qualified Unison.Server.SearchResult' as SR'
 
-data ImportCommand
-  = AddImplicitImport P.ModuleName
-  | AddQualifiedImport P.ModuleName P.ModuleName
-  | AddImportForIdentifier Text (Maybe P.ModuleName)
-  deriving (Show, Eq)
+type AmbientAbilities v = [Type v Ann]
+type SourceName = Text
+type Source = Text
+type LexedSource = (Text, [L.Token L.Lexeme])
 
-instance FromJSON ImportCommand where
-  parseJSON = withObject "ImportCommand" $ \o -> do
-    (command :: Text) <- o .: "importCommand"
-    case command of
-      "addImplicitImport" ->
-        AddImplicitImport <$> (P.moduleNameFromString <$> o .: "module")
-      "addQualifiedImport" ->
-        AddQualifiedImport
-          <$> (P.moduleNameFromString <$> o .: "module")
-          <*> (P.moduleNameFromString <$> o .: "qualifier")
-      "addImport" ->
-        AddImportForIdentifier
-          <$> (o .: "identifier")
-          <*> (fmap P.moduleNameFromString <$> o .:? "qualifier")
+data LoadSourceResult = InvalidSourceNameError
+                      | LoadError
+                      | LoadSuccess Text
 
-      s -> fail ("Unknown import command: " <> show s)
+type TypecheckingResult v =
+  Result (Seq (Note v Ann))
+         (Either Names0 (UF.TypecheckedUnisonFile v Ann))
 
-data ListType = LoadedModules | Imports FilePath | AvailableModules
+data Command m i v a where
+  -- Escape hatch.
+  Eval :: m a -> Command m i v a
 
-instance FromJSON ListType where
-  parseJSON = withObject "ListType" $ \o -> do
-    (listType' :: Text) <- o .: "type"
-    case listType' of
-      "import" -> Imports <$> o .: "file"
-      "loadedModules" -> pure LoadedModules
-      "availableModules" -> pure AvailableModules
-      s -> fail ("Unknown list type: " <> show s)
+  HQNameQuery
+    :: Maybe Path
+    -> Branch m
+    -> [HQ.HashQualified Name]
+    -> Command m i v QueryResult
 
-instance FromJSON Command where
-  parseJSON = withObject "command" $ \o -> do
-    (command :: Text) <- o .: "command"
-    case command of
-      "list" -> List <$> o .:? "params" .!= LoadedModules
-      "cwd"  -> pure Cwd
-      "quit" -> pure Quit
-      "reset" -> pure Reset
-      "load" -> do
-        params' <- o .:? "params"
-        case params' of
-          Nothing -> pure (Load [])
-          Just params ->
-            Load <$> (map P.moduleNameFromString <$> params .:? "modules" .!= [])
-      "type" -> do
-        params <- o .: "params"
-        Type
-          <$> params .: "search"
-          <*> params .:? "filters" .!= []
-          <*> (fmap P.moduleNameFromString <$> params .:? "currentModule")
-      "complete" -> do
-        params <- o .: "params"
-        Complete
-          <$> params .:? "filters" .!= []
-          <*> params .:? "matcher" .!= mempty
-          <*> (fmap P.moduleNameFromString <$> params .:? "currentModule")
-          <*> params .:? "options" .!= defaultCompletionOptions
-      "caseSplit" -> do
-        params <- o .: "params"
-        CaseSplit
-          <$> params .: "line"
-          <*> params .: "begin"
-          <*> params .: "end"
-          <*> (mkAnnotations <$> params .: "annotations")
-          <*> params .: "type"
-      "addClause" -> do
-        params <- o .: "params"
-        AddClause
-          <$> params .: "line"
-          <*> (mkAnnotations <$> params .: "annotations")
-      "usages" -> do
-        params <- o .: "params"
-        FindUsages
-          <$> (map P.moduleNameFromString (params .: "module"))
-          <*> params .: "identifier"
-          <*> params .: "namespace"
-      "import" -> do
-        params <- o .: "params"
-        Import
-          <$> params .: "file"
-          <*> params .:? "outfile"
-          <*> params .:? "filters" .!= []
-          <*> params .: "importCommand"
-      "rebuild" -> do
-        params <- o .: "params"
-        Rebuild
-          <$> params .: "file"
-          <*> params .:? "actualFile"
-          <*> (parseCodegenTargets =<< params .:? "codegen" .!= [ "js" ])
-      c -> fail ("Unknown command: " <> show c)
-    where
-      parseCodegenTargets ts =
-        case traverse (\t -> Map.lookup t P.codegenTargets) ts of
-          Nothing ->
-            fail ("Failed to parse codegen targets: " <> show ts)
-          Just ts' ->
-            pure (Set.fromList ts')
+  LoadSearchResults
+    :: [SR.SearchResult] -> Command m i v [SR'.SearchResult' v Ann]
 
-      mkAnnotations True = explicitAnnotations
-      mkAnnotations False = noAnnotations
+  GetDefinitionsBySuffixes
+    :: Maybe Path
+    -> Branch m
+    -> [HQ.HashQualified Name]
+    -> Command m i v (Either BackendError (DefinitionResults v))
+
+  FindShallow
+    :: Path.Absolute
+    -> Command m i v (Either BackendError [ShallowListEntry v Ann])
+
+  ConfigLookup :: Configured a => Text -> Command m i v (Maybe a)
+
+  Input :: Command m i v i
+
+  -- Presents some output to the user
+  Notify :: Output v -> Command m i v ()
+  NotifyNumbered :: NumberedOutput v -> Command m i v NumberedArgs
+
+  -- literally just write some terms and types .unison/{terms,types}
+  AddDefsToCodebase :: UF.TypecheckedUnisonFile v Ann -> Command m i v ()
+
+  -- the hash length needed to disambiguate any definition in the codebase
+  CodebaseHashLength :: Command m i v Int
+
+  TypeReferencesByShortHash :: ShortHash -> Command m i v (Set Reference)
+  TermReferencesByShortHash :: ShortHash -> Command m i v (Set Reference)
+  TermReferentsByShortHash :: ShortHash -> Command m i v (Set Referent)
+
+  -- the hash length needed to disambiguate any branch in the codebase
+  BranchHashLength :: Command m i v Int
+
+  BranchHashesByPrefix :: ShortBranchHash -> Command m i v (Set Branch.Hash)
+
+  ParseType :: Names -> LexedSource
+            -> Command m i v (Either (Parser.Err v) (Type v Ann))
+
+  LoadSource :: SourceName -> Command m i v LoadSourceResult
+
+  Typecheck :: AmbientAbilities v
+            -> Names
+            -> SourceName
+            -> LexedSource
+            -> Command m i v (TypecheckingResult v)
+
+  TypecheckFile :: UF.UnisonFile v Ann
+                -> [Type v Ann]
+                -> Command m i v (TypecheckingResult v)
+
+  -- Evaluate all watched expressions in a UnisonFile and return
+  -- their results, keyed by the name of the watch variable. The tuple returned
+  -- has the form:
+  --   (hash, (ann, sourceTerm, evaluatedTerm, isCacheHit))
+  --
+  -- where
+  --   `hash` is the hash of the original watch expression definition
+  --   `ann` gives the location of the watch expression
+  --   `sourceTerm` is a closed term (no free vars) for the watch expression
+  --   `evaluatedTerm` is the result of evaluating that `sourceTerm`
+  --   `isCacheHit` is True if the result was computed by just looking up
+  --   in a cache
+  --
+  -- It's expected that the user of this action might add the
+  -- `(hash, evaluatedTerm)` mapping to a cache to make future evaluations
+  -- of the same watches instantaneous.
+
+  Evaluate :: PPE.PrettyPrintEnv
+           -> UF.TypecheckedUnisonFile v Ann
+           -> Command m i v (Either Runtime.Error
+                ([(v, Term v ())], Map v
+                (Ann, UF.WatchKind, Reference, Term v (), Term v (), Runtime.IsCacheHit)))
+
+  -- Evaluate a single closed definition
+  Evaluate1 :: PPE.PrettyPrintEnv -> Term v Ann -> Command m i v (Either Runtime.Error (Term v Ann))
+
+  -- Add a cached watch to the codebase
+  PutWatch :: UF.WatchKind -> Reference.Id -> Term v Ann -> Command m i v ()
+
+  -- Loads any cached watches of the given kind
+  LoadWatches :: UF.WatchKind -> Set Reference -> Command m i v [(Reference, Term v Ann)]
+
+  -- Loads a root branch from some codebase, returning `Nothing` if not found.
+  -- Any definitions in the head of the requested root that aren't in the local
+  -- codebase are copied there.
+  LoadLocalRootBranch :: Command m i v (Branch m)
+
+  -- Like `LoadLocalRootBranch`.
+  LoadLocalBranch :: Branch.Hash -> Command m i v (Branch m)
+
+  ViewRemoteBranch ::
+    RemoteNamespace -> Command m i v (Either GitError (Branch m))
+
+  -- we want to import as little as possible, so we pass the SBH/path as part
+  -- of the `RemoteNamespace`.
+  ImportRemoteBranch ::
+    RemoteNamespace -> SyncMode -> Command m i v (Either GitError (Branch m))
+
+  -- Syncs the Branch to some codebase and updates the head to the head of this causal.
+  -- Any definitions in the head of the supplied branch that aren't in the target
+  -- codebase are copied there.
+  SyncLocalRootBranch :: Branch m -> Command m i v ()
+
+  SyncRemoteRootBranch ::
+    RemoteRepo -> Branch m -> SyncMode -> Command m i v (Either GitError ())
+
+  AppendToReflog :: Text -> Branch m -> Branch m -> Command m i v ()
+
+  -- load the reflog in file (chronological) order
+  LoadReflog :: Command m i v [Reflog.Entry]
+
+  LoadTerm :: Reference.Id -> Command m i v (Maybe (Term v Ann))
+
+  -- todo: change this to take Reference and return DeclOrBuiltin
+  LoadType :: Reference.Id -> Command m i v (Maybe (Decl v Ann))
+
+  LoadTypeOfTerm :: Reference -> Command m i v (Maybe (Type v Ann))
+
+  PutTerm :: Reference.Id -> Term v Ann -> Type v Ann -> Command m i v ()
+
+  PutDecl :: Reference.Id -> Decl v Ann -> Command m i v ()
+
+  -- todo: eliminate these hopefully
+  -- (why, again? because we can know from the Reference?)
+  IsTerm :: Reference -> Command m i v Bool
+  IsType :: Reference -> Command m i v Bool
+
+  -- Get the immediate (not transitive) dependents of the given reference
+  -- This might include historical definitions not in any current path; these
+  -- should be filtered by the caller of this command if that's not desired.
+  GetDependents :: Reference -> Command m i v (Set Reference)
+
+  GetTermsOfType :: Type v Ann -> Command m i v (Set Referent)
+  GetTermsMentioningType :: Type v Ann -> Command m i v (Set Referent)
+
+  -- Execute a UnisonFile for its IO effects
+  -- todo: Execute should do some evaluation?
+  Execute :: PPE.PrettyPrintEnv -> UF.TypecheckedUnisonFile v Ann -> Command m i v (Runtime.WatchResults v Ann)
+
+  CreateAuthorInfo :: Text -> Command m i v (AuthorInfo v Ann)
+
+  RuntimeMain :: Command m i v (Type v Ann)
+  RuntimeTest :: Command m i v (Type v Ann)
+
+commandName :: Command m i v a -> String
+commandName = \case
+  Eval{}                      -> "Eval"
+  ConfigLookup{}              -> "ConfigLookup"
+  Input                       -> "Input"
+  Notify{}                    -> "Notify"
+  NotifyNumbered{}            -> "NotifyNumbered"
+  AddDefsToCodebase{}         -> "AddDefsToCodebase"
+  CodebaseHashLength          -> "CodebaseHashLength"
+  TypeReferencesByShortHash{} -> "TypeReferencesByShortHash"
+  TermReferencesByShortHash{} -> "TermReferencesByShortHash"
+  TermReferentsByShortHash{}  -> "TermReferentsByShortHash"
+  BranchHashLength            -> "BranchHashLength"
+  BranchHashesByPrefix{}      -> "BranchHashesByPrefix"
+  ParseType{}                 -> "ParseType"
+  LoadSource{}                -> "LoadSource"
+  Typecheck{}                 -> "Typecheck"
+  TypecheckFile{}             -> "TypecheckFile"
+  Evaluate{}                  -> "Evaluate"
+  Evaluate1{}                 -> "Evaluate1"
+  PutWatch{}                  -> "PutWatch"
+  LoadWatches{}               -> "LoadWatches"
+  LoadLocalRootBranch         -> "LoadLocalRootBranch"
+  LoadLocalBranch{}           -> "LoadLocalBranch"
+  ViewRemoteBranch{}          -> "ViewRemoteBranch"
+  ImportRemoteBranch{}        -> "ImportRemoteBranch"
+  SyncLocalRootBranch{}       -> "SyncLocalRootBranch"
+  SyncRemoteRootBranch{}      -> "SyncRemoteRootBranch"
+  AppendToReflog{}            -> "AppendToReflog"
+  LoadReflog                  -> "LoadReflog"
+  LoadTerm{}                  -> "LoadTerm"
+  LoadType{}                  -> "LoadType"
+  LoadTypeOfTerm{}            -> "LoadTypeOfTerm"
+  PutTerm{}                   -> "PutTerm"
+  PutDecl{}                   -> "PutDecl"
+  IsTerm{}                    -> "IsTerm"
+  IsType{}                    -> "IsType"
+  GetDependents{}             -> "GetDependents"
+  GetTermsOfType{}            -> "GetTermsOfType"
+  GetTermsMentioningType{}    -> "GetTermsMentioningType"
+  Execute{}                   -> "Execute"
+  CreateAuthorInfo{}          -> "CreateAuthorInfo"
+  RuntimeMain                 -> "RuntimeMain"
+  RuntimeTest                 -> "RuntimeTest"
+  HQNameQuery{}               -> "HQNameQuery"
+  LoadSearchResults{}         -> "LoadSearchResults"
+  GetDefinitionsBySuffixes{}  -> "GetDefinitionsBySuffixes"
+  FindShallow{}               -> "FindShallow"

@@ -28,6 +28,9 @@ Other sources of language data (currently in lang2/):
   - https://github.com/purescript/purescript
   - https://github.com/sdiehl/wiwinwlh
   - https://github.com/exercism/haskell
+  - https://github.com/unisonweb/unison
+  - https://github.com/caiorss/Functional-Programming
+  - https://github.com/hadolint/hadolint
   
 - JavaScript
   - https://github.com/freeCodeCamp/freeCodeCamp

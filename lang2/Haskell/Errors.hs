@@ -1,24 +1,83 @@
-import Control.Monad.Except
-import Control.Monad.Identity
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-data Exception
-  = Failure String
-  | GenericFailure
-  deriving (Show)
+module Unison.Server.Errors where
 
-type ErrMonad a = ExceptT Exception Identity a
+import Data.Set (Set)
+import qualified Data.Set as Set
+import qualified Data.Text.Lazy as Text
+import qualified Data.Text.Lazy.Encoding as Text
+import Servant (ServerError (..), err400, err404, err500)
+import qualified Unison.Codebase as Codebase
+import qualified Unison.Codebase.Path as Path
+import qualified Unison.Codebase.ShortBranchHash as SBH
+import qualified Unison.Reference as Reference
+import qualified Unison.Server.Backend as Backend
+import Unison.Server.Types
+  ( HashQualifiedName,
+    munge,
+    mungeShow,
+    mungeString,
+  )
 
-example :: Int -> Int -> ErrMonad Int
-example x y = do
-  case y of
-    0 -> throwError $ Failure "division by zero"
-    x -> return $ x `div` y
+badHQN :: HashQualifiedName -> ServerError
+badHQN hqn = err400
+  { errBody = Text.encodeUtf8 (Text.fromStrict hqn)
+              <> " is not a well-formed name, hash, or hash-qualified name. "
+              <> "I expected something like `foo`, `#abc123`, or `foo#abc123`."
+  }
 
-runFail :: ErrMonad a -> Either Exception a
-runFail = runIdentity . runExceptT
+backendError :: Backend.BackendError -> ServerError
+backendError = \case
+  Backend.NoSuchNamespace n ->
+    noSuchNamespace . Path.toText $ Path.unabsolute n
+  Backend.BadRootBranch e -> rootBranchError e
+  Backend.NoBranchForHash h ->
+    noSuchNamespace . Text.toStrict . Text.pack $ show h
+  Backend.CouldntExpandBranchHash h ->
+    noSuchNamespace . Text.toStrict . Text.pack $ show h
+  Backend.AmbiguousBranchHash sbh hashes ->
+    ambiguousNamespace (SBH.toText sbh) (Set.map SBH.toText hashes)
+  Backend.MissingSignatureForTerm r -> missingSigForTerm $ Reference.toText r
 
-example1 :: Either Exception Int
-example1 = runFail $ example 2 3
+rootBranchError :: Codebase.GetRootBranchError -> ServerError
+rootBranchError rbe = err500
+  { errBody = case rbe of
+                Codebase.NoRootBranch -> "Couldn't identify a root namespace."
+                Codebase.CouldntLoadRootBranch h ->
+                  "Couldn't load root branch " <> mungeShow h
+                Codebase.CouldntParseRootBranch h ->
+                  "Couldn't parse root branch head " <> mungeShow h
+  }
 
-example2 :: Either Exception Int
-example2 = runFail $ example 2 0
+badNamespace :: String -> String -> ServerError
+badNamespace err namespace = err400
+  { errBody = "Malformed namespace: "
+              <> mungeString namespace
+              <> ". "
+              <> mungeString err
+  }
+
+noSuchNamespace :: HashQualifiedName -> ServerError
+noSuchNamespace namespace =
+  err404 { errBody = "The namespace " <> munge namespace <> " does not exist." }
+
+ambiguousNamespace :: HashQualifiedName -> Set HashQualifiedName -> ServerError
+ambiguousNamespace name namespaces = err400
+  { errBody = "Ambiguous namespace reference: "
+              <> munge name
+              <> ". It could refer to any of "
+              <> mungeShow (Set.toList namespaces)
+  }
+
+missingSigForTerm :: HashQualifiedName -> ServerError
+missingSigForTerm r = err500
+  { errBody = "The type signature for reference "
+              <> munge r
+              <> " is missing! "
+              <> "This means something might be wrong with the codebase, "
+              <> "or the term was deleted just now. "
+              <> "Try making the request again."
+  }

@@ -1,151 +1,90 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+module Unison.Util.Cache where
 
-module Language.PureScript.Make.Cache
-  ( ContentHash
-  , hash
-  , CacheDb
-  , CacheInfo(..)
-  , checkChanged
-  , removeModules
-  , normaliseForCache
-  ) where
-
-import Prelude
-
-import Control.Category ((>>>))
-import Control.Monad ((>=>))
-import Crypto.Hash (HashAlgorithm, Digest, SHA512)
-import qualified Crypto.Hash as Hash
-import qualified Data.Aeson as Aeson
-import Data.Align (align)
-import Data.ByteArray.Encoding (Base(Base16), convertToBase, convertFromBase)
-import qualified Data.ByteString as BS
-import Data.Map (Map)
+import Prelude hiding (lookup)
+import Unison.Prelude
+import UnliftIO (newTVarIO, modifyTVar', writeTVar, atomically, readTVar, readTVarIO)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
-import Data.Monoid (All(..))
-import Data.Set (Set)
-import Data.Text (Text)
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import Data.These (These(..))
-import Data.Time.Clock (UTCTime)
-import Data.Traversable (for)
-import qualified System.FilePath as FilePath
 
-import Language.PureScript.Names (ModuleName)
+data Cache m k v =
+  Cache { lookup :: k -> m (Maybe v)
+        , insert :: k -> v -> m ()
+        }
 
-digestToHex :: Digest a -> Text
-digestToHex = decodeUtf8 . convertToBase Base16
+-- Create a cache of unbounded size.
+cache :: (MonadIO m, Ord k) => m (Cache m k v)
+cache = do
+  t <- newTVarIO Map.empty
+  let
+    lookup k = Map.lookup k <$> readTVarIO t
+    insert k v = do
+      m <- readTVarIO t
+      case Map.lookup k m of
+        Nothing -> atomically $ modifyTVar' t (Map.insert k v)
+        _ -> pure ()
 
-digestFromHex :: forall a. HashAlgorithm a => Text -> Maybe (Digest a)
-digestFromHex =
-  encodeUtf8
-  >>> either (const Nothing) Just . convertFromBase Base16
-  >=> (Hash.digestFromByteString :: BS.ByteString -> Maybe (Digest a))
+  pure $ Cache lookup insert
 
--- | Defines the hash algorithm we use for cache invalidation of input files.
-newtype ContentHash = ContentHash
-  { unContentHash :: Digest SHA512 }
-  deriving (Show, Eq, Ord)
+nullCache :: (MonadIO m, Ord k) => m (Cache m k v)
+nullCache = pure $ Cache (const (pure Nothing)) (\_ _ -> pure ())
 
-instance Aeson.ToJSON ContentHash where
-  toJSON = Aeson.toJSON . digestToHex . unContentHash
+-- Create a cache of bounded size. Once the cache
+-- reaches a size of `maxSize`, older unused entries
+-- are evicted from the cache. Unlike LRU caching,
+-- where cache hits require updating LRU info,
+-- cache hits here are read-only and contention free.
+semispaceCache :: (MonadIO m, Ord k) => Word -> m (Cache m k v)
+semispaceCache 0 = nullCache
+semispaceCache maxSize = do
+  -- Analogous to semispace GC, keep 2 maps: gen0 and gen1
+  -- `insert k v` is done in gen0
+  --   if full, gen1 = gen0; gen0 = Map.empty
+  -- `lookup k` is done in gen0; then gen1
+  --   if found in gen0, return immediately
+  --   if found in gen1, `insert k v`, then return
+  -- Thus, older keys not recently looked up are forgotten
+  gen0 <- newTVarIO Map.empty
+  gen1 <- newTVarIO Map.empty
+  let
+    lookup k = readTVarIO gen0 >>= \m0 ->
+      case Map.lookup k m0 of
+        Nothing -> readTVarIO gen1 >>= \m1 ->
+          case Map.lookup k m1 of
+            Nothing -> pure Nothing
+            Just v -> insert k v $> Just v
+        just -> pure just
+    insert k v = atomically $ do
+      modifyTVar' gen0 (Map.insert k v)
+      m0 <- readTVar gen0
+      when (fromIntegral (Map.size m0) >= maxSize) $ do
+        writeTVar gen1 m0
+        writeTVar gen0 Map.empty
+  pure $ Cache lookup insert
 
-instance Aeson.FromJSON ContentHash where
-  parseJSON x = do
-    str <- Aeson.parseJSON x
-    case digestFromHex str of
-      Just digest ->
-        pure $ ContentHash digest
-      Nothing ->
-        fail "Unable to decode ContentHash"
+-- Cached function application: if a key `k` is not in the cache,
+-- calls `f` and inserts `f k` results in the cache.
+apply :: Monad m => Cache m k v -> (k -> m v) -> k -> m v
+apply c f k = lookup c k >>= \case
+  Just v -> pure v
+  Nothing -> do
+    v <- f k
+    insert c k v
+    pure v
 
-hash :: BS.ByteString -> ContentHash
-hash = ContentHash . Hash.hash
-
-type CacheDb = Map ModuleName CacheInfo
-
--- | A CacheInfo contains all of the information we need to store about a
--- particular module in the cache database.
-newtype CacheInfo = CacheInfo
-  { unCacheInfo :: Map FilePath (UTCTime, ContentHash) }
-  deriving stock (Show)
-  deriving newtype (Eq, Ord, Semigroup, Monoid, Aeson.FromJSON, Aeson.ToJSON)
-
--- | Given a module name, and a map containing the associated input files
--- together with current metadata i.e. timestamps and hashes, check whether the
--- input files have changed, based on comparing with the database stored in the
--- monadic state.
+-- Cached function application which only caches values for
+-- which `f k` is non-empty. For instance, if `g` is `Maybe`,
+-- and `f x` returns `Nothing`, this won't be cached.
 --
--- The CacheInfo in the return value should be stored in the cache for future
--- builds.
---
--- The Bool in the return value indicates whether it is safe to use existing
--- build artifacts for this module, at least based on the timestamps and hashes
--- of the module's input files.
---
--- If the timestamps are the same as those in the database, assume the file is
--- unchanged, and return True without checking hashes.
---
--- If any of the timestamps differ from what is in the database, check the
--- hashes of those files. In this case, update the database with any changed
--- timestamps and hashes, and return True if and only if all of the hashes are
--- unchanged.
-checkChanged
-  :: Monad m
-  => CacheDb
-  -> ModuleName
-  -> FilePath
-  -> Map FilePath (UTCTime, m ContentHash)
-  -> m (CacheInfo, Bool)
-checkChanged cacheDb mn basePath currentInfo = do
-
-  let dbInfo = unCacheInfo $ fromMaybe mempty (Map.lookup mn cacheDb)
-  (newInfo, isUpToDate) <-
-    fmap mconcat $
-      for (Map.toList (align dbInfo currentInfo)) $ \(normaliseForCache basePath -> fp, aligned) -> do
-        case aligned of
-          This _ -> do
-            -- One of the input files listed in the cache no longer exists;
-            -- remove that file from the cache and note that the module needs
-            -- rebuilding
-            pure (Map.empty, All False)
-          That (timestamp, getHash) -> do
-            -- The module has a new input file; add it to the cache and
-            -- note that the module needs rebuilding.
-            newHash <- getHash
-            pure (Map.singleton fp (timestamp, newHash), All False)
-          These db@(dbTimestamp, _) (newTimestamp, _) | dbTimestamp == newTimestamp -> do
-            -- This file exists both currently and in the cache database,
-            -- and the timestamp is unchanged, so we skip checking the
-            -- hash.
-            pure (Map.singleton fp db, mempty)
-          These (_, dbHash) (newTimestamp, getHash) -> do
-            -- This file exists both currently and in the cache database,
-            -- but the timestamp has changed, so we need to check the hash.
-            newHash <- getHash
-            pure (Map.singleton fp (newTimestamp, newHash), All (dbHash == newHash))
-
-  pure (CacheInfo newInfo, getAll isUpToDate)
-
--- | Remove any modules from the given set from the cache database; used when
--- they failed to build.
-removeModules :: Set ModuleName -> CacheDb -> CacheDb
-removeModules moduleNames = flip Map.withoutKeys moduleNames
-
--- | 1. Any path that is beneath our current working directory will be
--- stored as a normalised relative path
--- 2. Any path that isn't will be stored as an absolute path
-normaliseForCache :: FilePath -> FilePath -> FilePath
-normaliseForCache basePath fp =
-    if FilePath.isRelative fp then
-      FilePath.normalise fp
-    else
-      let relativePath = FilePath.makeRelative basePath fp in
-      if FilePath.isRelative relativePath then
-        FilePath.normalise relativePath
-      else
-        -- If the path is still absolute after trying to make it
-        -- relative to the base that means it is not underneath
-        -- the base path
-        FilePath.normalise fp
+-- Useful when we think that missing results for `f` may be
+-- later filled in so we don't want to cache missing results.
+applyDefined :: (Monad m, Applicative g, Traversable g)
+             => Cache m k v
+             -> (k -> m (g v))
+             -> k
+             -> m (g v)
+applyDefined c f k = lookup c k >>= \case
+  Just v -> pure (pure v)
+  Nothing -> do
+    v <- f k
+    -- only populate the cache if f returns a non-empty result
+    for_ v $ \v -> insert c k v
+    pure v

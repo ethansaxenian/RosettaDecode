@@ -1,38 +1,35 @@
-example1 :: Maybe Int
-example1 = do
-  a <- Just 3 -- Bind 3 to name a
-  b <- Just 4 -- Bind 4 to name b
-  return $ a + b -- Evaluate (a + b), then use 'return' to ensure
-      -- the result is in the Maybe monad in order to
-      -- satisfy the type signature
-      -- Just 7
 
-desugared1 :: Maybe Int
-desugared1 = Just 3 >>= \a -> -- This example is the desugared
-  Just 4 >>= \b -> -- equivalent to example1
-    return $ a + b
+-- file: ch14/Maybe.hs 
 
--- Just 7
+data Maybe a = Nothing | Just a 
 
-example2 :: Maybe Int
-example2 = do
-  a <- Just 3 -- Bind 3 to name a
-  b <- Nothing -- Bind Nothing to name b
-  return $ a + b
+instance Monad Maybe where
+  
+ -- chain 
+ (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+ Just x    >>= fn = fn x
+ Nothing   >>= fn = Nothing
 
--- Nothing
+ -- inject 
+ return :: a ->  Maybe a
+ return a = Just a 
 
--- This result might be somewhat surprising, since
--- addition within the Maybe monad can actually
--- return 'Nothing'. This result occurs because one
--- of the values, Nothing, indicates computational
--- failure. Since the computation failed at one
--- step within the process, the whole computation
--- fails, leaving us with 'Nothing' as the final
--- result.
+ ---
+ (>>) :: Maybe a -> Maybe b -> Maybe b
+ Just _   >> mb = mb
+ Nothing  >> mb = Nothing
+ 
+ fail _ = Nothing 
 
-desugared2 :: Maybe Int
-desugared2 = Just 3 >>= \a -> -- This example is the desugared
-  Nothing >>= \b -> -- equivalent to example2
-    return $ a + b
--- Nothing
+
+
+{- Function that executes the Maybe monad. If the computation 
+   fails the third parameter is Nothing it returns the value n, 
+   on  the other hand if the computation succeeds the third
+   parameter is (Just x) it applies the function (a -> b) to the
+   value x wrapped in the monad. 
+
+-}
+maybe :: b -> (a -> b ) -> Maybe a -> b
+maybe n _ Nothing  = n 
+maybe _ f (Just x) = f x

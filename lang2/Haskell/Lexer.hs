@@ -1,717 +1,804 @@
-module Language.PureScript.CST.Lexer
-  ( lenient
-  , lex
-  , lexTopLevel
-  , lexWithState
-  , isUnquotedKey
-  ) where
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 
-import Prelude hiding (lex, exp, exponent, lines)
-
-import Control.Monad (join)
-import qualified Data.Char as Char
-import qualified Data.DList as DList
-import Data.Foldable (foldl')
-import Data.Functor (($>))
-import qualified Data.Scientific as Sci
-import Data.String (fromString)
-import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.PureScript as Text
-import Language.PureScript.CST.Errors
-import Language.PureScript.CST.Monad hiding (token)
-import Language.PureScript.CST.Layout
-import Language.PureScript.CST.Positions
-import Language.PureScript.CST.Types
-
--- | Stops at the first lexing error and replaces it with TokEof. Otherwise,
--- the parser will fail when it attempts to draw a lookahead token.
-lenient :: [LexResult] -> [LexResult]
-lenient = go
+module Unison.Lexer (
+  Token(..), Line, Column, Err(..), Pos(..), Lexeme(..),
+  lexer, simpleWordyId, simpleSymbolyId,
+  line, column,
+  escapeChars,
+  debugLex', debugLex'', debugLex''', showEscapeChar, touches,
+  -- todo: these probably don't belong here
+  wordyIdChar, wordyIdStartChar,
+  wordyId, symbolyId, wordyId0, symbolyId0)
   where
-  go [] = []
-  go (Right a : as) = Right a : go as
-  go (Left (st, _) : _) = do
-    let
-      pos = lexPos st
-      ann = TokenAnn (SourceRange pos pos) (lexLeading st) []
-    [Right (SourceToken ann TokEof)]
 
--- | Lexes according to root layout rules.
-lex :: Text -> [LexResult]
-lex src = do
-  let (leading, src') = comments src
-  lexWithState $ LexState
-    { lexPos = advanceLeading (SourcePos 1 1) leading
-    , lexLeading = leading
-    , lexSource = src'
-    , lexStack = [(SourcePos 0 0, LytRoot)]
-    }
+import Unison.Prelude
 
--- | Lexes according to top-level declaration context rules.
-lexTopLevel :: Text -> [LexResult]
-lexTopLevel src = do
-  let
-    (leading, src') = comments src
-    lexPos = advanceLeading (SourcePos 1 1) leading
-    hd = Right $ lytToken lexPos TokLayoutStart
-    tl = lexWithState $ LexState
-      { lexPos = lexPos
-      , lexLeading = leading
-      , lexSource = src'
-      , lexStack = [(lexPos, LytWhere), (SourcePos 0 0, LytRoot)]
-      }
-  hd : tl
+import           Control.Lens.TH (makePrisms)
+import qualified Control.Monad.State as S
+import           Data.Char
+import           Data.List
+import qualified Data.List.NonEmpty as Nel
+import Unison.Util.Monoid (intercalateMap)
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+import           GHC.Exts (sortWith)
+import           Text.Megaparsec.Error (ShowToken(..))
+import           Unison.ShortHash ( ShortHash )
+import qualified Unison.ShortHash as SH
+import qualified Text.Megaparsec as P
+import qualified Text.Megaparsec.Error as EP
+import qualified Text.Megaparsec.Char as CP
+import Text.Megaparsec.Char (char)
+import qualified Text.Megaparsec.Char.Lexer as LP
+import qualified Unison.Util.Bytes as Bytes
 
--- | Lexes according to some LexState.
-lexWithState :: LexState -> [LexResult]
-lexWithState = go
+type Line = Int
+type Column = Int
+data Pos = Pos {-# Unpack #-} !Line {-# Unpack #-} !Column deriving (Eq,Ord,Show)
+type BlockName = String
+type Layout = [(BlockName,Column)]
+
+data Token a = Token {
+  payload :: a,
+  start :: !Pos,
+  end :: !Pos
+} deriving (Eq, Ord, Show, Functor)
+
+data ParsingEnv =
+  ParsingEnv { layout :: !Layout -- layout stack
+             , opening :: Maybe BlockName } -- `Just b` if a block of type `b` is being opened
+
+type P = P.ParsecT (Token Err) String (S.State ParsingEnv)
+
+data Err
+  = InvalidWordyId String
+  | InvalidSymbolyId String
+  | InvalidShortHash String
+  | InvalidBytesLiteral String
+  | InvalidHexLiteral
+  | InvalidOctalLiteral
+  | Both Err Err
+  | MissingFractional String -- ex `1.` rather than `1.04`
+  | MissingExponent String -- ex `1e` rather than `1e3`
+  | UnknownLexeme
+  | TextLiteralMissingClosingQuote String
+  | InvalidEscapeCharacter Char
+  | LayoutError
+  | CloseWithoutMatchingOpen String String -- open, close
+  | Opaque String -- Catch-all failure type, generally these will be
+                  -- automatically generated errors coming from megaparsec
+                  -- Try to avoid this for common errors a user is likely to see.
+  deriving (Eq,Ord,Show) -- richer algebra
+
+-- Design principle:
+--   `[Lexeme]` should be sufficient information for parsing without
+--   further knowledge of spacing or indentation levels
+--   any knowledge of comments
+data Lexeme
+  = Open String      -- start of a block
+  | Semi IsVirtual   -- separator between elements of a block
+  | Close            -- end of a block
+  | Reserved String  -- reserved tokens such as `{`, `(`, `type`, `of`, etc
+  | Textual String   -- text literals, `"foo bar"`
+  | Character Char   -- character literals, `?X`
+  | Backticks String (Maybe ShortHash) -- an identifier in backticks
+  | WordyId String   (Maybe ShortHash) -- a (non-infix) identifier
+  | SymbolyId String (Maybe ShortHash) -- an infix identifier
+  | Blank String     -- a typed hole or placeholder
+  | Numeric String   -- numeric literals, left unparsed
+  | Bytes Bytes.Bytes -- bytes literals
+  | Hash ShortHash   -- hash literals
+  | Err Err
+  deriving (Eq,Show,Ord)
+
+type IsVirtual = Bool -- is it a virtual semi or an actual semi?
+
+makePrisms ''Lexeme
+
+space :: P ()
+space = LP.space CP.space1 (fold <|> LP.skipLineComment "--")
+                           (LP.skipBlockCommentNested "{-" "-}")
   where
-  Parser lexK =
-    tokenAndComments
+  fold = P.try $ lit "---" *> P.takeRest *> pure ()
 
-  go state@(LexState {..}) =
-    lexK lexSource onError onSuccess
+lit :: String -> P String
+lit = P.try . LP.symbol (pure ())
+
+token :: P Lexeme -> P [Token Lexeme]
+token = token' (\a start end -> [Token a start end])
+
+pos :: P Pos
+pos = do
+  p <- P.getPosition
+  pure $ Pos (P.unPos (P.sourceLine p)) (P.unPos (P.sourceColumn p))
+
+-- Token parser: strips trailing whitespace and comments after a
+-- successful parse, and also takes care of emitting layout tokens
+-- (such as virtual semicolons and closing tokens).
+token' :: (a -> Pos -> Pos -> [Token Lexeme]) -> P a -> P [Token Lexeme]
+token' tok p = LP.lexeme space (token'' tok p)
+
+-- Committed failure
+err :: Pos -> Err -> P x
+err start t = do
+  stop <- pos
+  -- This consumes a character and therefore produces committed failure,
+  -- so `err s t <|> p2` won't try `p2`
+  _ <- void CP.anyChar <|> P.eof
+  P.customFailure (Token t start stop)
+
+{-
+commitAfter :: P a -> (a -> P b) -> P b
+commitAfter a f = do
+  a <- P.try a
+  f a
+-}
+
+commitAfter2 :: P a -> P b -> (a -> b -> P c) -> P c
+commitAfter2 a b f = do
+  (a,b) <- P.try $ liftA2 (,) a b
+  f a b
+
+-- Token parser implementation which leaves trailing whitespace and comments
+-- but does emit layout tokens such as virtual semicolons and closing tokens.
+token'' :: (a -> Pos -> Pos -> [Token Lexeme]) -> P a -> P [Token Lexeme]
+token'' tok p = do
+  start <- pos
+  -- We save the current state so we can backtrack the state if `p` fails.
+  env <- S.get
+  layoutToks <- case opening env of
+    -- If we're opening a block named b, we push (b, currentColumn) onto
+    -- the layout stack. Example:
+    --
+    --   blah = cases
+    --       {- A comment -}
+    --          -- A one-line comment
+    --     0 -> "hi"
+    --     1 -> "bye"
+    --
+    -- After the `cases` token, the state will be opening = Just "cases",
+    -- meaning the parser is searching for the next non-whitespace/comment
+    -- character to determine the leftmost column of the `cases` block.
+    -- That will be the column of the `0`.
+    Just blockname ->
+      -- special case - handling of empty blocks, as in:
+      --   foo =
+      --   bar = 42
+      if blockname == "=" && column start <= top l && not (null l) then do
+        S.put (env { layout = (blockname, column start + 1) : l, opening = Nothing })
+        pops start
+      else [] <$ S.put (env { layout = layout', opening = Nothing })
+      where layout' = (blockname, column start) : l
+            l = layout env
+    -- If we're not opening a block, we potentially pop from
+    -- the layout stack and/or emit virtual semicolons.
+    Nothing -> pops start
+  a <- p <|> (S.put env >> fail "resetting state")
+  end <- pos
+  pure $ layoutToks ++ tok a start end
+  where
+    pops :: Pos -> P [Token Lexeme]
+    pops p = do
+      env <- S.get
+      let l = layout env
+      if top l == column p then pure [Token (Semi True) p p]
+      else if column p > top l || topHasClosePair l then pure []
+      else if column p < top l then
+        -- traceShow (l, p) $
+        S.put (env { layout = pop l }) >> ((Token Close p p :) <$> pops p)
+      else error "impossible"
+
+    topHasClosePair :: Layout -> Bool
+    topHasClosePair [] = False
+    topHasClosePair ((name,_):_) = name `elem` ["{", "(", "handle", "match", "if", "then"]
+
+-- todo: implement function with same signature as the existing lexer function
+-- to set up initial state, run the parser, etc
+lexer0' :: String -> String -> [Token Lexeme]
+lexer0' scope rem =
+  case flip S.evalState env0 $ P.runParserT lexemes scope rem of
+    Left e -> case e of
+      P.FancyError _ (customErrs -> es) | not (null es) -> es
+      P.FancyError (top Nel.:| _) es ->
+        let msg = intercalateMap "\n" P.showErrorComponent es
+        in [Token (Err (Opaque msg)) (toPos top) (toPos top)]
+      P.TrivialError (top Nel.:| _) _ _ ->
+        let msg = Opaque $ EP.parseErrorPretty e
+        in [Token (Err msg) (toPos top) (toPos top)]
+    Right ts -> Token (Open scope) topLeftCorner topLeftCorner : tweak ts
+  where
+  customErrs es = [ Err <$> e | P.ErrorCustom e <- toList es ]
+  toPos (P.SourcePos _ line col) = Pos (P.unPos line) (P.unPos col)
+  env0 = ParsingEnv [] (Just scope)
+  -- hacky postprocessing pass to do some cleanup of stuff that's annoying to
+  -- fix without adding more state to the lexer:
+  --   - 1+1 lexes as [1, +1], convert this to [1, +, 1]
+  --   - when a semi followed by a virtual semi, drop the virtual, lets you
+  --     write
+  --       foo x = action1;
+  --               2
+  --   - semi immediately after first Open is ignored
+  tweak [] = []
+  tweak (h@(payload -> Semi False):(payload -> Semi True):t) = h : tweak t
+  tweak (h@(payload -> Reserved _):t) = h : tweak t
+  tweak (t1:t2@(payload -> Numeric num):rem)
+    | notLayout t1 && touches t1 t2 && isSigned num =
+      t1 : Token (SymbolyId (take 1 num) Nothing)
+                 (start t2)
+                 (inc $ start t2)
+         : Token (Numeric (drop 1 num)) (inc $ start t2) (end t2)
+         : tweak rem
+  tweak (h:t) = h : tweak t
+  isSigned num = all (\ch -> ch == '-' || ch == '+') $ take 1 num
+
+infixl 2 <+>
+(<+>) :: Monoid a => P a -> P a -> P a
+p1 <+> p2 = do a1 <- p1; a2 <- p2; pure (a1 <> a2)
+
+lexemes :: P [Token Lexeme]
+lexemes = P.optional space >> do
+  hd <- join <$> P.manyTill toks (P.lookAhead P.eof)
+  tl <- eof
+  pure $ hd <> tl
+  where
+  toks = doc <|> token numeric <|> token character <|> reserved <|> token symbolyId
+     <|> token blank <|> token wordyId
+     <|> (asum . map token) [ semi, textual, backticks, hash ]
+
+  wordySep c = isSpace c || not (isAlphaNum c)
+  positioned p = do start <- pos; a <- p; stop <- pos; pure (start, a, stop)
+
+  tok :: P a -> P [Token a]
+  tok p = do (start,a,stop) <- positioned p
+             pure [Token a start stop]
+
+  doc :: P [Token Lexeme]
+  doc = open <+> (CP.space *> fmap fixup body) <+> (close <* space) where
+    open = token'' (\t _ _ -> t) $ tok (Open <$> lit "[:")
+    close = tok (Close <$ lit ":]")
+    at = lit "@"
+    -- this removes some trailing whitespace from final textual segment
+    fixup [] = []
+    fixup (Token (Textual (reverse -> txt)) start stop : [])
+      = [Token (Textual txt') start stop]
+      where txt' = reverse (dropWhile (\c -> isSpace c && not (c == '\n')) txt)
+    fixup (h:t) = h : fixup t
+
+    body :: P [Token Lexeme]
+    body = txt <+> (atk <|> pure [])
+      where
+        ch = (":]" <$ lit "\\:]") <|> ("@" <$ lit "\\@") <|> (pure <$> CP.anyChar)
+        txt = tok (Textual . join <$> P.manyTill ch (P.lookAhead sep))
+        sep = void at <|> void close
+        ref = at *> (tok wordyId <|> tok symbolyId <|> docTyp)
+        atk = (ref <|> docTyp) <+> body
+        docTyp = do
+          _ <- lit "["
+          typ <- tok (P.manyTill CP.anyChar (P.lookAhead (lit "]")))
+          _ <- lit "]" *> CP.space
+          t <- tok wordyId <|> tok symbolyId
+          pure $ (fmap Reserved <$> typ) <> t
+
+  blank = separated wordySep $
+    char '_' *> P.optional wordyIdSeg <&> (Blank . fromMaybe "")
+
+  semi = char ';' $> Semi False
+  textual = Textual <$> quoted
+  quoted = char '"' *> P.manyTill (LP.charLiteral <|> sp) (char '"')
+           where sp = lit "\\s" $> ' '
+  character = Character <$> (char '?' *> (spEsc <|> LP.charLiteral))
+              where spEsc = P.try (char '\\' *> char 's' $> ' ')
+  backticks = tick <$> (char '`' *> wordyId <* char '`')
+              where tick (WordyId n sh) = Backticks n sh
+                    tick t = t
+
+  wordyId :: P Lexeme
+  wordyId = P.label wordyMsg . P.try $ do
+    dot <- P.optional (lit ".")
+    segs <- P.sepBy1 wordyIdSeg (P.try (char '.' <* P.lookAhead (CP.satisfy wordyIdChar)))
+    shorthash <- P.optional shorthash
+    pure $ WordyId (fromMaybe "" dot <> intercalate "." segs) shorthash
     where
-    onError lexSource' err = do
-      let
-        len1 = Text.length lexSource
-        len2 = Text.length lexSource'
-        chunk = Text.take (max 0 (len1 - len2)) lexSource
-        chunkDelta = textDelta chunk
-        pos = applyDelta lexPos chunkDelta
-      pure $ Left
-        ( state { lexSource = lexSource' }
-        , ParserErrorInfo (SourceRange pos $ applyDelta pos (0, 1)) [] lexStack err
-        )
+      wordyMsg = "identifier (ex: abba1, snake_case, .foo.bar#xyz, or 🌻)"
 
-    onSuccess _ (TokEof, _) =
-      Right <$> unwindLayout lexPos lexLeading lexStack
-    onSuccess lexSource' (tok, (trailing, lexLeading')) = do
-      let
-        endPos = advanceToken lexPos tok
-        lexPos' = advanceLeading (advanceTrailing endPos trailing) lexLeading'
-        tokenAnn = TokenAnn
-          { tokRange = SourceRange lexPos endPos
-          , tokLeadingComments = lexLeading
-          , tokTrailingComments = trailing
-          }
-        (lexStack', toks) =
-          insertLayout (SourceToken tokenAnn tok) lexPos' lexStack
-        state' = LexState
-          { lexPos = lexPos'
-          , lexLeading = lexLeading'
-          , lexSource = lexSource'
-          , lexStack = lexStack'
-          }
-      go2 state' toks
+  symbolyId :: P Lexeme
+  symbolyId = P.label symbolMsg . P.try $ do
+    dot <- P.optional (lit ".")
+    segs <- P.optional segs
+    shorthash <- P.optional shorthash
+    case (dot, segs) of
+      (_, Just segs)      -> pure $ SymbolyId (fromMaybe "" dot <> segs) shorthash
+      -- a single . or .#somehash is parsed as a symboly id
+      (Just dot, Nothing) -> pure $ SymbolyId dot shorthash
+      (Nothing, Nothing)  -> fail symbolMsg
+    where
+    segs = symbolyIdSeg <|> (wordyIdSeg <+> lit "." <+> segs)
 
-  go2 state [] = go state
-  go2 state (t : ts) = Right t : go2 state ts
+  symbolMsg = "operator (ex: +, Float./, List.++#xyz)"
 
-type Lexer = ParserM ParserErrorType Text
+  symbolyIdSeg :: P String
+  symbolyIdSeg = do
+    id <- P.takeWhile1P (Just symbolMsg) symbolyIdChar
+    if Set.member id reservedOperators then fail "reserved operator"
+    else pure id
 
-{-# INLINE next #-}
-next :: Lexer ()
-next = Parser $ \inp _ ksucc ->
-  ksucc (Text.drop 1 inp) ()
+  wordyIdSeg :: P String
+  -- wordyIdSeg = litSeg <|> (P.try do -- todo
+  wordyIdSeg = do
+    ch <- CP.satisfy wordyIdStartChar
+    rest <- P.many (CP.satisfy wordyIdChar)
+    when (Set.member (ch : rest) keywords) $ fail "identifier segment can't be a keyword"
+    pure (ch : rest)
 
-{-# INLINE nextWhile #-}
-nextWhile :: (Char -> Bool) -> Lexer Text
-nextWhile p = Parser $ \inp _ ksucc -> do
-  let (chs, inp') = Text.span p inp
-  ksucc inp' chs
+  {-
+  -- ``an-identifier-with-dashes``
+  -- ```an identifier with spaces```
+  litSeg :: P String
+  litSeg = P.try $ do
+    ticks1 <- lit "``"
+    ticks2 <- P.many (char '`')
+    let ticks = ticks1 <> ticks2
+    let escTick = lit "\\`" $> '`'
+    P.manyTill (LP.charLiteral <|> escTick) (lit ticks)
+  -}
 
-{-# INLINE nextWhile' #-}
-nextWhile' :: Int -> (Char -> Bool) -> Lexer Text
-nextWhile' n p = Parser $ \inp _ ksucc -> do
-  let (chs, inp') = Text.spanUpTo n p inp
-  ksucc inp' chs
+  hashMsg = "hash (ex: #af3sj3)"
+  shorthash = P.label hashMsg $ do
+    P.lookAhead (char '#')
+    -- `foo#xyz` should parse
+    (start, potentialHash, _) <- positioned $ P.takeWhile1P (Just hashMsg) (\ch -> not (isSep ch) && ch /= '`')
+    case SH.fromString potentialHash of
+      Nothing -> err start (InvalidShortHash potentialHash)
+      Just sh -> pure sh
 
-{-# INLINE peek #-}
-peek :: Lexer (Maybe Char)
-peek = Parser $ \inp _ ksucc ->
-  if Text.null inp
-    then ksucc inp Nothing
-    else ksucc inp $ Just $ Text.head inp
+  separated :: (Char -> Bool) -> P a -> P a
+  separated ok p = P.try $ p <* P.lookAhead (void (CP.satisfy ok) <|> P.eof)
 
-{-# INLINE restore #-}
-restore :: (ParserErrorType -> Bool) -> Lexer a -> Lexer a
-restore p (Parser k) = Parser $ \inp kerr ksucc ->
-  k inp (\inp' err -> kerr (if p err then inp else inp') err) ksucc
+  numeric = bytes <|> otherbase <|> float <|> intOrNat
+    where
+      intOrNat = P.try $ num <$> sign <*> LP.decimal
+      float = do
+        _ <- P.try (P.lookAhead (sign >> LP.decimal >> (char '.' <|> char 'e' <|> char 'E'))) -- commit after this
+        start <- pos
+        sign <- fromMaybe "" <$> sign
+        base <- P.takeWhile1P (Just "base") isDigit
+        decimals <- P.optional $ let
+          missingFractional = err start (MissingFractional $ base <> ".")
+          in liftA2 (<>) (lit ".") (P.takeWhile1P (Just "decimals") isDigit <|> missingFractional)
+        exp <- P.optional $ do
+          e <- map toLower <$> (lit "e" <|> lit "E")
+          sign <- fromMaybe "" <$> optional (lit "+" <|> lit "-")
+          let missingExp = err start (MissingExponent $ base <> fromMaybe "" decimals <> e <> sign)
+          exp <- P.takeWhile1P (Just "exponent") isDigit <|> missingExp
+          pure $ e <> sign <> exp
+        pure $ Numeric (sign <> base <> fromMaybe "" decimals <> fromMaybe "" exp)
 
-tokenAndComments :: Lexer (Token, ([Comment void], [Comment LineFeed]))
-tokenAndComments = (,) <$> token <*> breakComments
+      bytes = do
+        start <- pos
+        _ <- lit "0xs"
+        s <- map toLower <$> P.takeWhileP (Just "hexidecimal character") isAlphaNum
+        case Bytes.fromBase16 $ Bytes.fromWord8s (fromIntegral . ord <$> s) of
+          Left _ -> err start (InvalidBytesLiteral $ "0xs" <> s)
+          Right bs -> pure (Bytes bs)
+      otherbase = octal <|> hex
+      octal = do start <- pos
+                 commitAfter2 sign (lit "0o") $ \sign _ ->
+                   fmap (num sign) LP.octal <|> err start InvalidOctalLiteral
+      hex = do start <- pos
+               commitAfter2 sign (lit "0x") $ \sign _ ->
+                 fmap (num sign) LP.hexadecimal <|> err start InvalidHexLiteral
 
-comments :: Text -> ([Comment LineFeed], Text)
-comments = \src -> k src (\_ _ -> ([], src)) (\inp (a, b) -> (a <> b, inp))
+      num :: Maybe String -> Integer -> Lexeme
+      num sign n = Numeric (fromMaybe "" sign <> show n)
+      sign = P.optional (lit "+" <|> lit "-")
+
+  hash = Hash <$> P.try shorthash
+
+  reserved :: P [Token Lexeme]
+  reserved =
+    token' (\ts _ _ -> ts) $
+    braces <|> parens <|> delim <|> delayOrForce <|> keywords <|> layoutKeywords
+    where
+    keywords = symbolyKw ":" <|> symbolyKw "@" <|> symbolyKw "||" <|> symbolyKw "|" <|> symbolyKw "&&"
+           <|> wordyKw "true" <|> wordyKw "false"
+           <|> wordyKw "use" <|> wordyKw "forall" <|> wordyKw "∀"
+           <|> wordyKw "termLink" <|> wordyKw "typeLink"
+
+    wordyKw s = separated wordySep (kw s)
+    symbolyKw s = separated (not . symbolyIdChar) (kw s)
+
+    kw :: String -> P [Token Lexeme]
+    kw s = positioned (lit s) <&> \(pos1,s,pos2) -> [Token (Reserved s) pos1 pos2]
+
+    layoutKeywords :: P [Token Lexeme]
+    layoutKeywords =
+      ifElse <|> withKw <|> openKw "match" <|> openKw "handle" <|> typ <|> arr <|> eq <|>
+      openKw "cases" <|> openKw "where" <|> openKw "let"
+      where
+        ifElse = openKw "if" <|> close' (Just "then") ["if"] "then" <|> close' (Just "else") ["then"] "else"
+        typ = openKw1 "unique" <|> openTypeKw1 "type" <|> openTypeKw1 "ability"
+
+        withKw = do
+          [Token _ pos1 pos2] <- wordyKw "with"
+          env <- S.get
+          let l = layout env
+          case findClose ["handle","match"] l of
+            Nothing -> err pos1 (CloseWithoutMatchingOpen msgOpen "'with'")
+                       where msgOpen = "'handle' or 'match'"
+            Just (withBlock, n) -> do
+              let b = withBlock <> "-with"
+              S.put (env { layout = drop n l, opening = Just b })
+              let opens = [Token (Open "with") pos1 pos2]
+              pure $ replicate n (Token Close pos1 pos2) ++ opens
+
+        -- In `unique type` and `unique ability`, only the `unique` opens a layout block,
+        -- and `ability` and `type` are just keywords.
+        openTypeKw1 t = do
+          b <- S.gets (topBlockName . layout)
+          case b of Just "unique" -> wordyKw t
+                    _             -> openKw1 t
+
+        -- layout keyword which bumps the layout column by 1, rather than looking ahead
+        -- to the next token to determine the layout column
+        openKw1 :: String -> P [Token Lexeme]
+        openKw1 kw = do
+          (pos0, kw, pos1) <- positioned $ lit kw
+          S.modify (\env -> env { layout = (kw, column $ inc pos0) : layout env })
+          pure [Token (Open kw) pos0 pos1]
+
+        eq = do
+          [Token _ start end] <- symbolyKw "="
+          env <- S.get
+          case topBlockName (layout env) of
+            -- '=' does not open a layout block if within a type declaration
+            Just t | t == "type" || t == "unique" -> pure [Token (Reserved "=") start end]
+            Just _ -> S.put (env { opening = Just "=" }) >> pure [Token (Open "=") start end]
+            _ -> err start LayoutError
+
+        arr = do
+          [Token _ start end] <- symbolyKw "->"
+          env <- S.get
+          -- -> introduces a layout block if we're inside a `match with` or `cases`
+          case topBlockName (layout env) of
+            Just match | match == "match-with" || match == "cases" -> do
+              S.put (env { opening = Just "->" })
+              pure [Token (Open "->") start end]
+            _ -> pure [Token (Reserved "->") start end]
+
+    braces = open "{" <|> close ["{"] "}"
+    parens = open "(" <|> close ["("] ")"
+
+    delim = P.try $ do
+      ch <- CP.satisfy (\ch -> ch /= ';' && Set.member ch delimiters)
+      pos <- pos
+      pure [Token (Reserved [ch]) pos (inc pos)]
+
+    delayOrForce = separated ok $ do
+      (start, op, end) <- positioned $ CP.satisfy isDelayOrForce
+      pure [Token (Reserved [op]) start end]
+      where ok c = isDelayOrForce c || isSpace c || isAlphaNum c || Set.member c delimiters
+
+    open :: String -> P [Token Lexeme]
+    open b = do
+      (start, _, end) <- positioned $ lit b
+      env <- S.get
+      S.put (env { opening = Just b })
+      pure [Token (Open b) start end]
+
+    openKw :: String -> P [Token Lexeme]
+    openKw s = separated wordySep $ do
+      (pos1, s, pos2) <- positioned $ lit s
+      env <- S.get
+      S.put (env { opening = Just s })
+      pure [Token (Open s) pos1 pos2]
+
+    close = close' Nothing
+
+    close' :: Maybe String -> [String] -> String -> P [Token Lexeme]
+    close' reopenBlockname open close = do
+      (pos1, close, pos2) <- positioned $ lit close
+      env <- S.get
+      case findClose open (layout env) of
+        Nothing -> err pos1 (CloseWithoutMatchingOpen msgOpen (quote close))
+          where msgOpen = intercalate " or " (quote <$> open)
+                quote s = "'" <> s <> "'"
+        Just (_, n) -> do
+          S.put (env { layout = drop n (layout env), opening = reopenBlockname })
+          let opens = maybe [] (const $ [Token (Open close) pos1 pos2]) reopenBlockname
+          pure $ replicate n (Token Close pos1 pos2) ++ opens
+
+    findClose :: [String] -> Layout -> Maybe (String, Int)
+    findClose _ [] = Nothing
+    findClose s ((h,_):tl) = if h `elem` s then Just (h, 1) else fmap (1+) <$> findClose s tl
+
+  eof :: P [Token Lexeme]
+  eof = P.try $ do
+    p <- P.eof >> pos
+    n <- maybe 0 (const 1) <$> S.gets opening
+    l <- S.gets layout
+    pure $ replicate (length l + n) (Token Close p p)
+
+simpleWordyId :: String -> Lexeme
+simpleWordyId = flip WordyId Nothing
+
+simpleSymbolyId :: String -> Lexeme
+simpleSymbolyId = flip SymbolyId Nothing
+
+notLayout :: Token Lexeme -> Bool
+notLayout t = case payload t of
+  Close -> False
+  Semi _ -> False
+  Open _ -> False
+  _ -> True
+
+line :: Pos -> Line
+line (Pos line _) = line
+
+column :: Pos -> Column
+column (Pos _ column) = column
+
+-- `True` if the tokens are adjacent, with no space separating the two
+touches :: Token a -> Token b -> Bool
+touches (end -> t) (start -> t2) =
+  line t == line t2 && column t == column t2
+
+top :: Layout -> Column
+top []    = 1
+top ((_,h):_) = h
+
+-- todo: make Layout a NonEmpty
+topBlockName :: Layout -> Maybe BlockName
+topBlockName [] = Nothing
+topBlockName ((name,_):_) = Just name
+
+pop :: [a] -> [a]
+pop = drop 1
+
+topLeftCorner :: Pos
+topLeftCorner = Pos 1 1
+
+data T a = T a [T a] [a] | L a deriving (Functor, Foldable, Traversable)
+
+headToken :: T a -> a
+headToken (T a _ _) = a
+headToken (L a) = a
+
+instance Show a => Show (T a) where
+  show (L a) = show a
+  show (T open mid close) =
+    show open ++ "\n"
+              ++ indent "  " (intercalateMap "\n" show mid) ++ "\n"
+              ++ intercalateMap "" show close
+    where
+      indent by s = by ++ (s >>= go by)
+      go by '\n' = '\n' : by
+      go _ c = [c]
+
+reorderTree :: ([T a] -> [T a]) -> T a -> T a
+reorderTree _ l@(L _) = l
+reorderTree f (T open mid close) = T open (f (reorderTree f <$> mid)) close
+
+tree :: [Token Lexeme] -> T (Token Lexeme)
+tree toks = one toks const where
+  one (open@(payload -> Open _) : ts) k = many (T open) [] ts k
+  one (t : ts) k = k (L t) ts
+  one [] k = k lastErr [] where
+    lastErr = case drop (length toks - 1) toks of
+      [] -> L (Token (Err LayoutError) topLeftCorner topLeftCorner)
+      (t : _) -> L $ t { payload = Err LayoutError }
+
+  many open acc [] k = k (open (reverse acc) []) []
+  many open acc (t@(payload -> Close) : ts) k = k (open (reverse acc) [t]) ts
+  many open acc ts k = one ts $ \t ts -> many open (t:acc) ts k
+
+stanzas :: [T (Token Lexeme)] -> [[T (Token Lexeme)]]
+stanzas = go [] where
+  go acc [] = [reverse acc]
+  go acc (t:ts) = case payload $ headToken t of
+    Semi _ -> reverse (t : acc) : go [] ts
+    _      -> go (t:acc) ts
+
+-- Moves type and effect declarations to the front of the token stream
+-- and move `use` statements to the front of each block
+reorder :: [T (Token Lexeme)] -> [T (Token Lexeme)]
+reorder = join . sortWith f . stanzas
   where
-  Parser k = breakComments
+    f [] = 3 :: Int
+    f (t : _) = case payload $ headToken t of
+      Open "type" -> 1
+      Open "unique" -> 1
+      Open "ability" -> 1
+      Reserved "use" -> 0
+      _ -> 3 :: Int
 
-breakComments :: Lexer ([Comment void], [Comment LineFeed])
-breakComments = k0 []
-  where
-  k0 acc = do
-    spaces <- nextWhile (== ' ')
-    lines  <- nextWhile isLineFeed
-    let
-      acc'
-        | Text.null spaces = acc
-        | otherwise = Space (Text.length spaces) : acc
-    if Text.null lines
-      then do
-        mbComm <- comment
-        case mbComm of
-          Just comm -> k0 (comm : acc')
-          Nothing   -> pure (reverse acc', [])
-      else
-        k1 acc' (goWs [] $ Text.unpack lines)
+lexer :: String -> String -> [Token Lexeme]
+lexer scope rem =
+  let t = tree $ lexer0' scope rem
+      -- after reordering can end up with trailing semicolon at the end of
+      -- a block, which we remove with this pass
+      fixup ((payload -> Semi _) : t@(payload -> Close) : tl) = t : fixup tl
+      fixup [] = []
+      fixup (h : t) = h : fixup t
+  in fixup . toList $ reorderTree reorder t
 
-  k1 trl acc = do
-    ws <- nextWhile (\c -> c == ' ' || isLineFeed c)
-    let acc' = goWs acc $ Text.unpack ws
-    mbComm <- comment
-    case mbComm of
-      Just comm -> k1 trl (comm : acc')
-      Nothing   -> pure (reverse trl, reverse acc')
+isDelayOrForce :: Char -> Bool
+isDelayOrForce op = op == '\''|| op == '!'
 
-  goWs a ('\r' : '\n' : ls) = goWs (Line CRLF : a) ls
-  goWs a ('\r' : ls) = goWs (Line CRLF : a) ls
-  goWs a ('\n' : ls) = goWs (Line LF : a) ls
-  goWs a (' ' : ls) = goSpace a 1 ls
-  goWs a _ = a
+-- Mapping between characters and their escape codes. Use parse/showEscapeChar
+-- to convert.
+escapeChars :: [(Char, Char)]
+escapeChars =
+  [ ('0', '\0')
+  , ('a', '\a')
+  , ('b', '\b')
+  , ('f', '\f')
+  , ('n', '\n')
+  , ('r', '\r')
+  , ('t', '\t')
+  , ('v', '\v')
+  , ('s', ' ')
+  , ('\'', '\'')
+  , ('"', '"')
+  , ('\\', '\\')
+  ]
 
-  goSpace a !n (' ' : ls) = goSpace a (n + 1) ls
-  goSpace a !n ls = goWs (Space n : a) ls
+-- Inverse of parseEscapeChar; map a character to its escaped version:
+showEscapeChar :: Char -> Maybe Char
+showEscapeChar c =
+  Map.lookup c (Map.fromList [(x, y) | (y, x) <- escapeChars])
 
-  isBlockComment = Parser $ \inp _ ksucc ->
-    case Text.uncons inp of
-      Just ('-', inp2) ->
-        case Text.uncons inp2 of
-          Just ('-', inp3) ->
-            ksucc inp3 $ Just False
-          _ ->
-            ksucc inp Nothing
-      Just ('{', inp2) ->
-        case Text.uncons inp2 of
-          Just ('-', inp3) ->
-            ksucc inp3 $ Just True
-          _ ->
-            ksucc inp Nothing
-      _ ->
-        ksucc inp Nothing
+isSep :: Char -> Bool
+isSep c = isSpace c || Set.member c delimiters
 
-  comment = isBlockComment >>= \case
-    Just True  -> Just <$> blockComment "{-"
-    Just False -> Just <$> lineComment "--"
-    Nothing    -> pure $ Nothing
+-- Not a keyword, '.' delimited list of wordyId0 (should not include a trailing '.')
+wordyId0 :: String -> Either Err (String, String)
+wordyId0 s = span' wordyIdChar s $ \case
+  (id@(ch:_), rem) | not (Set.member id keywords)
+                    && wordyIdStartChar ch
+                    -> Right (id, rem)
+  (id, _rem) -> Left (InvalidWordyId id)
 
-  lineComment acc = do
-    comm <- nextWhile (\c -> c /= '\r' && c /= '\n')
-    pure $ Comment (acc <> comm)
+wordyIdStartChar :: Char -> Bool
+wordyIdStartChar ch = isAlpha ch || isEmoji ch || ch == '_'
 
-  blockComment acc = do
-    chs <- nextWhile (/= '-')
-    dashes <- nextWhile (== '-')
-    if Text.null dashes
-      then pure $ Comment $ acc <> chs
-      else peek >>= \case
-        Just '}' -> next $> Comment (acc <> chs <> dashes <> "}")
-        _ -> blockComment (acc <> chs <> dashes)
+wordyIdChar :: Char -> Bool
+wordyIdChar ch =
+  isAlphaNum ch || isEmoji ch || ch `elem` "_!'"
 
-token :: Lexer Token
-token = peek >>= maybe (pure TokEof) k0
-  where
-  k0 ch1 = case ch1 of
-    '('  -> next *> leftParen
-    ')'  -> next $> TokRightParen
-    '{'  -> next $> TokLeftBrace
-    '}'  -> next $> TokRightBrace
-    '['  -> next $> TokLeftSquare
-    ']'  -> next $> TokRightSquare
-    '`'  -> next $> TokTick
-    ','  -> next $> TokComma
-    '∷'  -> next *> orOperator1 (TokDoubleColon Unicode) ch1
-    '←'  -> next *> orOperator1 (TokLeftArrow Unicode) ch1
-    '→'  -> next *> orOperator1 (TokRightArrow Unicode) ch1
-    '⇒'  -> next *> orOperator1 (TokRightFatArrow Unicode) ch1
-    '∀'  -> next *> orOperator1 (TokForall Unicode) ch1
-    '|'  -> next *> orOperator1 TokPipe ch1
-    '.'  -> next *> orOperator1 TokDot ch1
-    '\\' -> next *> orOperator1 TokBackslash ch1
-    '<'  -> next *> orOperator2 (TokLeftArrow ASCII) ch1 '-'
-    '-'  -> next *> orOperator2 (TokRightArrow ASCII) ch1 '>'
-    '='  -> next *> orOperator2' TokEquals (TokRightFatArrow ASCII) ch1 '>'
-    ':'  -> next *> orOperator2' (TokOperator [] ":") (TokDoubleColon ASCII) ch1 ':'
-    '?'  -> next *> hole
-    '\'' -> next *> char
-    '"'  -> next *> string
-    _  | Char.isDigit ch1 -> restore (== ErrNumberOutOfRange) (next *> number ch1)
-       | Char.isUpper ch1 -> next *> upper [] ch1
-       | isIdentStart ch1 -> next *> lower [] ch1
-       | isSymbolChar ch1 -> next *> operator [] [ch1]
-       | otherwise        -> throw $ ErrLexeme (Just [ch1]) []
+isEmoji :: Char -> Bool
+isEmoji c = c >= '\x1F300' && c <= '\x1FAFF'
 
-  {-# INLINE orOperator1 #-}
-  orOperator1 :: Token -> Char -> Lexer Token
-  orOperator1 tok ch1 = join $ Parser $ \inp _ ksucc ->
-    case Text.uncons inp of
-      Just (ch2, inp2) | isSymbolChar ch2 ->
-        ksucc inp2 $ operator [] [ch1, ch2]
-      _ ->
-        ksucc inp $ pure tok
+symbolyId :: String -> Either Err (String, String)
+symbolyId r@('.':s)
+  | s == ""              = symbolyId0 r --
+  | isSpace (head s)     = symbolyId0 r -- lone dot treated as an operator
+  | isDelimiter (head s) = symbolyId0 r --
+  | otherwise            = (\(s, rem) -> ('.':s, rem)) <$> symbolyId' s
+symbolyId s = symbolyId' s
 
-  {-# INLINE orOperator2 #-}
-  orOperator2 :: Token -> Char -> Char -> Lexer Token
-  orOperator2 tok ch1 ch2 = join $ Parser $ \inp _ ksucc ->
-    case Text.uncons inp of
-      Just (ch2', inp2) | ch2 == ch2' ->
-        case Text.uncons inp2 of
-          Just (ch3, inp3) | isSymbolChar ch3 ->
-            ksucc inp3 $ operator [] [ch1, ch2, ch3]
-          _ ->
-            ksucc inp2 $ pure tok
-      _ ->
-        ksucc inp $ operator [] [ch1]
+-- Is a '.' delimited list of wordyId, with a final segment of `symbolyId0`
+symbolyId' :: String -> Either Err (String, String)
+symbolyId' s = case wordyId0 s of
+  Left _ -> symbolyId0 s
+  Right (wid, '.':rem) -> case symbolyId rem of
+    Left e -> Left e
+    Right (rest, rem) -> Right (wid <> "." <> rest, rem)
+  Right (w,_) -> Left (InvalidSymbolyId w)
 
-  {-# INLINE orOperator2' #-}
-  orOperator2' :: Token -> Token -> Char -> Char -> Lexer Token
-  orOperator2' tok1 tok2 ch1 ch2 = join $ Parser $ \inp _ ksucc ->
-    case Text.uncons inp of
-      Just (ch2', inp2) | ch2 == ch2' ->
-        case Text.uncons inp2 of
-          Just (ch3, inp3) | isSymbolChar ch3 ->
-            ksucc inp3 $ operator [] [ch1, ch2, ch3]
-          _ ->
-            ksucc inp2 $ pure tok2
-      Just (ch2', inp2) | isSymbolChar ch2' ->
-        ksucc inp2 $ operator [] [ch1, ch2']
-      _ ->
-        ksucc inp $ pure tok1
+wordyId :: String -> Either Err (String, String)
+wordyId ('.':s) = (\(s,rem) -> ('.':s,rem)) <$> wordyId' s
+wordyId s = wordyId' s
 
-  {-
-    leftParen
-      : '(' '→'  ')'
-      | '(' '->' ')'
-      | '('  symbolChar+  ')'
-      | '('
-  -}
-  leftParen :: Lexer Token
-  leftParen = Parser $ \inp kerr ksucc ->
-    case Text.span isSymbolChar inp of
-      (chs, inp2)
-        | Text.null chs -> ksucc inp TokLeftParen
-        | otherwise ->
-            case Text.uncons inp2 of
-              Just (')', inp3) ->
-                case chs of
-                  "→"  -> ksucc inp3 $ TokSymbolArr Unicode
-                  "->" -> ksucc inp3 $ TokSymbolArr ASCII
-                  _ | isReservedSymbol chs -> kerr inp ErrReservedSymbol
-                    | otherwise -> ksucc inp3 $ TokSymbolName [] chs
-              _ -> ksucc inp TokLeftParen
+-- Is a '.' delimited list of wordyId
+wordyId' :: String -> Either Err (String, String)
+wordyId' s = case wordyId0 s of
+  Left e -> Left e
+  Right (wid, '.':rem@(ch:_)) | wordyIdStartChar ch -> case wordyId rem of
+    Left e -> Left e
+    Right (rest, rem) -> Right (wid <> "." <> rest, rem)
+  Right (w,rem) -> Right (w,rem)
 
-  {-
-    symbol
-      : '(' symbolChar+ ')'
-  -}
-  symbol :: [Text] -> Lexer Token
-  symbol qual = restore isReservedSymbolError $ peek >>= \case
-    Just ch | isSymbolChar ch ->
-      nextWhile isSymbolChar >>= \chs ->
-        peek >>= \case
-          Just ')'
-            | isReservedSymbol chs -> throw ErrReservedSymbol
-            | otherwise -> next $> TokSymbolName (reverse qual) chs
-          Just ch2 -> throw $ ErrLexeme (Just [ch2]) []
-          Nothing  -> throw ErrEof
-    Just ch -> throw $ ErrLexeme (Just [ch]) []
-    Nothing -> throw ErrEof
+-- Returns either an error or an id and a remainder
+symbolyId0 :: String -> Either Err (String, String)
+symbolyId0 s = span' symbolyIdChar s $ \case
+  (id@(_:_), rem) | not (Set.member id reservedOperators) -> Right (id, rem)
+  (id, _rem) -> Left (InvalidSymbolyId id)
 
-  {-
-    operator
-      : symbolChar+
-  -}
-  operator :: [Text] -> [Char] -> Lexer Token
-  operator qual pre = do
-    rest <- nextWhile isSymbolChar
-    pure . TokOperator (reverse qual) $ Text.pack pre <> rest
+symbolyIdChar :: Char -> Bool
+symbolyIdChar ch = Set.member ch symbolyIdChars
 
-  {-
-    moduleName
-      : upperChar alphaNumChar*
+symbolyIdChars :: Set Char
+symbolyIdChars = Set.fromList "!$%^&*-=+<>.~\\/|:"
 
-    qualifier
-      : (moduleName '.')* moduleName
+keywords :: Set String
+keywords = Set.fromList [
+  "if", "then", "else", "forall", "∀",
+  "handle", "with", "unique",
+  "where", "use",
+  "true", "false",
+  "type", "ability", "alias", "typeLink", "termLink",
+  "let", "namespace", "match", "cases"]
 
-    upper
-      : (qualifier '.')? upperChar identChar*
-      | qualifier '.' lowerQualified
-      | qualifier '.' operator
-      | qualifier '.' symbol
-  -}
-  upper :: [Text] -> Char -> Lexer Token
-  upper qual pre = do
-    rest <- nextWhile isIdentChar
-    ch1  <- peek
-    let name = Text.cons pre rest
-    case ch1 of
-      Just '.' -> do
-        let qual' = name : qual
-        next *> peek >>= \case
-          Just '(' -> next *> symbol qual'
-          Just ch2
-            | Char.isUpper ch2 -> next *> upper qual' ch2
-            | isIdentStart ch2 -> next *> lower qual' ch2
-            | isSymbolChar ch2 -> next *> operator qual' [ch2]
-            | otherwise -> throw $ ErrLexeme (Just [ch2]) []
-          Nothing ->
-            throw ErrEof
-      _ ->
-        pure $ TokUpperName (reverse qual) name
+delimiters :: Set Char
+delimiters = Set.fromList "()[]{},?;"
 
-  {-
-    lower
-      : '_'
-      | 'forall'
-      | lowerChar identChar*
+isDelimiter :: Char -> Bool
+isDelimiter ch = Set.member ch delimiters
 
-    lowerQualified
-      : lowerChar identChar*
-  -}
-  lower :: [Text] -> Char -> Lexer Token
-  lower qual pre = do
-    rest <- nextWhile isIdentChar
-    case pre of
-      '_' | Text.null rest ->
-        if null qual
-          then pure TokUnderscore
-          else throw $ ErrLexeme (Just [pre]) []
-      _ ->
-        case Text.cons pre rest of
-          "forall" | null qual -> pure $ TokForall ASCII
-          name -> pure $ TokLowerName (reverse qual) name
+reservedOperators :: Set String
+reservedOperators = Set.fromList ["=", "->", ":", "&&", "||", "|", "!", "'"]
 
-  {-
-    hole
-      : '?' identChar+
-  -}
-  hole :: Lexer Token
-  hole = do
-    name <- nextWhile isIdentChar
-    if Text.null name
-      then operator [] ['?']
-      else pure $ TokHole name
+inc :: Pos -> Pos
+inc (Pos line col) = Pos line (col + 1)
 
-  {-
-    char
-      : "'" '\' escape "'"
-      | "'" [^'] "'"
-  -}
-  char :: Lexer Token
-  char = do
-    (raw, ch) <- peek >>= \case
-      Just '\\' -> do
-        (raw, ch2) <- next *> escape
-        pure (Text.cons '\\' raw, ch2)
-      Just ch ->
-        next $> (Text.singleton ch, ch)
-      Nothing ->
-        throw $ ErrEof
-    peek >>= \case
-      Just '\''
-        | fromEnum ch > 0xFFFF -> throw ErrAstralCodePointInChar
-        | otherwise -> next $> TokChar raw ch
-      Just ch2 ->
-        throw $ ErrLexeme (Just [ch2]) []
-      _ ->
-        throw $ ErrEof
+debugLex'' :: [Token Lexeme] -> String
+debugLex'' = show . fmap payload . tree
 
-  {-
-    stringPart
-      : '\' escape
-      | '\' [ \r\n]+ '\'
-      | [^"]
+debugLex' :: String -> String
+debugLex' =  debugLex'' . lexer "debugLex"
 
-    string
-      : '"' stringPart* '"'
-      | '"""' '"'{0,2} ([^"]+ '"'{1,2})* [^"]* '"""'
+debugLex''' :: String -> String -> String
+debugLex''' s =  debugLex'' . lexer s
 
-    A raw string literal can't contain any sequence of 3 or more quotes,
-    although sequences of 1 or 2 quotes are allowed anywhere, including at the
-    beginning or the end.
-  -}
-  string :: Lexer Token
-  string = do
-    quotes1 <- nextWhile' 7 (== '"')
-    case Text.length quotes1 of
-      0 -> do
-        let
-          go raw acc = do
-            chs <- nextWhile isNormalStringChar
-            let
-              raw' = raw <> chs
-              acc' = acc <> DList.fromList (Text.unpack chs)
-            peek >>= \case
-              Just '"'  -> next $> TokString raw' (fromString (DList.toList acc'))
-              Just '\\' -> next *> goEscape (raw' <> "\\") acc'
-              Just _    -> throw ErrLineFeedInString
-              Nothing   -> throw ErrEof
+span' :: (a -> Bool) -> [a] -> (([a],[a]) -> r) -> r
+span' f a k = k (span f a)
 
-          goEscape raw acc = do
-            mbCh <- peek
-            case mbCh of
-              Just ch1 | isStringGapChar ch1 -> do
-                gap <- nextWhile isStringGapChar
-                peek >>= \case
-                  Just '"'  -> next $> TokString (raw <> gap) (fromString (DList.toList acc))
-                  Just '\\' -> next *> go (raw <> gap <> "\\") acc
-                  Just ch   -> throw $ ErrCharInGap ch
-                  Nothing   -> throw ErrEof
-              _ -> do
-                (raw', ch) <- escape
-                go (raw <> raw') (acc <> DList.singleton ch)
-        go "" mempty
-      1 ->
-        pure $ TokString "" ""
-      n | n >= 5 ->
-        pure $ TokRawString $ Text.drop 5 quotes1
-      _ -> do
-        let
-          go acc = do
-            chs <- nextWhile (/= '"')
-            quotes2 <- nextWhile' 5 (== '"')
-            case Text.length quotes2 of
-              0          -> throw ErrEof
-              n | n >= 3 -> pure $ TokRawString $ acc <> chs <> Text.drop 3 quotes2
-              _          -> go (acc <> chs <> quotes2)
-        go $ Text.drop 2 quotes1
+instance EP.ShowErrorComponent (Token Err) where
+  showErrorComponent (Token err _ _) = go err where
+    go = \case
+      Opaque msg -> msg
+      CloseWithoutMatchingOpen open close -> "I found a closing " <> close <> " but no matching " <> open <> "."
+      Both e1 e2 -> go e1 <> "\n" <> go e2
+      LayoutError -> "Indentation error"
+      TextLiteralMissingClosingQuote s -> "This text literal missing a closing quote: " <> excerpt s
+      e -> show e
+    excerpt s = if length s < 15 then s else take 15 s <> "..."
 
-  {-
-    escape
-      : 't'
-      | 'r'
-      | 'n'
-      | "'"
-      | '"'
-      | 'x' [0-9a-fA-F]{0,6}
-  -}
-  escape :: Lexer (Text, Char)
-  escape = do
-    ch <- peek
-    case ch of
-      Just 't'  -> next $> ("t", '\t')
-      Just 'r'  -> next $> ("r", '\r')
-      Just 'n'  -> next $> ("n", '\n')
-      Just '"'  -> next $> ("\"", '"')
-      Just '\'' -> next $> ("'", '\'')
-      Just '\\' -> next $> ("\\", '\\')
-      Just 'x'  -> (*>) next $ Parser $ \inp kerr ksucc -> do
-        let
-          go n acc (ch' : chs)
-            | Char.isHexDigit ch' = go (n * 16 + Char.digitToInt ch') (ch' : acc) chs
-          go n acc _
-            | n <= 0x10FFFF =
-                ksucc (Text.drop (length acc) inp)
-                  ("x" <> Text.pack (reverse acc), Char.chr n)
-            | otherwise =
-                kerr inp ErrCharEscape -- TODO
-        go 0 [] $ Text.unpack $ Text.take 6 inp
-      _ -> throw ErrCharEscape
+instance ShowToken (Token Lexeme) where
+  showTokens xs =
+      join . Nel.toList . S.evalState (traverse go xs) . end $ Nel.head xs
+    where
+      go :: Token Lexeme -> S.State Pos String
+      go tok = do
+        prev <- S.get
+        S.put $ end tok
+        pure $ pad prev (start tok) ++ pretty (payload tok)
+      pretty (Open s) = s
+      pretty (Reserved w) = w
+      pretty (Textual t) = '"' : t ++ ['"']
+      pretty (Character c) =
+        case showEscapeChar c of
+          Just c -> "?\\" ++ [c]
+          Nothing -> '?' : [c]
+      pretty (Backticks n h) =
+        '`' : n ++ (toList h >>= SH.toString) ++ ['`']
+      pretty (WordyId n h) = n ++ (toList h >>= SH.toString)
+      pretty (SymbolyId n h) = n ++ (toList h >>= SH.toString)
+      pretty (Blank s) = "_" ++ s
+      pretty (Numeric n) = n
+      pretty (Hash sh) = show sh
+      pretty (Err e) = show e
+      pretty (Bytes bs) = "0xs" <> show bs
+      pretty Close = "<outdent>"
+      pretty (Semi True) = "<virtual semicolon>"
+      pretty (Semi False) = ";"
+      pad (Pos line1 col1) (Pos line2 col2) =
+        if line1 == line2
+        then replicate (col2 - col1) ' '
+        else replicate (line2 - line1) '\n' ++ replicate col2 ' '
 
-  {-
-    number
-      : hexadecimal
-      | integer ('.'  fraction)? exponent?
-  -}
-  number :: Char -> Lexer Token
-  number ch1 = peek >>= \ch2 -> case (ch1, ch2) of
-    ('0', Just 'x') -> next *> hexadecimal
-    (_, _) -> do
-      mbInt <- integer1 ch1
-      mbFraction <- fraction
-      case (mbInt, mbFraction) of
-        (Just (raw, int), Nothing) -> do
-          let int' = digitsToInteger int
-          exponent >>= \case
-            Just (raw', exp) ->
-              sciDouble (raw <> raw') $ Sci.scientific int' exp
-            Nothing ->
-              pure $ TokInt raw int'
-        (Just (raw, int), Just (raw', frac)) -> do
-          let sci = digitsToScientific int frac
-          exponent >>= \case
-            Just (raw'', exp) ->
-              sciDouble (raw <> raw' <> raw'') $ uncurry Sci.scientific $ (+ exp) <$> sci
-            Nothing ->
-              sciDouble (raw <> raw') $ uncurry Sci.scientific sci
-        (Nothing, Just (raw, frac)) -> do
-          let sci = digitsToScientific [] frac
-          exponent >>= \case
-            Just (raw', exp) ->
-              sciDouble (raw <> raw') $ uncurry Sci.scientific $ (+ exp) <$> sci
-            Nothing ->
-              sciDouble raw $ uncurry Sci.scientific sci
-        (Nothing, Nothing) ->
-          peek >>= \ch -> throw $ ErrLexeme (pure <$> ch) []
+instance Applicative Token where
+  pure a = Token a (Pos 0 0) (Pos 0 0)
+  Token f start _ <*> Token a _ end = Token (f a) start end
 
-  sciDouble :: Text -> Sci.Scientific -> Lexer Token
-  sciDouble raw sci = case Sci.toBoundedRealFloat sci of
-    Left _ -> throw ErrNumberOutOfRange
-    Right n -> pure $ TokNumber raw n
+instance Semigroup Pos where (<>) = mappend
 
-  {-
-    integer
-      : '0'
-      | [1-9] digits
-  -}
-  integer :: Lexer (Maybe (Text, String))
-  integer = peek >>= \case
-    Just '0' -> next *> peek >>= \case
-      Just ch | isNumberChar ch -> throw ErrLeadingZero
-      _ -> pure $ Just ("0", "0")
-    Just ch | isDigitChar ch -> Just <$> digits
-    _ -> pure $ Nothing
-
-  {-
-    integer1
-      : '0'
-      | [1-9] digits
-
-    This is the same as 'integer', the only difference is that this expects the
-    first char to be consumed during dispatch.
-  -}
-  integer1 :: Char -> Lexer (Maybe (Text, String))
-  integer1 = \case
-    '0' -> peek >>= \case
-      Just ch | isNumberChar ch -> throw ErrLeadingZero
-      _ -> pure $ Just ("0", "0")
-    ch | isDigitChar ch -> do
-      (raw, chs) <- digits
-      pure $ Just (Text.cons ch raw, ch : chs)
-    _ -> pure $ Nothing
-
-  {-
-    fraction
-      : '.' [0-9_]+
-  -}
-  fraction :: Lexer (Maybe (Text, String))
-  fraction = Parser $ \inp _ ksucc ->
-    -- We need more than a single char lookahead for things like `1..10`.
-    case Text.uncons inp of
-      Just ('.', inp')
-        | (raw, inp'') <- Text.span isNumberChar inp'
-        , not (Text.null raw) ->
-            ksucc inp'' $ Just ("." <> raw, filter (/= '_') $ Text.unpack raw)
-      _ ->
-        ksucc inp Nothing
-
-  {-
-    digits
-      : [0-9_]*
-
-    Digits can contain underscores, which are ignored.
-  -}
-  digits :: Lexer (Text, String)
-  digits = do
-    raw <- nextWhile isNumberChar
-    pure (raw, filter (/= '_') $ Text.unpack raw)
-
-  {-
-    exponent
-      : 'e' ('+' | '-')? integer
-  -}
-  exponent :: Lexer (Maybe (Text, Int))
-  exponent = peek >>= \case
-    Just 'e' -> do
-      (neg, sign) <- next *> peek >>= \case
-        Just '-' -> next $> (True, "-")
-        Just '+' -> next $> (False, "+")
-        _   -> pure (False, "")
-      integer >>= \case
-        Just (raw, chs) -> do
-          let
-            int | neg = negate $ digitsToInteger chs
-                | otherwise = digitsToInteger chs
-          pure $ Just ("e" <> sign <> raw, fromInteger int)
-        Nothing -> throw ErrExpectedExponent
-    _ ->
-      pure Nothing
-
-  {-
-    hexadecimal
-      : '0x' [0-9a-fA-F]+
-  -}
-  hexadecimal :: Lexer Token
-  hexadecimal = do
-    chs <- nextWhile Char.isHexDigit
-    if Text.null chs
-      then throw ErrExpectedHex
-      else pure $ TokInt ("0x" <> chs) $ digitsToIntegerBase 16 $ Text.unpack chs
-
-digitsToInteger :: [Char] -> Integer
-digitsToInteger = digitsToIntegerBase 10
-
-digitsToIntegerBase :: Integer -> [Char] -> Integer
-digitsToIntegerBase b = foldl' (\n c -> n * b + (toInteger (Char.digitToInt c))) 0
-
-digitsToScientific :: [Char] -> [Char] -> (Integer, Int)
-digitsToScientific = go 0 . reverse
-  where
-  go !exp is [] = (digitsToInteger (reverse is), exp)
-  go !exp is (f : fs) = go (exp - 1) (f : is) fs
-
-isSymbolChar :: Char -> Bool
-isSymbolChar c = (c `elem` (":!#$%&*+./<=>?@\\^|-~" :: [Char])) || (not (Char.isAscii c) && Char.isSymbol c)
-
-isReservedSymbolError :: ParserErrorType -> Bool
-isReservedSymbolError = (== ErrReservedSymbol)
-
-isReservedSymbol :: Text -> Bool
-isReservedSymbol = flip elem symbols
-  where
-  symbols =
-    [ "::"
-    , "∷"
-    , "<-"
-    , "←"
-    , "->"
-    , "→"
-    , "=>"
-    , "⇒"
-    , "∀"
-    , "|"
-    , "."
-    , "\\"
-    , "="
-    ]
-
-isIdentStart :: Char -> Bool
-isIdentStart c = Char.isLower c || c == '_'
-
-isIdentChar :: Char -> Bool
-isIdentChar c = Char.isAlphaNum c || c == '_' || c == '\''
-
-isDigitChar :: Char -> Bool
-isDigitChar c = c >= '0' && c <= '9'
-
-isNumberChar :: Char -> Bool
-isNumberChar c = (c >= '0' && c <= '9') || c == '_'
-
-isNormalStringChar :: Char -> Bool
-isNormalStringChar c = c /= '"' && c /= '\\' && c /= '\r' && c /= '\n'
-
-isStringGapChar :: Char -> Bool
-isStringGapChar c = c == ' ' || c == '\r' || c == '\n'
-
-isLineFeed :: Char -> Bool
-isLineFeed c = c == '\r' || c == '\n'
-
--- | Checks if some identifier is a valid unquoted key.
-isUnquotedKey :: Text -> Bool
-isUnquotedKey t =
-  case Text.uncons t of
-    Nothing ->
-      False
-    Just (hd, tl) ->
-      isIdentStart hd && Text.all isIdentChar tl
+instance Monoid Pos where
+  mempty = Pos 0 0
+  Pos line col `mappend` Pos line2 col2 =
+    if line2 == 0 then Pos line (col + col2)
+    else Pos (line + line2) col2
