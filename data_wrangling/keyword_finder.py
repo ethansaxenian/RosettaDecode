@@ -1,36 +1,39 @@
 import json
 import sys
 from collections import Counter
+from pathlib import Path
 
-from data_wrangling.feature_extractor import RESERVED_KEYWORDS
+from data_wrangling.feature_extractor import RESERVED_KEYWORDS, compile_dataset
 from data_wrangling.language_info import EXT_TO_LANG
 
 if __name__ == '__main__':
-    # reserved_keywords = set()
-    # with open("keywords.txt", "r") as file:
-    #     for line in file:
-    #         word = line.strip("\n")
-    #         if word:
-    #             reserved_keywords.add(word.lower())
+    reserved_keywords = set()
+    with open("keywords.txt", "r") as file:
+        for line in file:
+            word = line.strip("\n")
+            if word:
+                reserved_keywords.add(word.lower())
 
-    # print(list(reserved_keywords))
+    # print(sorted(list(reserved_keywords)))
+
+    if not Path("../data/all_keywords_bc.jsonl").exists():
+        compile_dataset("all_keywords", binary_counts=True, keywords=list(reserved_keywords))
 
     appears = Counter()
 
-    word_frequency = {lang: {word: 0 for word in RESERVED_KEYWORDS} for lang in EXT_TO_LANG.values()}
+    word_frequency = {word: {lang: 0 for lang in EXT_TO_LANG.values()} for word in reserved_keywords}
 
-    with open("../data/features_data_bc.jsonl") as f:
+    with open("../data/all_keywords_bc.jsonl") as f:
         for line in f:
             info = json.loads(line)
-            counts = info["features"]
 
-            for word in RESERVED_KEYWORDS:
-                if counts[word]:
+            for word in reserved_keywords:
+                if info["features"][word]:
                     appears.update([word])
-                    word_frequency[info["lang"]][word] += 1
+                    word_frequency[word][info["lang"]] += 1
 
     zero = []
-    for word in RESERVED_KEYWORDS:
+    for word in reserved_keywords:
         if word not in appears:
             zero.append(word)
 
@@ -38,18 +41,16 @@ if __name__ == '__main__':
     # print(zero)
 
     relevant_words = [word for word in appears if appears[word] > 300]
-    print(len(relevant_words))
+    relevant_words2 = [word for word in appears if max(word_frequency[word].values()) > 200]
+    print(len(relevant_words), len(relevant_words2))
 
-    final_list = []
-    marginal = []
+    print(set(relevant_words) - set(relevant_words2))
+    print(set(relevant_words2) - set(relevant_words))
 
-    for word in relevant_words:
-        if max([word_frequency[lang][word] for lang in word_frequency.keys()]) < 200:
-            marginal.append(word)
-        else:
-            final_list.append(word)
+    with open("../data/keyword_frequencies.txt", "w") as file:
+        file.write(f"{'keyword':<12} {''.join(f'{lang:<11}' for lang in EXT_TO_LANG.values())}\n")
+        for word in sorted(relevant_words2):
+            counts = ''.join([f'{word_frequency[word][lang]:<11}' for lang in EXT_TO_LANG.values()])
+            file.write(f"{word + ':':<12} {counts}\n")
 
-    for word in final_list:
-        print(word, [word_frequency[lang][word] for lang in word_frequency.keys()])
-
-    print(sorted(RESERVED_KEYWORDS))
+    # print(sorted(reserved_keywords))

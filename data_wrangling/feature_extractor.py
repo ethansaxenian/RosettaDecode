@@ -80,14 +80,17 @@ def pct_specials(code: str) -> float:
     return len(find_special_characters(code)) / len(remove_spaces(code))
 
 
-def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
+def extract_features(code: str, binary_counts: bool = False, keywords: list[str] = None) -> dict[str: int]:
     """
     returns a dictionary of features extracted from a string
     """
+    if keywords is None:
+        keywords = RESERVED_KEYWORDS
+
     features_dict = {}
 
     bag_of_words = Counter(find_words(code))
-    for keyword in RESERVED_KEYWORDS:
+    for keyword in keywords:
         num = bag_of_words[keyword]
         features_dict[keyword] = int(bool(num)) if binary_counts else num
 
@@ -104,7 +107,7 @@ def extract_features(code: str, binary_counts: bool = False) -> dict[str: int]:
     return features_dict
 
 
-def compile_dataset(filename: str, lowercase: bool = True, binary_counts: bool = False):
+def compile_dataset(filename: str, lowercase: bool = True, binary_counts: bool = False, keywords: list[str] = None):
     """
     stores the features data for each code file in data/features_data.jsonl
     """
@@ -112,7 +115,7 @@ def compile_dataset(filename: str, lowercase: bool = True, binary_counts: bool =
             "../data/file_paths.jsonl", "r") as infile:
         for line in infile:
             info = json.loads(line)
-            data = parse_file(info["path"], lowercase, binary_counts)
+            data = parse_file(info["path"], lowercase, binary_counts, keywords)
             json.dump(data, outfile)
             outfile.write("\n")
 
@@ -128,7 +131,7 @@ def read_file(path: str, lowercase: bool = True) -> str:
         return unidecode.unidecode(code)
 
 
-def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -> dict[str: int]:
+def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False, keywords: list[str] = None) -> dict[str: int]:
     """
     compiles and returns the data from a single file path, which includes the filename, the features dictionary,
     and the language of the code in the file
@@ -136,7 +139,7 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False) -
     code = read_file(path, lowercase)
     return {
         "name": os.path.basename(path),
-        "features": extract_features(code, binary_counts),
+        "features": extract_features(code, binary_counts, keywords),
         "lang": get_language_from_filename(path),
         # "code": code,
     }

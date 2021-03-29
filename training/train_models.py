@@ -81,9 +81,8 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data_bc.jsonl"
+    data_path = "../data/features_data.jsonl"
     X, y = parse_features_data(data_path)
-    print(X.shape, y.shape)
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
