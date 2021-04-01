@@ -4,40 +4,59 @@ from typing import Type
 import numpy as np
 from sklearn.base import ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
-from training.data_splits import parse_features_data, split_train_vali_test, LANG_TO_INT
+from training.data_splits import collect_features_data, split_train_vali_test, LANG_TO_INT, collect_TFIDF_features
 
 INT_TO_LANG = {i: lang for (lang, i) in LANG_TO_INT.items()}
 
 MODELS = {  # note: perceptron has no predict_proba() method
-    DecisionTreeClassifier: {
-        "criterion": "entropy",
-        "max_depth": 8,
-        "random_state": 1,
-    },
-    RandomForestClassifier: {
-        "criterion": "entropy",
-        "max_depth": 8,
-        "random_state": 1,
-    },
-    LogisticRegression: {
+    # DecisionTreeClassifier: {
+    #     "criterion": "entropy",
+    #     "max_depth": 8,
+    #     "random_state": 1,
+    # },
+    # RandomForestClassifier: {
+    #     "criterion": "entropy",
+    #     "max_depth": 8,
+    #     "random_state": 1,
+    # },
+    # LogisticRegression: {
+    #     "random_state": 0,
+    #     "penalty": "l2",
+    #     "max_iter": 3500,
+    #     "C": 1.0,
+    #     "multi_class": "multinomial",
+    # },
+    # MLPClassifier: {
+    #     "hidden_layer_sizes": (32, 32, 32, 32),
+    #     "random_state": 0,
+    #     "solver": "adam",
+    #     "learning_rate_init": 0.0001,
+    #     "max_iter": 3500,
+    #     "alpha": 0.0001,
+    # },
+    # SGDClassifier: {
+    #     "loss": "modified_huber",
+    #     "random_state": 0,
+    # },
+    LinearSVC: {
         "random_state": 0,
-        "penalty": "l2",
-        "max_iter": 3500,
-        "C": 1.0,
-        "multi_class": "multinomial",
+        "max_iter": 1000
     },
-    MLPClassifier: {
-        "hidden_layer_sizes": (32, 32, 32, 32),
-        "random_state": 0,
-        "solver": "adam",
-        "learning_rate_init": 0.0001,
-        "max_iter": 3500,
-        "alpha": 0.0001,
-    }
+    # SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
+    #     # "probability": True,
+    #     "random_state": 0,
+    # },
+    # NuSVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
+    #     # "probability": True,
+    #     "random_state": 0,
+    # },
+    # GaussianNB: {},
 }
 
 
@@ -49,6 +68,7 @@ def train_model(model: Type[ClassifierMixin], params: dict[str, any], X_train: n
 
 
 def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarray) -> tuple[float, dict[str, float], dict[str, float]]:
+    print(f"Validating {model}.")
     total = 0
     accurate = 0
     true_pos: dict[str, int] = defaultdict(int)
@@ -56,9 +76,10 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
     false_neg: dict[str, int] = defaultdict(int)
 
     for x, y in zip(X_vali, y_vali):
-        probs = model.predict_proba([x])[0]
-        pred = list(probs).index(max(probs)) + 1
-        # print(probs, "----", y)
+        # probs = model.predict_proba([x])[0]
+        # pred = list(probs).index(max(probs)) + 1
+        # # print(probs, "----", y)
+        pred = model.predict([x])[0]
         total += 1
         if pred == y:
             true_pos[INT_TO_LANG[pred]] += 1
@@ -82,7 +103,8 @@ def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarra
 
 if __name__ == '__main__':
     data_path = "../data/features_data.jsonl"
-    X, y = parse_features_data(data_path)
+    X, y = collect_features_data(data_path)
+    # X, y = collect_TFIDF_features()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
@@ -90,18 +112,18 @@ if __name__ == '__main__':
     for model, params in MODELS.items():
         trained_models.append(train_model(model, params, X_train, y_train))
 
-    # for model in trained_models:
-    #     acc, prec, rec = validate_model(model, X_vali, y_vali)
-    #     print(acc)
-    #     print(prec)
-    #     print(rec)
+    for model in trained_models:
+        acc, prec, rec = validate_model(model, X_vali, y_vali)
+        print(acc)
+        print(prec)
+        print(rec)
 
-    with open("../data/training_data.txt", "a+") as file:
-        file.write("=====================================================\n")
-        file.write(f"data from {data_path}\n")
-        for model in trained_models:
-            acc, prec, rec = validate_model(model, X_vali, y_vali)
-            file.write(f"stats for {model}:\n")
-            file.write(f"\taccuracy: {acc:.3}\n")
-            file.write(f"\tprecisions: {dict(sorted(prec.items()))}\n")
-            file.write(f"\trecalls: {dict(sorted(rec.items()))}\n\n")
+    # with open("../data/training_data.txt", "a+") as file:
+    #     file.write("=====================================================\n")
+    #     file.write(f"data from {data_path}\n")
+    #     for model in trained_models:
+    #         acc, prec, rec = validate_model(model, X_vali, y_vali)
+    #         file.write(f"stats for {model}:\n")
+    #         file.write(f"\taccuracy: {acc:.3}\n")
+    #         file.write(f"\tprecisions: {dict(sorted(prec.items()))}\n")
+    #         file.write(f"\trecalls: {dict(sorted(rec.items()))}\n\n")
