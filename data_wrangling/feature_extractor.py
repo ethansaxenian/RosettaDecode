@@ -15,10 +15,12 @@ import json
 import os
 import re
 from collections import Counter
+from pathlib import Path
 from typing import Callable
 
 import unidecode
 
+from data_wrangling.file_path_storer import generate_file_paths
 from data_wrangling.language_info import get_language_from_filename
 
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
@@ -146,5 +148,6 @@ def parse_file(path: str, lowercase: bool = True, binary_counts: bool = False, k
 
 
 if __name__ == '__main__':
-    # generate_file_paths()
+    if not Path("../data/features_data.jsonl").exists():
+        generate_file_paths()
     compile_dataset("features_data")
