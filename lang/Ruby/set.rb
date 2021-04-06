@@ -1,43 +1,55 @@
->> require 'set'
-=> true
->> s1, s2 = Set[1, 2, 3, 4], [3, 4, 5, 6].to_set # different ways of creating a set
-=> [#<Set: {1, 2, 3, 4}>, #<Set: {5, 6, 3, 4}>]
->> s1 | s2 # Union
-=> #<Set: {5, 6, 1, 2, 3, 4}>
->> s1 & s2 # Intersection
-=> #<Set: {3, 4}>
->> s1 - s2 # Difference
-=> #<Set: {1, 2}>
->> s1.proper_subset?(s1) # Proper subset
-=> false
->> Set[3, 1].proper_subset?(s1) # Proper subset
-=> true
->> s1.subset?(s1) # Subset
-=> true
->> Set[3, 1].subset?(s1) # Subset
-=> true
->> Set[3, 2, 4, 1] == s1 # Equality
-=> true
->> s1 == s2 # Equality
-=> false
->> s1.include?(2) # Membership
-=> true
->> Set[1, 2, 3, 4, 5].proper_superset?(s1) # Proper superset
-=> true
->> Set[1, 2, 3, 4].proper_superset?(s1) # Proper superset
-=> false
->> Set[1, 2, 3, 4].superset?(s1) # Superset
-=> true
->> s1 ^ s2 # Symmetric difference
-=> #<Set: {5, 6, 1, 2}>
->> s1.size # Cardinality
-=> 4
->> s1 << 99 # Mutability (or s1.add(99) )
-=> #<Set: {99, 1, 2, 3, 4}>
->> s1.delete(99) # Mutability
-=> #<Set: {1, 2, 3, 4}>
->> s1.merge(s2) # Mutability
-=> #<Set: {5, 6, 1, 2, 3, 4}>
->> s1.subtract(s2) # Mutability
-=> #<Set: {1, 2}>
->>
+# frozen_string_literal: true
+##
+# Resolver sets are used to look up specifications (and their
+# dependencies) used in resolution.  This set is abstract.
+
+class Gem::Resolver::Set
+  ##
+  # Set to true to disable network access for this set
+
+  attr_accessor :remote
+
+  ##
+  # Errors encountered when resolving gems
+
+  attr_accessor :errors
+
+  ##
+  # When true, allows matching of requests to prerelease gems.
+
+  attr_accessor :prerelease
+
+  def initialize # :nodoc:
+    require 'uri'
+    @prerelease = false
+    @remote     = true
+    @errors     = []
+  end
+
+  ##
+  # The find_all method must be implemented.  It returns all Resolver
+  # Specification objects matching the given DependencyRequest +req+.
+
+  def find_all(req)
+    raise NotImplementedError
+  end
+
+  ##
+  # The #prefetch method may be overridden, but this is not necessary.  This
+  # default implementation does nothing, which is suitable for sets where
+  # looking up a specification is cheap (such as installed gems).
+  #
+  # When overridden, the #prefetch method should look up specifications
+  # matching +reqs+.
+
+  def prefetch(reqs)
+  end
+
+  ##
+  # When true, this set is allowed to access the network when looking up
+  # specifications or dependencies.
+
+  def remote? # :nodoc:
+    @remote
+  end
+end

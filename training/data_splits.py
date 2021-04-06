@@ -1,23 +1,10 @@
-"""
-Initial train/validate/test setup using essentially the same code from the practicals
-
-features_data.jsonl contains data from 11,848 files in the 10 different languages, fairly evenly distributed.
-
-Currently I have 187 features for each code snippet:
- - presence of 122 reserved keywords from the different languages
- - counts and percentages of each special character
- - the most common line-ending character
-Is this too many features?
-
-So far the task seems doable, I'm experimenting with training the various models from p04 and getting 80-90% accuracies.
-I would be curious to obtain even more data; currently all my data is from RosettaCode (https://github.com/acmeism/RosettaCodeData).
-I have tried downloading the StackOverflow data but ran into issues on my end.
-"""
 import json
 
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 LANG_TO_INT = {
     "C": 1,
@@ -35,7 +22,26 @@ LANG_TO_INT = {
 RANDOM_SEED = 12345678
 
 
-def parse_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
+def collect_TFIDF_features() -> tuple[np.ndarray, np.ndarray]:
+    ys = []
+    examples = []
+
+    with open("../data/file_paths.jsonl", "r") as file:
+        for line in file:
+            info = json.loads(line)
+            with open(info["path"], "r") as f:
+                code = f.read()
+                ys.append(LANG_TO_INT[info["lang"]])
+                examples.append(code)
+
+    word_to_column = TfidfVectorizer(strip_accents="unicode", lowercase=True, stop_words="english", min_df=100)
+    X = word_to_column.fit_transform(examples)
+    y = np.array(ys)
+
+    return X.toarray(), y
+
+
+def collect_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
     examples = []
     ys = []
 
@@ -47,7 +53,8 @@ def parse_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
             examples.append(keep)
 
     feature_numbering = DictVectorizer(sort=True, sparse=False)
-    X = feature_numbering.fit_transform(examples)
+    x = feature_numbering.fit_transform(examples)
+    X = StandardScaler().fit_transform(x)
     y = np.array(ys)
 
     return X, y
@@ -65,6 +72,7 @@ def split_train_vali_test(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.
 
 
 if __name__ == '__main__':
-    X, y = parse_features_data("../data/features_data.jsonl")
+    # X, y = collect_features_data("../data/features_data.jsonl")
+    X, y = collect_TFIDF_features()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)

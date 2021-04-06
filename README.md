@@ -6,16 +6,16 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 
 | Language    | Examples    |
 | ----------- | ----------- |
-| C           | 1138        |
-| C++         | 926         |
-| Go          | 1130        |
-| Haskell     | 1427        |
-| Java        | 1050        |
-| JavaScript  | 1186        |
-| Julia       | 989         |
-| Perl        | 1220        |
-| Python      | 1657        |
-| Ruby        | 1125        |
+| C           | 2025        |
+| C++         | 2046         |
+| Go          | 2130        |
+| Haskell     | 2313        |
+| Java        | 2371        |
+| JavaScript  | 2196        |
+| Julia       | 2051         |
+| Perl        | 2305        |
+| Python      | 2260        |
+| Ruby        | 2116        |
 
 Other sources of language data (currently in lang2/):
 - C++
@@ -42,6 +42,8 @@ Other sources of language data (currently in lang2/):
   - https://github.com/JuliaNLSolvers/Optim.jl
   - https://github.com/FluxML/Zygote.jl
   - https://github.com/JuliaCollections/DataStructures.jl
+  - https://github.com/h-Klok/StatsWithJuliaBook
+  - https://github.com/SciML/ModelingToolkit.jl
   
 - Perl
   - https://github.com/Perl/perl5
