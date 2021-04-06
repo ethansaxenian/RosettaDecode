@@ -1,10 +1,13 @@
 import json
 
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.utils import resample
 
 LANG_TO_INT = {
     "C": 1,
@@ -71,8 +74,45 @@ def split_train_vali_test(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.
     return X_train, X_vali, X_test, y_train, y_vali, y_test
 
 
+def test_split_sizes():
+    X, y = collect_features_data("../data/features_data.jsonl")
+    X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
+
+    N = len(y_train)
+    num_trials = 100
+    sizes = list(range(1000, N, 1000))
+    scores = {}
+    acc_mean = []
+    acc_std = []
+    model_type = DecisionTreeClassifier
+
+    print(N)
+    for n_samples in sizes:
+        print(f"{n_samples} samples...")
+        scores[n_samples] = []
+        for i in range(num_trials):
+            X_sample, y_sample = resample(X_train, y_train, n_samples=n_samples, replace=False)
+            model = model_type(random_state=RANDOM_SEED + n_samples + i)
+            model.fit(X_sample, y_sample)
+            scores[n_samples].append(model.score(X_vali, y_vali))
+        acc_mean.append(np.mean(scores[n_samples]))
+        acc_std.append(np.std(scores[n_samples]))
+
+    means = np.array(acc_mean)
+    std = np.array(acc_std)
+    plt.plot(sizes, acc_mean, "o-")
+    plt.fill_between(sizes, means - std, means + std, alpha=0.2)
+    plt.xlabel("Num Samples")
+    plt.ylabel("Mean Accuracy")
+    plt.xlim([0, N])
+    plt.title("Shaded Accuracy Plot")
+    plt.savefig(f"../data/area-Accuracy-{model_type.__name__}.png")
+    plt.show()
+
+
 if __name__ == '__main__':
     # X, y = collect_features_data("../data/features_data.jsonl")
-    X, y = collect_TFIDF_features()
+    # X, y = collect_TFIDF_features()
 
-    X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
+    # X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
+    test_split_sizes()
