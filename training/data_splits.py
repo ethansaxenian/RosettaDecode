@@ -1,18 +1,3 @@
-"""
-Initial train/validate/test setup using essentially the same code from the practicals
-
-features_data.jsonl contains data from 11,848 files in the 10 different languages, fairly evenly distributed.
-
-Currently I have 187 features for each code snippet:
- - presence of 122 reserved keywords from the different languages
- - counts and percentages of each special character
- - the most common line-ending character
-Is this too many features?
-
-So far the task seems doable, I'm experimenting with training the various models from p04 and getting 80-90% accuracies.
-I would be curious to obtain even more data; currently all my data is from RosettaCode (https://github.com/acmeism/RosettaCodeData).
-I have tried downloading the StackOverflow data but ran into issues on my end.
-"""
 import json
 
 import numpy as np
