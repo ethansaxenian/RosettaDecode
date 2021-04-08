@@ -1,9 +1,8 @@
 import json
-import sys
 from collections import Counter
 from pathlib import Path
 
-from data_wrangling.feature_extractor import RESERVED_KEYWORDS, compile_dataset
+from data_wrangling.feature_extractor import FeatureExtractor
 from data_wrangling.language_info import EXT_TO_LANG
 
 if __name__ == '__main__':
@@ -17,7 +16,7 @@ if __name__ == '__main__':
     # print(sorted(list(reserved_keywords)))
 
     if not Path("../data/all_keywords_bc.jsonl").exists():
-        compile_dataset("all_keywords", binary_counts=True, keywords=list(reserved_keywords))
+        FeatureExtractor("all_keywords", binary_counts=True, keywords=list(reserved_keywords)).compile_dataset()
 
     appears = Counter()
 
