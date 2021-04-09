@@ -1,4 +1,5 @@
-scikit-learn
+matplotlib
 numpy
+scikit-learn
 unidecode
 xlwt

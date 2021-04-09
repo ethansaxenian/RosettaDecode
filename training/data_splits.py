@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,9 +52,8 @@ def collect_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
     with open(path, "r") as fp:
         for line in fp:
             info = json.loads(line)
-            keep = info["features"]
+            examples.append(info["features"])
             ys.append(LANG_TO_INT[info["lang"]])
-            examples.append(keep)
 
     feature_numbering = DictVectorizer(sort=True, sparse=False)
     x = feature_numbering.fit_transform(examples)

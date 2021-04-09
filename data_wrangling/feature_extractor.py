@@ -3,7 +3,7 @@ import os
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 import unidecode
 
@@ -71,12 +71,13 @@ class FeatureExtractor:
                         'type', 'typedef', 'typename', 'typeof', 'undef', 'union', 'unless', 'unsigned', 'use', 'using',
                         'var', 'void', 'when', 'where', 'while', 'with']
 
-    def __init__(self, path: str, lowercase: bool = True, binary_counts: bool = False, keywords: list[str] = None):
+    def __init__(self, path: Optional[str] = None, lowercase: bool = True, binary_counts: bool = False,
+                 keywords: Optional[list[str]] = None):
         self.path = path
         self.lowercase = lowercase
         self.binary_counts = binary_counts
         self.reserved_keywords = keywords or self.default_keywords
-        if not Path(f"../data/{self.path}{'-bc' if self.binary_counts else ''}.jsonl").exists():
+        if path is not None and not Path(f"../data/{self.path}{'-bc' if self.binary_counts else ''}.jsonl").exists():
             generate_file_paths()
 
     def extract_features(self, code: str) -> dict[str: int]:

@@ -1,25 +1,27 @@
 from collections import defaultdict
-from typing import Type
+from typing import Type, Union, Optional
 
 import numpy as np
-from sklearn.base import ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
+from data_wrangling.feature_extractor import FeatureExtractor
 from training.data_splits import collect_features_data, split_train_vali_test, LANG_TO_INT, collect_TFIDF_features
 
-INT_TO_LANG = {i: lang for (lang, i) in LANG_TO_INT.items()}
+Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
+              MLPClassifier, SVC, NuSVC, LinearSVC]
 
 MODELS = {  # note: perceptron has no predict_proba() method
-    # DecisionTreeClassifier: {
-    #     "criterion": "entropy",
-    #     "max_depth": 8,
-    #     "random_state": 1,
-    # },
+    DecisionTreeClassifier: {
+        "criterion": "entropy",
+        "max_depth": 8,
+        "random_state": 1,
+    },
     # RandomForestClassifier: {
     #     "criterion": "entropy",
     #     "max_depth": 8,
@@ -44,10 +46,10 @@ MODELS = {  # note: perceptron has no predict_proba() method
     #     "loss": "modified_huber",
     #     "random_state": 0,
     # },
-    LinearSVC: {
-        "random_state": 0,
-        "max_iter": 1000
-    },
+    # LinearSVC: {
+    #     "random_state": 0,
+    #     "max_iter": 1000
+    # },
     # SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
     #     # "probability": True,
     #     "random_state": 0,
@@ -60,49 +62,79 @@ MODELS = {  # note: perceptron has no predict_proba() method
 }
 
 
-def train_model(model: Type[ClassifierMixin], params: dict[str, any], X_train: np.ndarray, y_train: np.ndarray) -> ClassifierMixin:
-    f = model(**params)
-    print(f"Training {f}.")
-    f.fit(X_train, y_train)
-    return f
+class Trainer:
+    int_to_lang = {i: lang for (lang, i) in LANG_TO_INT.items()}
 
+    def __init__(self, model: Type[Model], params: Optional[dict[str, any]] = None, probability: bool = True):
+        if params is None:
+            params = {}
+        if probability and hasattr(model, "probability"):
+            params["probability"] = True
+        self.probability = probability
+        self.model = model(**params)
 
-def validate_model(model: ClassifierMixin, X_vali: np.ndarray, y_vali: np.ndarray) -> tuple[float, dict[str, float], dict[str, float]]:
-    print(f"Validating {model}.")
-    total = 0
-    accurate = 0
-    true_pos: dict[str, int] = defaultdict(int)
-    false_pos: dict[str, int] = defaultdict(int)
-    false_neg: dict[str, int] = defaultdict(int)
+    def __repr__(self):
+        return str(self.model)
 
-    for x, y in zip(X_vali, y_vali):
-        # probs = model.predict_proba([x])[0]
-        # pred = list(probs).index(max(probs)) + 1
-        # # print(probs, "----", y)
-        pred = model.predict([x])[0]
-        total += 1
-        if pred == y:
-            true_pos[INT_TO_LANG[pred]] += 1
-            accurate += 1
+    def train(self, X_train: np.ndarray, y_train: np.ndarray):
+        print(f"Training {self.model}.")
+        self.model.fit(X_train, y_train)
+
+    def predict(self, x: np.ndarray) -> np.int64:
+        if self.probability and hasattr(self.model, "predict_proba"):
+            probs = self.model.predict_proba([x])[0]
+            print(probs)
+            pred = list(probs).index(max(probs)) + 1
         else:
-            false_pos[INT_TO_LANG[pred]] += 1
-            false_neg[INT_TO_LANG[y]] += 1
+            pred = self.model.predict([x])[0]
 
-    acc = accurate / total
+        return pred
 
-    precisions: dict[str, float] = {}
-    for lang in true_pos.keys():
-        precisions[lang] = round(true_pos[lang] / (true_pos[lang] + false_pos[lang]), 3)
+    def validate(self, X_vali: np.ndarray, y_vali: np.ndarray) -> tuple[float, dict[str, float], dict[str, float]]:
+        print(f"Validating {self.model}.")
+        total = 0
+        accurate = 0
+        true_pos: dict[str, int] = defaultdict(int)
+        false_pos: dict[str, int] = defaultdict(int)
+        false_neg: dict[str, int] = defaultdict(int)
 
-    recalls: dict[str, float] = {}
-    for lang in true_pos.keys():
-        recalls[lang] = round(true_pos[lang] / (true_pos[lang] + false_neg[lang]), 3)
+        for x, y in zip(X_vali, y_vali):
+            pred = self.predict(x)
 
-    return acc, precisions, recalls
+            total += 1
+            if pred == y:
+                true_pos[self.int_to_lang[pred]] += 1
+                accurate += 1
+            else:
+                false_pos[self.int_to_lang[pred]] += 1
+                false_neg[self.int_to_lang[y]] += 1
+
+        acc = accurate / total
+
+        precisions: dict[str, float] = {}
+        for lang in true_pos.keys():
+            precisions[lang] = round(true_pos[lang] / (true_pos[lang] + false_pos[lang]), 3)
+
+        recalls: dict[str, float] = {}
+        for lang in true_pos.keys():
+            recalls[lang] = round(true_pos[lang] / (true_pos[lang] + false_neg[lang]), 3)
+
+        return acc, precisions, recalls
+
+    def predict_sample(self, file_or_code: str, lowercase: bool = True, binary_counts: bool = False):
+        feature_extractor = FeatureExtractor(lowercase=lowercase, binary_counts=binary_counts)
+        try:
+            features = feature_extractor.parse_file(file_or_code)["features"]
+        except FileNotFoundError:
+            features = feature_extractor.extract_features(file_or_code)
+
+        feature_numbering = DictVectorizer(sparse=False)
+        x = feature_numbering.fit_transform([features])
+        return self.int_to_lang[self.predict(x[0])]
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data.jsonl"
+    data_path = "../data/features_data_bc.jsonl"
     X, y = collect_features_data(data_path)
     # X, y = collect_TFIDF_features()
 
@@ -110,20 +142,20 @@ if __name__ == '__main__':
 
     trained_models = []
     for model, params in MODELS.items():
-        trained_models.append(train_model(model, params, X_train, y_train))
+        trainer = Trainer(model, params)
+        trainer.train(X_train, y_train)
+        trained_models.append(trainer)
 
-    for model in trained_models:
-        acc, prec, rec = validate_model(model, X_vali, y_vali)
-        print(acc)
-        print(prec)
-        print(rec)
+    for trainer in trained_models:
+        # print(trainer.validate(X_vali, y_vali))
+        print(trainer.predict_sample("import x\ndef foo():\nprint(x)\nreturn 23\n", binary_counts=True))
 
     # with open("../data/training_data.txt", "a+") as file:
     #     file.write("=====================================================\n")
     #     file.write(f"data from {data_path}\n")
-    #     for model in trained_models:
-    #         acc, prec, rec = validate_model(model, X_vali, y_vali)
-    #         file.write(f"stats for {model}:\n")
+    #     for trainer in trained_models:
+    #         acc, prec, rec = trainer.validate(X_vali, y_vali)
+    #         file.write(f"stats for {trainer}:\n")
     #         file.write(f"\taccuracy: {acc:.3}\n")
     #         file.write(f"\tprecisions: {dict(sorted(prec.items()))}\n")
     #         file.write(f"\trecalls: {dict(sorted(rec.items()))}\n\n")
