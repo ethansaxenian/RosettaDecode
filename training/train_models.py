@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
@@ -14,14 +14,14 @@ from data_wrangling.feature_extractor import FeatureExtractor
 from training.data_splits import collect_features_data, split_train_vali_test, LANG_TO_INT, collect_TFIDF_features
 
 Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
-              MLPClassifier, SVC, NuSVC, LinearSVC]
+              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB]
 
 MODELS = {  # note: perceptron has no predict_proba() method
-    DecisionTreeClassifier: {
-        "criterion": "entropy",
-        "max_depth": 8,
-        "random_state": 1,
-    },
+    # DecisionTreeClassifier: {
+    #     "criterion": "entropy",
+    #     "max_depth": 8,
+    #     "random_state": 1,
+    # },
     # RandomForestClassifier: {
     #     "criterion": "entropy",
     #     "max_depth": 8,
@@ -48,7 +48,9 @@ MODELS = {  # note: perceptron has no predict_proba() method
     # },
     # LinearSVC: {
     #     "random_state": 0,
-    #     "max_iter": 1000
+    #     "max_iter": 1000,
+    #     # "dual": False,
+    #     "loss": "squared_hinge",
     # },
     # SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
     #     # "probability": True,
@@ -58,7 +60,7 @@ MODELS = {  # note: perceptron has no predict_proba() method
     #     # "probability": True,
     #     "random_state": 0,
     # },
-    # GaussianNB: {},
+    GaussianNB: {},
 }
 
 
@@ -70,28 +72,32 @@ class Trainer:
             params = {}
         if probability and hasattr(model, "probability"):
             params["probability"] = True
+        self.params = params
         self.probability = probability
-        self.model = model(**params)
+        self.model = model(**self.params)
 
     def __repr__(self):
-        return str(self.model)
+        return f"{type(self.model).__name__}{self.params}"
 
     def train(self, X_train: np.ndarray, y_train: np.ndarray):
-        print(f"Training {self.model}.")
+        # print(f"Training {self.model}.")
         self.model.fit(X_train, y_train)
 
     def predict(self, x: np.ndarray) -> np.int64:
         if self.probability and hasattr(self.model, "predict_proba"):
             probs = self.model.predict_proba([x])[0]
-            print(probs)
+            # print(probs)
             pred = list(probs).index(max(probs)) + 1
         else:
             pred = self.model.predict([x])[0]
 
         return pred
 
+    def score(self, X_vali: np.ndarray, y_vali: np.ndarray) -> float:
+        return self.model.score(X_vali, y_vali)
+
     def validate(self, X_vali: np.ndarray, y_vali: np.ndarray) -> tuple[float, dict[str, float], dict[str, float]]:
-        print(f"Validating {self.model}.")
+        # print(f"Validating {self.model}.")
         total = 0
         accurate = 0
         true_pos: dict[str, int] = defaultdict(int)
@@ -134,21 +140,24 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data_bc.jsonl"
-    X, y = collect_features_data(data_path)
+    data_path = "../data/features_data.jsonl"
+    X, y = collect_features_data(data_path, scale=False)
     # X, y = collect_TFIDF_features()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
-    trained_models = []
-    for model, params in MODELS.items():
-        trainer = Trainer(model, params)
-        trainer.train(X_train, y_train)
-        trained_models.append(trainer)
+    # trained_models = []
+    # for model, params in MODELS.items():
+    #     trainer = Trainer(model, params)
+    #     trainer.train(X_train, y_train)
+    #     trained_models.append(trainer)
+    #
+    # for trainer in trained_models:
+    #     # print(trainer.model.decision_function(X_vali))
+    #     acc, prec, rec = trainer.validate(X_vali, y_vali)
+    #     print(f"{acc}\n{prec}\n{rec}")
 
-    for trainer in trained_models:
-        # print(trainer.validate(X_vali, y_vali))
-        print(trainer.predict_sample("import x\ndef foo():\nprint(x)\nreturn 23\n", binary_counts=True))
+        # print(trainer.predict_sample("../lang/Go/stack-6.go", binary_counts=True))
 
     # with open("../data/training_data.txt", "a+") as file:
     #     file.write("=====================================================\n")

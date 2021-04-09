@@ -141,5 +141,5 @@ class FeatureExtractor:
 
 
 if __name__ == '__main__':
-    extractor = FeatureExtractor("features_data", lowercase=True, binary_counts=True)
+    extractor = FeatureExtractor("features_data_no_pct", lowercase=True, binary_counts=False)
     extractor.compile_dataset()

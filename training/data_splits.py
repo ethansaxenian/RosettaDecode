@@ -45,7 +45,7 @@ def collect_TFIDF_features() -> tuple[np.ndarray, np.ndarray]:
     return X.toarray(), y
 
 
-def collect_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
+def collect_features_data(path: str, scale: bool = True) -> tuple[np.ndarray, np.ndarray]:
     examples = []
     ys = []
 
@@ -56,8 +56,9 @@ def collect_features_data(path: str) -> tuple[np.ndarray, np.ndarray]:
             ys.append(LANG_TO_INT[info["lang"]])
 
     feature_numbering = DictVectorizer(sort=True, sparse=False)
-    x = feature_numbering.fit_transform(examples)
-    X = StandardScaler().fit_transform(x)
+    X = feature_numbering.fit_transform(examples)
+    if scale:
+        X = StandardScaler().fit_transform(X)
     y = np.array(ys)
 
     return X, y
