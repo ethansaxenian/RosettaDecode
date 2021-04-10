@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
@@ -14,7 +15,7 @@ from data_wrangling.feature_extractor import FeatureExtractor
 from training.data_splits import collect_features_data, split_train_vali_test, LANG_TO_INT, collect_TFIDF_features
 
 Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
-              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB]
+              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]
 
 MODELS = {  # note: perceptron has no predict_proba() method
     # DecisionTreeClassifier: {
@@ -146,25 +147,14 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
-    # trained_models = []
-    # for model, params in MODELS.items():
-    #     trainer = Trainer(model, params)
-    #     trainer.train(X_train, y_train)
-    #     trained_models.append(trainer)
-    #
-    # for trainer in trained_models:
-    #     # print(trainer.model.decision_function(X_vali))
-    #     acc, prec, rec = trainer.validate(X_vali, y_vali)
-    #     print(f"{acc}\n{prec}\n{rec}")
-
-        # print(trainer.predict_sample("../lang/Go/stack-6.go", binary_counts=True))
-
-    # with open("../data/training_data.txt", "a+") as file:
-    #     file.write("=====================================================\n")
-    #     file.write(f"data from {data_path}\n")
-    #     for trainer in trained_models:
-    #         acc, prec, rec = trainer.validate(X_vali, y_vali)
-    #         file.write(f"stats for {trainer}:\n")
-    #         file.write(f"\taccuracy: {acc:.3}\n")
-    #         file.write(f"\tprecisions: {dict(sorted(prec.items()))}\n")
-    #         file.write(f"\trecalls: {dict(sorted(rec.items()))}\n\n")
+    params = {
+        "hidden_layer_sizes": (100, 100, 100),
+        "activation": "logistic",
+        "solver": "adam",
+        "learning_rate": "adaptive",
+        "random_state": 0,
+    }
+    trainer = Trainer(MLPClassifier, params)
+    trainer.train(X_train, y_train)
+    score = trainer.score(X_vali, y_vali)
+    print(score)
