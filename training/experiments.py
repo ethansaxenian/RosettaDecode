@@ -6,8 +6,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
-from training.data_splits import collect_features_data, split_train_vali_test
+from training.data_splits import DataSplitter
 from training.train_models import Trainer
+
+RANDOM_SEED = 12345678
 
 
 def log_experiments(experiments: list[tuple[Trainer, float]]):
@@ -78,7 +80,7 @@ def linear_svc_experiment_2(X_train: np.ndarray, X_vali: np.ndarray, y_train: np
                         "C": 1.0,
                         "multi_class": multi_class,
                         "fit_intercept": fit_intercept,
-                        "random_state": rand,
+                        "random_state": rand
                     }
                     try:
                         trainer = Trainer(LinearSVC, params)
@@ -88,6 +90,30 @@ def linear_svc_experiment_2(X_train: np.ndarray, X_vali: np.ndarray, y_train: np
                         print(f"{trainer}: {score}")
                     except ValueError:
                         continue
+    log_experiments(experiments)
+
+
+def linear_svc_experiment_3(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
+    experiments = []
+    for e in range(2, 10):
+        for fit_intercept in [True, False]:
+            for rand in range(3):
+                params = {
+                    "loss": "squared_hinge",
+                    "penalty": "l2",
+                    "tol": float(f"1e-{e}"),
+                    "C": 1.0,
+                    "fit_intercept": fit_intercept,
+                    "random_state": rand
+                }
+                try:
+                    trainer = Trainer(LinearSVC, params)
+                    trainer.train(X_train, y_train)
+                    score = trainer.score(X_vali, y_vali)
+                    experiments.append((trainer, score))
+                    print(f"{trainer}: {score}")
+                except ValueError:
+                    continue
     log_experiments(experiments)
 
 
@@ -221,34 +247,37 @@ def mlp_experiment_2(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarra
 
 def mlp_experiment_3(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
     experiments = []
-    for batch_size in [64, 128, 256, 512, 1024, 2048]:
-            for rand in range(3):
-                params = {
-                    "hidden_layer_sizes": (100,),
-                    "activation": "logistic",
-                    "solver": "adam",
-                    "alpha": 1e-5,
-                    "batch_size": batch_size,
-                    "learning_rate_init": 0.0001,
-                    "max_iter": 1000,
-                    "random_state": rand,
-                    "tol": 1e-4,
-                }
-                try:
-                    trainer = Trainer(MLPClassifier, params)
-                    trainer.train(X_train, y_train)
-                    score = trainer.score(X_vali, y_vali)
-                    experiments.append((trainer, score))
-                    print(f"{trainer}: {score}")
-                except ValueError:
-                    continue
+    for batch_size in [50, 64, 100, 128, 200]:
+        for rand in range(3):
+            params = {
+                "hidden_layer_sizes": (100,),
+                "activation": "logistic",
+                "solver": "adam",
+                "alpha": 1e-5,
+                "batch_size": batch_size,
+                "learning_rate_init": 0.0001,
+                "max_iter": 1000,
+                "random_state": rand,
+                "tol": 1e-4,
+            }
+            try:
+                trainer = Trainer(MLPClassifier, params)
+                trainer.train(X_train, y_train)
+                score = trainer.score(X_vali, y_vali)
+                experiments.append((trainer, score))
+                print(f"{trainer}: {score}")
+            except ValueError:
+                continue
     log_experiments(experiments)
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data_bc.jsonl"
-    X, y = collect_features_data(data_path)
-    # X, y = collect_TFIDF_features()
+    splitter = DataSplitter("../data/features_data_bc.jsonl", seed=RANDOM_SEED)
+    X, y = splitter.collect_features_data()
+    X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
+    linear_svc_experiment_3(X_train, X_vali, y_train, y_vali)
+    sgd_classifier_experiment(X_train, X_vali, y_train, y_vali)
+    k_neighbors_classifier_experiment(X_train, X_vali, y_train, y_vali)
+    decision_tree_experiment(X_train, X_vali, y_train, y_vali)
     mlp_experiment_3(X_train, X_vali, y_train, y_vali)

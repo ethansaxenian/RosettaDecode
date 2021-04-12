@@ -4,6 +4,7 @@ from typing import Type, Union, Optional
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -12,56 +13,73 @@ from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
 from data_wrangling.feature_extractor import FeatureExtractor
-from training.data_splits import collect_features_data, split_train_vali_test, LANG_TO_INT, collect_TFIDF_features
+from training.data_splits import DataSplitter, LANG_TO_INT
 
 Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
               MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]
 
-MODELS = {  # note: perceptron has no predict_proba() method
-    # DecisionTreeClassifier: {
-    #     "criterion": "entropy",
-    #     "max_depth": 8,
-    #     "random_state": 1,
-    # },
-    # RandomForestClassifier: {
-    #     "criterion": "entropy",
-    #     "max_depth": 8,
-    #     "random_state": 1,
-    # },
-    # LogisticRegression: {
-    #     "random_state": 0,
-    #     "penalty": "l2",
-    #     "max_iter": 3500,
-    #     "C": 1.0,
-    #     "multi_class": "multinomial",
-    # },
-    # MLPClassifier: {
-    #     "hidden_layer_sizes": (32, 32, 32, 32),
-    #     "random_state": 0,
-    #     "solver": "adam",
-    #     "learning_rate_init": 0.0001,
-    #     "max_iter": 3500,
-    #     "alpha": 0.0001,
-    # },
-    # SGDClassifier: {
-    #     "loss": "modified_huber",
-    #     "random_state": 0,
-    # },
-    # LinearSVC: {
-    #     "random_state": 0,
-    #     "max_iter": 1000,
-    #     # "dual": False,
-    #     "loss": "squared_hinge",
-    # },
-    # SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
-    #     # "probability": True,
-    #     "random_state": 0,
-    # },
-    # NuSVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
-    #     # "probability": True,
-    #     "random_state": 0,
-    # },
-    GaussianNB: {},
+MODELS = {
+    DecisionTreeClassifier: {
+        'criterion': 'entropy',
+        'splitter': 'best',
+        'max_depth': 20,
+        'max_features': None,
+        'random_state': 0
+    },
+    RandomForestClassifier: {
+        "criterion": "entropy",
+        "max_depth": 8,
+        "random_state": 1,
+    },
+    LogisticRegression: {
+        "random_state": 0,
+        "penalty": "l2",
+        "max_iter": 3500,
+        "C": 1.0,
+        "multi_class": "multinomial",
+    },
+    MLPClassifier: {
+        'hidden_layer_sizes': (100,),
+        'activation': 'logistic',
+        'solver': 'adam',
+        'alpha': 1e-05,
+        'batch_size': 64,
+        'learning_rate_init': 0.0001,
+        'max_iter': 1000,
+        'random_state': 2,
+        'tol': 1e-4,
+    },
+    SGDClassifier: {
+        'loss': 'squared_hinge',
+        'penalty': 'l1',
+        'alpha': 1e-06,
+        'shuffle': False,
+        'random_state': 0,
+        'learning_rate': 'optimal'
+    },
+    LinearSVC: {
+        'loss': 'hinge',
+        'penalty': 'l2',
+        'tol': 0.01,
+        'C': 1.0,
+        'random_state': 1,
+        # 'max_iter': 10000,
+    },
+    SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
+        # "probability": True,
+        "random_state": 0,
+    },
+    NuSVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
+        # "probability": True,
+        "random_state": 0,
+    },
+    KNeighborsClassifier: {
+        'n_neighbors': 9,
+        'weights': 'distance',
+        'algorithm': 'auto',
+        'leaf_size': 15,
+        'p': 1
+    },
 }
 
 
@@ -141,23 +159,15 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data_bc.jsonl"
-    X, y = collect_features_data(data_path)
-    # X, y = collect_TFIDF_features()
+    # tfidf = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
 
-    X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
+    splitter = DataSplitter("../data/features_data_bc.jsonl", seed=123456)
+    X, y = splitter.collect_features_data()
 
-    params = {'hidden_layer_sizes': (100,),
-              'activation': 'logistic',
-              'solver': 'adam',
-              'alpha': 1e-05,
-              'batch_size': 64,
-              'learning_rate_init': 0.0001,
-              'max_iter': 500,
-              'random_state': 2,
-              'tol': 1e-3,
-              }
-    trainer = Trainer(MLPClassifier, params)
+    X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
+
+    model = LinearSVC
+    trainer = Trainer(model, MODELS[model])
     trainer.train(X_train, y_train)
     score = trainer.score(X_vali, y_vali)
     print(score)
