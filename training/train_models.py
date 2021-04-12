@@ -141,19 +141,22 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    data_path = "../data/features_data.jsonl"
-    X, y = collect_features_data(data_path, scale=False)
+    data_path = "../data/features_data_bc.jsonl"
+    X, y = collect_features_data(data_path)
     # X, y = collect_TFIDF_features()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = split_train_vali_test(X, y)
 
-    params = {
-        "hidden_layer_sizes": (100, 100, 100),
-        "activation": "logistic",
-        "solver": "adam",
-        "learning_rate": "adaptive",
-        "random_state": 0,
-    }
+    params = {'hidden_layer_sizes': (100,),
+              'activation': 'logistic',
+              'solver': 'adam',
+              'alpha': 1e-05,
+              'batch_size': 64,
+              'learning_rate_init': 0.0001,
+              'max_iter': 500,
+              'random_state': 2,
+              'tol': 1e-3,
+              }
     trainer = Trainer(MLPClassifier, params)
     trainer.train(X_train, y_train)
     score = trainer.score(X_vali, y_vali)
