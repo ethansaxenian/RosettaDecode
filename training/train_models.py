@@ -46,15 +46,15 @@ MODELS = {
         'batch_size': 64,
         'learning_rate_init': 0.0001,
         'max_iter': 1000,
-        'random_state': 2,
-        'tol': 1e-4,
+        'random_state': 1,
+        'tol': 0.0001
     },
     SGDClassifier: {
-        'loss': 'squared_hinge',
-        'penalty': 'l1',
-        'alpha': 1e-06,
-        'shuffle': False,
-        'random_state': 0,
+        'loss': 'perceptron',
+        'penalty': 'elasticnet',
+        'alpha': 0.0001,
+        'shuffle': True,
+        'random_state': 1,
         'learning_rate': 'optimal'
     },
     LinearSVC: {
@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = LinearSVC
+    model = SGDClassifier
     trainer = Trainer(model, MODELS[model])
     trainer.train(X_train, y_train)
     score = trainer.score(X_vali, y_vali)

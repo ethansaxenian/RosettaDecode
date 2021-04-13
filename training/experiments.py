@@ -144,6 +144,60 @@ def sgd_classifier_experiment(X_train: np.ndarray, X_vali: np.ndarray, y_train: 
     log_experiments(experiments)
 
 
+def sgd_classifier_experiment_2(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
+    experiments = []
+    for rand in range(3):
+        for learning_rate in ["constant", "invscaling", "adaptive"]:
+            for eta0 in [0.1, 0.01, 0.001, 0.0001, 0.00001]:
+                params = {
+                    'loss': 'perceptron',
+                    'penalty': 'elasticnet',
+                    'alpha': 0.0001,
+                    'shuffle': True,
+                    'random_state': rand,
+                    'learning_rate': learning_rate,
+                    'eta0': eta0,
+                }
+                try:
+                    trainer = Trainer(SGDClassifier, params)
+                    trainer.train(X_train, y_train)
+                    score = trainer.score(X_vali, y_vali)
+                    experiments.append((trainer, score))
+                    print(f"{trainer}: {score}")
+                except ValueError:
+                    continue
+    log_experiments(experiments)
+
+
+def sgd_classifier_experiment_3(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
+    experiments = []
+    for loss in ["hinge", "squared_hinge", "log", "perceptron"]:
+        for penalty in ["l1", "l2", "elasticnet"]:
+            for alpha in [0.0001, 0.00001, 0.000001]:
+                for shuffle in [True, False]:
+                    for rand in range(3):
+                        for learning_rate in ["constant", "invscaling", "adaptive"]:
+                            for eta0 in [0.1, 0.01, 0.001, 0.0001, 0.00001]:
+                                params = {
+                                    "loss": loss,
+                                    "penalty": penalty,
+                                    "alpha": alpha,
+                                    "shuffle": shuffle,
+                                    "random_state": rand,
+                                    "learning_rate": learning_rate,
+                                    "eta0": eta0,
+                                }
+                                try:
+                                    trainer = Trainer(SGDClassifier, params)
+                                    trainer.train(X_train, y_train)
+                                    score = trainer.score(X_vali, y_vali)
+                                    experiments.append((trainer, score))
+                                    print(f"{trainer}: {score}")
+                                except ValueError:
+                                    continue
+    log_experiments(experiments)
+
+
 def k_neighbors_classifier_experiment(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
     experiments = []
     for n_neighbors in range(1, 10):
@@ -276,8 +330,9 @@ if __name__ == '__main__':
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    linear_svc_experiment_3(X_train, X_vali, y_train, y_vali)
-    sgd_classifier_experiment(X_train, X_vali, y_train, y_vali)
-    k_neighbors_classifier_experiment(X_train, X_vali, y_train, y_vali)
-    decision_tree_experiment(X_train, X_vali, y_train, y_vali)
-    mlp_experiment_3(X_train, X_vali, y_train, y_vali)
+    # linear_svc_experiment_3(X_train, X_vali, y_train, y_vali)
+    # sgd_classifier_experiment(X_train, X_vali, y_train, y_vali)
+    # k_neighbors_classifier_experiment(X_train, X_vali, y_train, y_vali)
+    # decision_tree_experiment(X_train, X_vali, y_train, y_vali)
+    # mlp_experiment_3(X_train, X_vali, y_train, y_vali)
+    sgd_classifier_experiment_3(X_train, X_vali, y_train, y_vali)
