@@ -1,13 +1,17 @@
 import json
-from typing import Union, Optional
+from typing import Union, Optional, Any, Type
 
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.base import ClassifierMixin
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 from sklearn.utils import resample
 
 RANDOM_SEED = 12345678
@@ -82,7 +86,7 @@ class DataSplitter:
         return self.prepare_data(X_train, fit=True, scale=scale), self.prepare_data(X_vali, scale=scale), self.prepare_data(X_test, scale=scale), y_train, y_vali, y_test
 
 
-def test_split_sizes(model_type):
+def test_split_sizes(models: dict[Type[ClassifierMixin], dict[str, Any]]):
     splitter = DataSplitter("../data/features_data.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
@@ -90,40 +94,76 @@ def test_split_sizes(model_type):
     N = len(y_train)
     num_trials = 10
     percentages = list(range(100, 0, -10))
-    scores = {}
-    acc_mean = []
-    acc_std = []
 
-    print(N)
-    for pct in percentages:
-        print(f"{pct}% = {int(N * (pct / 100))} samples...")
-        scores[pct] = []
-        for i in range(num_trials):
-            X_sample, y_sample = resample(X_train, y_train, n_samples=int(N * (pct / 100)), replace=False)
-            params = {'hidden_layer_sizes': (100,),
-                      'activation': 'logistic',
-                      'solver': 'adam',
-                      'alpha': 1e-05,
-                      'batch_size': 64,
-                      'learning_rate_init': 0.0001,
-                      'random_state': RANDOM_SEED + pct + i}
-            model = model_type(**params)
-            model.fit(X_sample, y_sample)
-            scores[pct].append(model.score(X_vali, y_vali))
-        acc_mean.append(np.mean(scores[pct]))
-        acc_std.append(np.std(scores[pct]))
+    for model_type, params in models.items():
+        scores = {}
+        acc_mean = []
+        acc_std = []
 
-    means = np.array(acc_mean)
-    std = np.array(acc_std)
-    plt.plot(percentages, acc_mean, "o-")
-    plt.fill_between(percentages, means - std, means + std, alpha=0.2)
+        print(model_type.__name__)
+        for pct in percentages:
+            print(f"{pct}% = {int(N * (pct / 100))} samples...")
+            scores[pct] = []
+            for i in range(num_trials):
+                X_sample, y_sample = resample(X_train, y_train, n_samples=int(N * (pct / 100)), replace=False)
+                model = model_type(**params)
+                if hasattr(model, "random_state"):
+                    model.random_state = RANDOM_SEED + pct + i
+                model.fit(X_sample, y_sample)
+                scores[pct].append(model.score(X_vali, y_vali))
+            acc_mean.append(np.mean(scores[pct]))
+            acc_std.append(np.std(scores[pct]))
+
+        means = np.array(acc_mean)
+        std = np.array(acc_std)
+        plt.plot(percentages, acc_mean, "o-")
+        plt.fill_between(percentages, means - std, means + std, alpha=0.2, label=model_type.__name__)
+    plt.legend()
     plt.xlabel("Percent Train")
     plt.ylabel("Mean Accuracy")
     plt.xlim([0, 100])
-    plt.title(f"Shaded Accuracy Plot: {model_type.__name__}")
-    plt.savefig(f"../data/area-Accuracy-{model_type.__name__}.png")
+    plt.title(f"Shaded Accuracy Plot")
+    plt.savefig(f"../data/area-Accuracies.png")
     plt.show()
 
 
+MODELS = {
+    SGDClassifier: {
+        'loss': 'perceptron',
+        'penalty': 'elasticnet',
+        'alpha': 0.0001,
+        'shuffle': True,
+        'random_state': 1,
+        'learning_rate': 'optimal'
+    },
+    LinearSVC: {
+        'loss': 'hinge',
+        'penalty': 'l2',
+        'tol': 0.01,
+        'C': 1.0,
+        'random_state': 1,
+        # 'max_iter': 10000,
+    },
+    KNeighborsClassifier: {
+        'n_neighbors': 9,
+        'weights': 'distance',
+        'algorithm': 'auto',
+        'leaf_size': 15,
+        'p': 1
+    },
+    MLPClassifier: {
+        'hidden_layer_sizes': (100,),
+        'activation': 'logistic',
+        'solver': 'adam',
+        'alpha': 1e-05,
+        'batch_size': 64,
+        'learning_rate_init': 0.0001,
+        'max_iter': 1000,
+        'random_state': 1,
+        'tol': 0.0001
+    },
+}
+
+
 if __name__ == '__main__':
-    test_split_sizes(MLPClassifier)
+    test_split_sizes(MODELS)
