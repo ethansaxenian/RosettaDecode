@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.utils import resample
 
-from globals import LANG_TO_INT, Model, RANDOM_SEED
+from shared import LANG_TO_INT, Model, RANDOM_SEED
 from training.models import MODELS
 
 

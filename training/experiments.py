@@ -6,7 +6,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
-from globals import RANDOM_SEED
+from shared import RANDOM_SEED
 from training.data_splits import DataSplitter
 from training.train_models import Trainer
 

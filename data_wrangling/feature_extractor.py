@@ -8,7 +8,7 @@ from typing import Callable, Optional
 import unidecode
 
 from data_wrangling.file_path_storer import generate_file_paths
-from globals import get_language_from_filename, DEFAULT_KEYWORDS, SPECIAL_CHAR_NAMES, CHAR_MAPPING, SPECIAL_CHARS
+from shared import get_language_from_filename, DEFAULT_KEYWORDS, SPECIAL_CHAR_NAMES, CHAR_MAPPING, SPECIAL_CHARS
 
 
 def remove_spaces(code: str) -> str:

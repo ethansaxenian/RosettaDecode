@@ -6,7 +6,7 @@ import pathlib
 
 from xlwt import Workbook
 
-from globals import EXT_TO_LANG, get_lang_files
+from shared import EXT_TO_LANG, get_lang_files
 
 
 def generate_labels():

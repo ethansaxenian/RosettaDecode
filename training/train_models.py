@@ -13,7 +13,7 @@ from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
 from data_wrangling.feature_extractor import FeatureExtractor
-from globals import Model, RANDOM_SEED, INT_TO_LANG
+from shared import Model, RANDOM_SEED, INT_TO_LANG
 from training.data_splits import DataSplitter
 from training.models import MODELS
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = MLPClassifier
+    model = SGDClassifier
     params = MODELS[model]
     trainer = Trainer(model, params)
     trainer.train(X_train, y_train)

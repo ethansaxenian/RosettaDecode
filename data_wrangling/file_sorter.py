@@ -2,7 +2,7 @@ import glob
 import os
 import pathlib
 
-from globals import LANG_TO_EXT, EXT_TO_LANG
+from shared import LANG_TO_EXT, EXT_TO_LANG
 
 lang = "Julia"
 directory = "ModelingToolkit.jl-master/"

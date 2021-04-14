@@ -4,7 +4,7 @@ Stores the path of each language file in a text file
 import json
 import os
 
-from globals import get_path_from_filename, get_language_from_filename, get_lang_files
+from shared import get_path_from_filename, get_language_from_filename, get_lang_files
 
 
 def generate_file_paths():
