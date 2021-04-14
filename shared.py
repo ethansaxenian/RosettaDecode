@@ -41,10 +41,6 @@ EXT_TO_LANG = {
 LANG_TO_EXT = {l: e for e, l in EXT_TO_LANG.items()}
 
 
-def get_lang_files() -> list[str]:
-    return [file for lang in EXT_TO_LANG.values() for file in os.listdir(f'../lang/{lang}')]
-
-
 def get_language_from_filename(filename: str) -> str:
     ext = pathlib.Path(filename).suffix
     return EXT_TO_LANG[ext]

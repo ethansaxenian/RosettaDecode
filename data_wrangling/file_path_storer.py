@@ -4,7 +4,11 @@ Stores the path of each language file in a text file
 import json
 import os
 
-from shared import get_path_from_filename, get_language_from_filename, get_lang_files
+from shared import get_path_from_filename, get_language_from_filename, EXT_TO_LANG
+
+
+def get_lang_files() -> list[str]:
+    return [file for lang in EXT_TO_LANG.values() for file in os.listdir(f'../lang/{lang}')]
 
 
 def generate_file_paths():

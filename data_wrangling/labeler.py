@@ -6,7 +6,11 @@ import pathlib
 
 from xlwt import Workbook
 
-from shared import EXT_TO_LANG, get_lang_files
+from shared import EXT_TO_LANG
+
+
+def get_lang_files() -> list[str]:
+    return [file for lang in EXT_TO_LANG.values() for file in os.listdir(f'../lang/{lang}')]
 
 
 def generate_labels():
