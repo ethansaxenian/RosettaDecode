@@ -3,7 +3,6 @@ from typing import Union, Optional, Any, Type
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.base import ClassifierMixin
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
@@ -14,20 +13,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.utils import resample
 
-RANDOM_SEED = 12345678
-
-LANG_TO_INT = {
-        "C": 1,
-        "C++": 2,
-        "Go": 3,
-        "Haskell": 4,
-        "Java": 5,
-        "JavaScript": 6,
-        "Julia": 7,
-        "Perl": 8,
-        "Python": 9,
-        "Ruby": 10
-    }
+from globals import LANG_TO_INT, Model, RANDOM_SEED
+from training.models import MODELS
 
 
 class DataSplitter:
@@ -86,8 +73,8 @@ class DataSplitter:
         return self.prepare_data(X_train, fit=True, scale=scale), self.prepare_data(X_vali, scale=scale), self.prepare_data(X_test, scale=scale), y_train, y_vali, y_test
 
 
-def test_split_sizes(models: dict[Type[ClassifierMixin], dict[str, Any]]):
-    splitter = DataSplitter("../data/features_data.jsonl", seed=RANDOM_SEED)
+def test_split_sizes(models: dict[Type[Model], dict[str, Any]]):
+    splitter = DataSplitter("../data/features_data_all_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
@@ -125,44 +112,6 @@ def test_split_sizes(models: dict[Type[ClassifierMixin], dict[str, Any]]):
     plt.title(f"Shaded Accuracy Plot")
     plt.savefig(f"../data/area-Accuracies.png")
     plt.show()
-
-
-MODELS = {
-    SGDClassifier: {
-        'loss': 'perceptron',
-        'penalty': 'elasticnet',
-        'alpha': 0.0001,
-        'shuffle': True,
-        'random_state': 1,
-        'learning_rate': 'optimal'
-    },
-    LinearSVC: {
-        'loss': 'hinge',
-        'penalty': 'l2',
-        'tol': 0.01,
-        'C': 1.0,
-        'random_state': 1,
-        # 'max_iter': 10000,
-    },
-    KNeighborsClassifier: {
-        'n_neighbors': 9,
-        'weights': 'distance',
-        'algorithm': 'auto',
-        'leaf_size': 15,
-        'p': 1
-    },
-    MLPClassifier: {
-        'hidden_layer_sizes': (100,),
-        'activation': 'logistic',
-        'solver': 'adam',
-        'alpha': 1e-05,
-        'batch_size': 64,
-        'learning_rate_init': 0.0001,
-        'max_iter': 1000,
-        'random_state': 1,
-        'tol': 0.0001
-    },
-}
 
 
 if __name__ == '__main__':

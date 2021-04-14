@@ -3,7 +3,7 @@ from collections import Counter
 from pathlib import Path
 
 from data_wrangling.feature_extractor import FeatureExtractor
-from data_wrangling.language_info import EXT_TO_LANG
+from globals import EXT_TO_LANG
 
 if __name__ == '__main__':
     reserved_keywords = set()

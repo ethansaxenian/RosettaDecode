@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Type, Union, Optional
+from typing import Type, Optional
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -13,79 +13,12 @@ from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
 from data_wrangling.feature_extractor import FeatureExtractor
-from training.data_splits import DataSplitter, LANG_TO_INT
-
-Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
-              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]
-
-MODELS = {
-    DecisionTreeClassifier: {
-        'criterion': 'entropy',
-        'splitter': 'best',
-        'max_depth': 20,
-        'max_features': None,
-        'random_state': 0
-    },
-    RandomForestClassifier: {
-        "criterion": "entropy",
-        "max_depth": 8,
-        "random_state": 1,
-    },
-    LogisticRegression: {
-        "random_state": 0,
-        "penalty": "l2",
-        "max_iter": 3500,
-        "C": 1.0,
-        "multi_class": "multinomial",
-    },
-    MLPClassifier: {
-        'hidden_layer_sizes': (100,),
-        'activation': 'logistic',
-        'solver': 'adam',
-        'alpha': 1e-05,
-        'batch_size': 64,
-        'learning_rate_init': 0.0001,
-        'max_iter': 1000,
-        'random_state': 1,
-        'tol': 0.0001
-    },
-    SGDClassifier: {
-        'loss': 'perceptron',
-        'penalty': 'elasticnet',
-        'alpha': 0.0001,
-        'shuffle': True,
-        'random_state': 1,
-        'learning_rate': 'optimal'
-    },
-    LinearSVC: {
-        'loss': 'hinge',
-        'penalty': 'l2',
-        'tol': 0.01,
-        'C': 1.0,
-        'random_state': 1,
-        # 'max_iter': 10000,
-    },
-    SVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
-        # "probability": True,
-        "random_state": 0,
-    },
-    NuSVC: {  # this takes a WHILE with probibility == True. it also doesn't work very well
-        # "probability": True,
-        "random_state": 0,
-    },
-    KNeighborsClassifier: {
-        'n_neighbors': 9,
-        'weights': 'distance',
-        'algorithm': 'auto',
-        'leaf_size': 15,
-        'p': 1
-    },
-}
+from globals import Model, RANDOM_SEED, INT_TO_LANG
+from training.data_splits import DataSplitter
+from training.models import MODELS
 
 
 class Trainer:
-    int_to_lang = {i: lang for (lang, i) in LANG_TO_INT.items()}
-
     def __init__(self, model: Type[Model], params: Optional[dict[str, any]] = None, probability: bool = True):
         if params is None:
             params = {}
@@ -128,11 +61,11 @@ class Trainer:
 
             total += 1
             if pred == y:
-                true_pos[self.int_to_lang[pred]] += 1
+                true_pos[INT_TO_LANG[pred]] += 1
                 accurate += 1
             else:
-                false_pos[self.int_to_lang[pred]] += 1
-                false_neg[self.int_to_lang[y]] += 1
+                false_pos[INT_TO_LANG[pred]] += 1
+                false_neg[INT_TO_LANG[y]] += 1
 
         acc = accurate / total
 
@@ -161,13 +94,16 @@ class Trainer:
 if __name__ == '__main__':
     # tfidf = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
 
-    splitter = DataSplitter("../data/features_data_bc.jsonl", seed=123456)
+    splitter = DataSplitter("../data/features_data_all_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = SGDClassifier
-    trainer = Trainer(model, MODELS[model])
+    model = LinearSVC
+    params = MODELS[model]
+    trainer = Trainer(model, params)
     trainer.train(X_train, y_train)
-    score = trainer.score(X_vali, y_vali)
+    score, prec, rec = trainer.validate(X_vali, y_vali)
     print(score)
+    print(prec)
+    print(rec)

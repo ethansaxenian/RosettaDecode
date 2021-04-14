@@ -1,22 +1,8 @@
 import glob
 import os
 import pathlib
-import random
 
-EXT_TO_LANG = {
-    ".c": "C",
-    ".cpp": "C++",
-    ".go": "Go",
-    ".hs": "Haskell",
-    ".java": "Java",
-    ".js": "JavaScript",
-    ".jl": "Julia",
-    ".pm": "Perl",
-    ".py": "Python",
-    ".rb": "Ruby"
-}
-
-LANG_TO_EXT = {l: e for e, l in EXT_TO_LANG.items()}
+from globals import LANG_TO_EXT, EXT_TO_LANG
 
 lang = "Julia"
 directory = "ModelingToolkit.jl-master/"

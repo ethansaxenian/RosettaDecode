@@ -6,7 +6,7 @@ import pathlib
 
 from xlwt import Workbook
 
-from data_wrangling.language_info import EXT_TO_LANG, LANG_FILES
+from globals import EXT_TO_LANG, get_lang_files
 
 
 def generate_labels():
@@ -24,7 +24,7 @@ def generate_labels():
 
     # label all supported files
     row = 1
-    for filename in LANG_FILES:
+    for filename in get_lang_files():
         extension = pathlib.Path(filename).suffix
         labels.write(row, 0, filename)
         labels.write(row, 1, EXT_TO_LANG[extension])

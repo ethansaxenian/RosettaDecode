@@ -7,17 +7,17 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 | Language    | Examples    |
 | ----------- | ----------- |
 | C           | 2025        |
-| C++         | 2046         |
+| C++         | 2046        |
 | Go          | 2130        |
 | Haskell     | 2313        |
 | Java        | 2371        |
 | JavaScript  | 2196        |
-| Julia       | 2051         |
+| Julia       | 2051        |
 | Perl        | 2305        |
 | Python      | 2260        |
 | Ruby        | 2116        |
 
-Other sources of language data (currently in lang2/):
+Other sources of language data:
 - C++
   - https://github.com/facebook/folly
   

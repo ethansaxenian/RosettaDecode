@@ -6,10 +6,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 
+from globals import RANDOM_SEED
 from training.data_splits import DataSplitter
 from training.train_models import Trainer
-
-RANDOM_SEED = 12345678
 
 
 def log_experiments(experiments: list[tuple[Trainer, float]]):
@@ -223,6 +222,29 @@ def k_neighbors_classifier_experiment(X_train: np.ndarray, X_vali: np.ndarray, y
     log_experiments(experiments)
 
 
+def k_neighbors_classifier_experiment_2(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
+    experiments = []
+    for n_neighbors in range(5, 10):
+        for algorithm in ["auto", "ball_tree", "kd_tree", "brute"]:
+            for leaf_size in [15, 30, 45]:
+                params = {
+                    "n_neighbors": n_neighbors,
+                    "weights": "distance",
+                    "algorithm": algorithm,
+                    "leaf_size": leaf_size,
+                    "p": 1,
+                }
+                try:
+                    trainer = Trainer(KNeighborsClassifier, params)
+                    trainer.train(X_train, y_train)
+                    score = trainer.score(X_vali, y_vali)
+                    experiments.append((trainer, score))
+                    print(f"{trainer}: {score}")
+                except ValueError:
+                    continue
+    log_experiments(experiments)
+
+
 def decision_tree_experiment(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarray, y_vali: np.ndarray):
     experiments = []
     for criterion in ["gini", "entropy"]:
@@ -326,13 +348,13 @@ def mlp_experiment_3(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarra
 
 
 if __name__ == '__main__':
-    splitter = DataSplitter("../data/features_data_bc.jsonl", seed=RANDOM_SEED)
+    splitter = DataSplitter("../data/features_data_all_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
     # linear_svc_experiment_3(X_train, X_vali, y_train, y_vali)
     # sgd_classifier_experiment(X_train, X_vali, y_train, y_vali)
-    # k_neighbors_classifier_experiment(X_train, X_vali, y_train, y_vali)
-    # decision_tree_experiment(X_train, X_vali, y_train, y_vali)
+    decision_tree_experiment(X_train, X_vali, y_train, y_vali)
+    k_neighbors_classifier_experiment_2(X_train, X_vali, y_train, y_vali)
     # mlp_experiment_3(X_train, X_vali, y_train, y_vali)
-    sgd_classifier_experiment_3(X_train, X_vali, y_train, y_vali)
+    # sgd_classifier_experiment_3(X_train, X_vali, y_train, y_vali)
