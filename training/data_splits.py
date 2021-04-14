@@ -59,8 +59,12 @@ class DataSplitter:
 
     def prepare_data(self, data: list[dict[str, float]], fit: bool = False, scale: bool = True) -> np.ndarray:
         if fit:
+            if scale:
+                return self.scaler.fit_transform(self.transformer.fit_transform(data))
             return self.scaler.fit_transform(self.transformer.fit_transform(data))
-        return self.scaler.transform(self.transformer.transform(data))
+        if scale:
+            return self.scaler.transform(self.transformer.transform(data))
+        return self.transformer.transform(data)
 
     def split_train_vali_test(self, X: np.ndarray, y: np.ndarray, scale: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         X_tv, X_test, y_tv, y_test = train_test_split(

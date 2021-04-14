@@ -88,7 +88,7 @@ class Trainer:
 
         feature_numbering = DictVectorizer(sparse=False)
         x = feature_numbering.fit_transform([features])
-        return self.int_to_lang[self.predict(x[0])]
+        return INT_TO_LANG[self.predict(x[0])]
 
 
 if __name__ == '__main__':
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = LinearSVC
+    model = MLPClassifier
     params = MODELS[model]
     trainer = Trainer(model, params)
     trainer.train(X_train, y_train)
