@@ -80,9 +80,9 @@ class DataSplitter:
 
         return transformed
 
-    def split_train_vali_test(self, X: Union[np.ndarray, list[str]], y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        X_tv, X_test, y_tv, y_test = train_test_split(X, y, train_size=0.75, random_state=self.random_seed)
-        X_train, X_vali, y_train, y_vali = train_test_split(X_tv, y_tv, train_size=0.66, random_state=self.random_seed)
+    def split_train_vali_test(self, X: Union[np.ndarray, list[str]], y: np.ndarray, split_1: float = 0.75, split_2: float = 0.66) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        X_tv, X_test, y_tv, y_test = train_test_split(X, y, train_size=split_1, random_state=self.random_seed)
+        X_train, X_vali, y_train, y_vali = train_test_split(X_tv, y_tv, train_size=split_2, random_state=self.random_seed)
 
         return self.prepare_data(X_train, fit=True), self.prepare_data(X_vali), self.prepare_data(X_test), y_train, y_vali, y_test
 
