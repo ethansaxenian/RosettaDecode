@@ -18,63 +18,73 @@ from training.models import MODELS
 
 
 class DataSplitter:
-    def __init__(self, path: str, transformer: Union[DictVectorizer, TfidfVectorizer] = DictVectorizer(sparse=False), seed: Optional[int] = None):
+    def __init__(self, path: str, transformer: Union[DictVectorizer, TfidfVectorizer] = DictVectorizer(sparse=False), seed: Optional[int] = None, scale: bool = True):
         self.data_path = path
         self.transformer = transformer
+        self.scale = type(self.transformer) != TfidfVectorizer and scale
         self.scaler = StandardScaler()
         self.random_seed = seed
 
-    def collect_features_data(self):
+    def collect_features_data(self) -> tuple[Union[np.ndarray, list[str]], np.ndarray]:
         if type(self.transformer) == DictVectorizer:
-            return self._collect_dict_vectorizer_features()
+            features = self._collect_dict_vectorizer_features()
 
-        if type(self.transformer) == TfidfVectorizer:
-            return self._collect_tfidf_features()
+        elif type(self.transformer) == TfidfVectorizer:
+            features = self._collect_tfidf_features()  # TODO: the code exits here for some reason...?
 
-    def _collect_tfidf_features(self) -> tuple[np.ndarray, np.ndarray]:
-        ys = []
-        examples = []
+        else:
+            raise NotImplementedError
 
-        with open("../data/file_paths.jsonl", "r") as file:
-            for line in file:
-                info = json.loads(line)
-                with open(info["path"], "r") as f:
-                    code = f.read()
-                    ys.append(LANG_TO_INT[info["lang"]])
-                    examples.append(code)
-
-        return np.array(examples), np.array(ys)
+        return features
 
     def _collect_dict_vectorizer_features(self) -> tuple[np.ndarray, np.ndarray]:
         examples = []
         ys = []
 
-        with open(self.data_path, "r") as fp:
-            for line in fp:
+        with open(self.data_path, "r") as file:
+            for line in file:
                 info = json.loads(line)
                 examples.append(info["features"])
                 ys.append(LANG_TO_INT[info["lang"]])
 
         return np.array(examples), np.array(ys)
 
-    def prepare_data(self, data: list[dict[str, float]], fit: bool = False, scale: bool = True) -> np.ndarray:
+    def _collect_tfidf_features(self) -> tuple[list[str], np.ndarray]:
+        examples = []
+        ys = []
+
+        with open(self.data_path, "r") as file:
+            for line in file:
+                info = json.loads(line)
+                examples.append(info["code"])
+                ys.append(LANG_TO_INT[info["lang"]])
+
+        return examples, np.array(ys)
+
+    def prepare_data(self, data: Union[np.ndarray, list[str]], fit: bool = False) -> np.ndarray:
+        if type(self.transformer) == TfidfVectorizer:
+            assert not self.scale
+
         if fit:
-            if scale:
-                return self.scaler.fit_transform(self.transformer.fit_transform(data))
-            return self.scaler.fit_transform(self.transformer.fit_transform(data))
-        if scale:
-            return self.scaler.transform(self.transformer.transform(data))
-        return self.transformer.transform(data)
+            if self.scale:
+                transformed = self.scaler.fit_transform(self.transformer.fit_transform(data))
+            else:
+                transformed = self.transformer.fit_transform(data)
+        elif self.scale:
+            transformed = self.scaler.transform(self.transformer.transform(data))
+        else:
+            transformed = self.transformer.transform(data)
 
-    def split_train_vali_test(self, X: np.ndarray, y: np.ndarray, scale: bool = True) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        X_tv, X_test, y_tv, y_test = train_test_split(
-            X, y, train_size=0.75, shuffle=True, random_state=self.random_seed
-        )
-        X_train, X_vali, y_train, y_vali = train_test_split(
-            X_tv, y_tv, train_size=0.66, shuffle=True, random_state=self.random_seed
-        )
+        if type(transformed) != np.ndarray:
+            transformed = transformed.toarray()
 
-        return self.prepare_data(X_train, fit=True, scale=scale), self.prepare_data(X_vali, scale=scale), self.prepare_data(X_test, scale=scale), y_train, y_vali, y_test
+        return transformed
+
+    def split_train_vali_test(self, X: Union[np.ndarray, list[str]], y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        X_tv, X_test, y_tv, y_test = train_test_split(X, y, train_size=0.75, random_state=self.random_seed)
+        X_train, X_vali, y_train, y_vali = train_test_split(X_tv, y_tv, train_size=0.66, random_state=self.random_seed)
+
+        return self.prepare_data(X_train, fit=True), self.prepare_data(X_vali), self.prepare_data(X_test), y_train, y_vali, y_test
 
 
 def test_split_sizes(models: dict[Type[Model], dict[str, Any]]):

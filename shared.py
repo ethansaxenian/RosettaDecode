@@ -1,7 +1,8 @@
-import os
 import pathlib
 from typing import Union
 
+import numpy as np
+import scipy.sparse
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
@@ -52,9 +53,6 @@ def get_path_from_filename(filename: str) -> str:
     return f'../lang/{language}/{filename}'
 
 
-Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
-              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]
-
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
                           "$": "dollar", "%": "pct", "^": "caret", "&": "amp", "*": "times", "(": "lparen",
                           ")": "rparen", "-": "minus", "+": "plus", "=": "eq", "[": "lbracket", "]": "rbracket",
@@ -87,3 +85,7 @@ DEFAULT_KEYWORDS = ['__end__', 'and', 'any', 'as', 'assert', 'auto', 'begin', 'b
                     'var', 'void', 'when', 'where', 'while', 'with']
 
 RANDOM_SEED = 12345678
+
+
+Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
+              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]

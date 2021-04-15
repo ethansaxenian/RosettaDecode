@@ -64,9 +64,10 @@ class FeatureExtractor:
         specials_count = Counter(find_special_characters(code))
         num_specials = len(list(specials_count.elements()))
         for char in SPECIAL_CHARS:
-            features_dict[f'num_{SPECIAL_CHAR_NAMES[char]}'] = int(bool(specials_count[char])) if self.binary_counts else specials_count[char]
+            num = specials_count[char]
+            features_dict[f'{char}'] = int(bool(num)) if self.binary_counts else num
             percent_specials = (specials_count[char] / num_specials) if num_specials > 0 else 0
-            features_dict[f'percent_{SPECIAL_CHAR_NAMES[char]}'] = percent_specials
+            features_dict[f'percent_{char}'] = percent_specials
 
         most_common_ending = count_line_endings(code).most_common(1)[0][0]
         features_dict['most_frequent_line_ending'] = CHAR_MAPPING[most_common_ending]
@@ -93,15 +94,14 @@ class FeatureExtractor:
             "name": os.path.basename(path),
             "features": self.extract_features(code),
             "lang": get_language_from_filename(path),
-            # "code": code,
+            "code": code,
         }
 
     def compile_dataset(self):
         """
         stores the features data for each code file in data/features_data.jsonl
         """
-        with open(f"../data/{self.path}{'_bc' if self.binary_counts else ''}.jsonl", "w") as outfile, open(
-                "../data/file_paths.jsonl", "r") as infile:
+        with open(f"../data/{self.path}.jsonl", "w") as outfile, open("../data/file_paths.jsonl", "r") as infile:
             for line in infile:
                 info = json.loads(line)
                 data = self.parse_file(info["path"])
@@ -110,5 +110,5 @@ class FeatureExtractor:
 
 
 if __name__ == '__main__':
-    extractor = FeatureExtractor("features_data_all", binary_counts=True)
+    extractor = FeatureExtractor("features_data", binary_counts=False)
     extractor.compile_dataset()
