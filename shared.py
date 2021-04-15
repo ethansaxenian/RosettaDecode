@@ -1,11 +1,9 @@
 import pathlib
 from typing import Union
 
-import numpy as np
-import scipy.sparse
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
@@ -88,4 +86,4 @@ RANDOM_SEED = 12345678
 
 
 Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
-              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier]
+              MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier, BernoulliNB]

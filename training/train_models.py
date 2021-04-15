@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
@@ -92,9 +92,9 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    # tfidf = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
+    tfidf = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
 
-    splitter = DataSplitter("../data/features_data_bc.jsonl", seed=RANDOM_SEED)
+    splitter = DataSplitter("../data/features_data.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
