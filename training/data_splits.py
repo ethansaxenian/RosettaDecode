@@ -18,9 +18,9 @@ from training.models import MODELS
 
 
 class DataSplitter:
-    def __init__(self, path: str, transformer: Union[DictVectorizer, TfidfVectorizer] = DictVectorizer(sparse=False), seed: Optional[int] = None, scale: bool = True):
+    def __init__(self, path: str, transformer: Optional[Union[DictVectorizer, TfidfVectorizer]] = None, seed: Optional[int] = None, scale: bool = True):
         self.data_path = path
-        self.transformer = transformer
+        self.transformer = transformer or DictVectorizer(sparse=False)
         self.scale = type(self.transformer) != TfidfVectorizer and scale
         self.scaler = StandardScaler()
         self.random_seed = seed
