@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -8,6 +9,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from shared import RANDOM_SEED
 from training.data_splits import DataSplitter
+from training.models import MODELS
 from training.train_models import Trainer
 
 
@@ -347,14 +349,8 @@ def mlp_experiment_3(X_train: np.ndarray, X_vali: np.ndarray, y_train: np.ndarra
     log_experiments(experiments)
 
 
+
 if __name__ == '__main__':
     splitter = DataSplitter("../data/features_data_all_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
-
-    # linear_svc_experiment_3(X_train, X_vali, y_train, y_vali)
-    # sgd_classifier_experiment(X_train, X_vali, y_train, y_vali)
-    decision_tree_experiment(X_train, X_vali, y_train, y_vali)
-    k_neighbors_classifier_experiment_2(X_train, X_vali, y_train, y_vali)
-    # mlp_experiment_3(X_train, X_vali, y_train, y_vali)
-    # sgd_classifier_experiment_3(X_train, X_vali, y_train, y_vali)

@@ -30,7 +30,7 @@ class DataSplitter:
             features = self._collect_dict_vectorizer_features()
 
         elif type(self.transformer) == TfidfVectorizer:
-            features = self._collect_tfidf_features()  # TODO: the code exits here for some reason...?
+            features = self._collect_tfidf_features()
 
         else:
             raise NotImplementedError
