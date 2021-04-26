@@ -2,7 +2,6 @@ import pickle
 from collections import defaultdict
 from typing import Type, Optional
 
-from joblib import dump, load
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
@@ -13,10 +12,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC, NuSVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.utils.validation import check_is_fitted
 
 from data_wrangling.feature_extractor import FeatureExtractor
-from shared import Model, RANDOM_SEED, INT_TO_LANG, DEFAULT_KEYWORDS
+from shared import Model, RANDOM_SEED, INT_TO_LANG
 from training.data_splits import DataSplitter
 from training.models import MODELS
 
@@ -49,7 +47,7 @@ class Trainer:
     def predict(self, x: np.ndarray) -> np.int64:
         if self.probability and hasattr(self.model, "predict_proba"):
             probs = self.model.predict_proba([x])[0]
-            print([round(x, 3) for x in probs], end=" ")
+            # print([round(x, 3) for x in probs], end=" ")
             pred = list(probs).index(max(probs)) + 1
         else:
             pred = self.model.predict([x])[0]
@@ -69,10 +67,6 @@ class Trainer:
 
         for x, y in zip(X_vali, y_vali):
             pred = self.predict(x)
-            if y == pred:
-                print(y)
-            else:
-                print(y, "NOOOOOOOOOOOOOOOOO")
 
             total += 1
             if pred == y:
@@ -108,7 +102,6 @@ class Trainer:
     def save_model(self, filename: str):
         with open(f"../data/saved_models/{filename}", "wb") as file:
             pickle.dump(self.model, file)
-            print(self.model)
 
     @staticmethod
     def load_model(filename: str, probability: bool = True):
@@ -119,27 +112,27 @@ class Trainer:
 
 if __name__ == '__main__':
     # tfidf_vect = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
-    # count_vectorizer = CountVectorizer()
-    # tfidf_transform = TfidfTransformer()
+    # count_vectorizer = CountVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
 
     splitter = DataSplitter("../data/features_data_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model_path = "sgd"
-    # model = MLPClassifier
-    # params = MODELS[model]
-    # trainer = Trainer(model, params)
-    # trainer.train(X_train, y_train)
-    # acc, prec, rec = trainer.validate(X_vali, y_vali)
-    # print(acc)
-    # print(prec, round(np.mean([i for _, i in prec.items()]), 3))
-    # print(rec, round(np.mean([i for _, i in rec.items()]), 3))
-    # trainer.save_model(model_path)
-    new_trainer = Trainer.load_model(model_path)
-    print(new_trainer.predict_sample("../training/train_models.py"))
-    # acc, prec, rec = new_trainer.validate(X_vali, y_vali)
-    # print(acc)
-    # print(prec, round(np.mean([i for _, i in prec.items()]), 3))
-    # print(rec, round(np.mean([i for _, i in rec.items()]), 3))
+    model = SGDClassifier
+    params = {
+        'loss': 'log',
+        'penalty': 'elasticnet',
+        'alpha': 0.0001,
+        'shuffle': False,
+        'random_state': 1,
+        'learning_rate': 'constant',
+        'eta0': 0.01
+    }
+    trainer = Trainer(model, params)
+    trainer.train(X_train, y_train)
+    acc, prec, rec = trainer.validate(X_vali, y_vali)
+    print(acc)
+    print(prec)
+    print(rec)
+    trainer.save_model(model.__name__)
