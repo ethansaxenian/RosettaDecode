@@ -3,13 +3,14 @@ Creates an excel sheet with labels for each file
 """
 import os
 import pathlib
+from typing import List
 
 from xlwt import Workbook
 
 from shared import EXT_TO_LANG
 
 
-def get_lang_files() -> list[str]:
+def get_lang_files() -> List[str]:
     return [file for lang in EXT_TO_LANG.values() for file in os.listdir(f'../lang/{lang}')]
 
 

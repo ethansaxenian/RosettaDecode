@@ -1,4 +1,4 @@
-from typing import Type, Any
+from typing import Type, Any, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +9,7 @@ from training.data_splits import DataSplitter
 from training.models import MODELS
 
 
-def test_split_sizes(models: dict[Type[Model], dict[str, Any]]):
+def test_split_sizes(models: Dict[Type[Model], Dict[str, Any]]):
     splitter = DataSplitter("../data/features_data_all_bc.jsonl", seed=RANDOM_SEED)
     X, y = splitter.collect_features_data()
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)

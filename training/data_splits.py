@@ -1,5 +1,5 @@
 import json
-from typing import Union, Optional
+from typing import Union, Optional, Tuple, List
 
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
@@ -19,19 +19,17 @@ class DataSplitter:
         self.scaler = StandardScaler()
         self.random_seed = seed
 
-    def collect_features_data(self) -> tuple[Union[np.ndarray, list[str]], np.ndarray]:
+    def collect_features_data(self) -> Tuple[Union[np.ndarray, List[str]], np.ndarray]:
         if type(self.vectorizer) == DictVectorizer:
-            features = self._collect_dict_vectorizer_features()
+            return self._collect_dict_vectorizer_features()
 
         elif type(self.vectorizer) in (TfidfVectorizer, CountVectorizer):
-            features = self._collect_tfidf_features()
+            return self._collect_tfidf_features()
 
         else:
             raise NotImplementedError
 
-        return features
-
-    def _collect_dict_vectorizer_features(self) -> tuple[np.ndarray, np.ndarray]:
+    def _collect_dict_vectorizer_features(self) -> Tuple[np.ndarray, np.ndarray]:
         examples = []
         ys = []
 
@@ -43,7 +41,7 @@ class DataSplitter:
 
         return np.array(examples), np.array(ys)
 
-    def _collect_tfidf_features(self) -> tuple[list[str], np.ndarray]:
+    def _collect_tfidf_features(self) -> Tuple[List[str], np.ndarray]:
         examples = []
         ys = []
 
@@ -55,7 +53,7 @@ class DataSplitter:
 
         return examples, np.array(ys)
 
-    def prepare_data(self, data: Union[np.ndarray, list[str]], fit: bool = False) -> np.ndarray:
+    def prepare_data(self, data: Union[np.ndarray, List[str]], fit: bool = False) -> np.ndarray:
         if type(self.vectorizer) in (TfidfVectorizer, CountVectorizer):
             assert not self.scale
 
@@ -74,7 +72,7 @@ class DataSplitter:
 
         return transformed
 
-    def split_train_vali_test(self, X: Union[np.ndarray, list[str]], y: np.ndarray, split_1: float = 0.75, split_2: float = 0.66) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def split_train_vali_test(self, X: Union[np.ndarray, List[str]], y: np.ndarray, split_1: float = 0.75, split_2: float = 0.66) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         X_tv, X_test, y_tv, y_test = train_test_split(X, y, train_size=split_1, random_state=self.random_seed)
         X_train, X_vali, y_train, y_vali = train_test_split(X_tv, y_tv, train_size=split_2, random_state=self.random_seed)
 

@@ -3,7 +3,7 @@ import os
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict, List, Any
 
 import unidecode
 
@@ -15,19 +15,19 @@ def remove_spaces(code: str) -> str:
     return re.sub(r"[\n\t\s]*", "", code)
 
 
-def find_words(code: str) -> list[str]:
+def find_words(code: str) -> List[str]:
     return [word for word in re.findall(r'\w+', code) if not word.isdecimal()]
 
 
-def find_special_characters(code: str) -> list[str]:
+def find_special_characters(code: str) -> List[str]:
     return re.findall(r'[.]{3}|[^0-9a-zA-Z_ \n]', code)  # find all special characters and ellipses
 
 
-def features_per_line(code: str, regex: Callable[[str], list[str]]) -> list[int]:
+def features_per_line(code: str, regex: Callable[[str], List[str]]) -> List[int]:
     return [len(regex(line)) for line in code.split("\n")]
 
 
-def n_length_substrings(n: int, code: str) -> list[str]:
+def n_length_substrings(n: int, code: str) -> List[str]:
     return [code[i:i+n] for i in range(len(code) - (n-1)) if code[i:i+n].isalpha()]
 
 
@@ -41,7 +41,7 @@ def pct_specials(code: str) -> float:
 
 class FeatureExtractor:
     def __init__(self, path: Optional[str] = None, lowercase: bool = True, binary_counts: bool = False,
-                 keywords: Optional[list[str]] = None):
+                 keywords: Optional[List[str]] = None):
         self.path = path
         self.lowercase = lowercase
         self.binary_counts = binary_counts
@@ -49,7 +49,7 @@ class FeatureExtractor:
         if not Path("../data/file_paths.jsonl").exists():
             generate_file_paths()
 
-    def extract_features(self, code: str) -> dict[str: int]:
+    def extract_features(self, code: str) -> Dict[str, int]:
         """
         returns a dictionary of features extracted from a string
         """
@@ -84,7 +84,7 @@ class FeatureExtractor:
                 code = code.lower()
             return unidecode.unidecode(code)
 
-    def parse_file(self, path: str) -> dict[str: int]:
+    def parse_file(self, path: str) -> Dict[str, Any]:
         """
         compiles and returns the data from a single file path, which includes the filename, the features dictionary,
         and the language of the code in the file

@@ -13,7 +13,7 @@ from training.models import MODELS
 from training.train_models import Trainer
 
 
-def log_experiments(experiments: list[tuple[Trainer, float]]):
+def log_experiments(experiments: List[tuple[Trainer, float]]):
     best_model, best_acc = max(experiments, key=lambda tup: tup[1])
     best_experiments = [(model, acc) for model, acc in experiments if acc == best_acc]
     with open("../data/experiments.txt", "a+") as file:

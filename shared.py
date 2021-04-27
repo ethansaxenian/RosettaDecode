@@ -52,11 +52,11 @@ def get_path_from_filename(filename: str) -> str:
 
 
 SPECIAL_CHAR_NAMES = {"'": "squote", "~": "tilde", "`": "backtick", "!": "exclaim", "@": "at", "#": "pound",
-                          "$": "dollar", "%": "pct", "^": "caret", "&": "amp", "*": "times", "(": "lparen",
-                          ")": "rparen", "-": "minus", "+": "plus", "=": "eq", "[": "lbracket", "]": "rbracket",
-                          "{": "lbrace", "}": "rbrace", "|": "pipe", ";": "semicolon", ":": "colon", '"': "dquote",
-                          ",": "comma", ".": "dot", "<": "langle", ">": "rangle", "/": "fslash", "?": "question",
-                          "\\": "bslash", "...": "ellipsis"}
+                      "$": "dollar", "%": "pct", "^": "caret", "&": "amp", "*": "times", "(": "lparen", ")": "rparen",
+                      "-": "minus", "+": "plus", "=": "eq", "[": "lbracket", "]": "rbracket", "{": "lbrace",
+                      "}": "rbrace", "|": "pipe", ";": "semicolon", ":": "colon", '"': "dquote", ",": "comma",
+                      ".": "dot", "<": "langle", ">": "rangle", "/": "fslash", "?": "question", "\\": "bslash",
+                      "...": "ellipsis"}
 
 SPECIAL_CHARS = list(SPECIAL_CHAR_NAMES.keys())
 
