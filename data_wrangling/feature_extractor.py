@@ -101,7 +101,7 @@ class FeatureExtractor:
         """
         stores the features data for each code file in data/features_data.jsonl
         """
-        with open(f"../data/{self.path}.jsonl", "w") as outfile, open("../data/file_paths.jsonl", "r") as infile:
+        with open(f"../data/features/{self.path}.jsonl", "w") as outfile, open("../data/file_paths.jsonl", "r") as infile:
             for line in infile:
                 info = json.loads(line)
                 data = self.parse_file(info["path"])

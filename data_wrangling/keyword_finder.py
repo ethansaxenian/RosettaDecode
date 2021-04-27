@@ -15,14 +15,14 @@ if __name__ == '__main__':
 
     # print(sorted(list(reserved_keywords)))
 
-    if not Path("../data/all_keywords.jsonl").exists():
+    if not Path("../data/features/all_keywords.jsonl").exists():
         FeatureExtractor("all_keywords", binary_counts=False, keywords=list(reserved_keywords)).compile_dataset()
 
     appears = Counter()
 
     word_frequency = {word: {lang: 0 for lang in EXT_TO_LANG.values()} for word in reserved_keywords}
 
-    with open("../data/all_keywords.jsonl") as f:
+    with open("../data/features/all_keywords.jsonl") as f:
         for line in f:
             info = json.loads(line)
 

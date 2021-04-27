@@ -17,7 +17,7 @@ if __name__ == '__main__':
     # tfidf_vect = TfidfVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
     # count_vectorizer = CountVectorizer(strip_accents="unicode", stop_words="english", min_df=100)
 
-    splitter = DataSplitter("../data/features_data_only_bc.jsonl", seed=RANDOM_SEED, scale=False)
+    splitter = DataSplitter("../data/features/features_data_only_bc.jsonl", seed=RANDOM_SEED, scale=False)
     X, y = splitter.collect_features_data()
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
