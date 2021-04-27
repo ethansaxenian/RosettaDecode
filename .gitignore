@@ -1,9 +1,8 @@
 **/.DS_Store
 /.idea
 __pycache__/
-data/feature_importances/
-data/features/
-data/saved_models/
+data/features/*
+data/saved_models/*
 data/area-Accuracies.png
 data/experiments.txt
 data/feature_importances_LinearSVC.txt
