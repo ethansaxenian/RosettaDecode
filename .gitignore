@@ -1,6 +1,10 @@
 **/.DS_Store
 /.idea
 __pycache__/
-data/
+data/feature_importances/
+data/features/
+data/saved_models/
+data/area-Accuracies.png
+data/experiments.txt
 venv/
 project-checkpoints/

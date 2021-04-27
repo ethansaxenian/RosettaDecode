@@ -48,6 +48,7 @@ class FeatureExtractor:
         self.reserved_keywords = keywords or DEFAULT_KEYWORDS
         if not Path("../data/file_paths.jsonl").exists():
             generate_file_paths()
+        os.makedirs("../data/features", exist_ok=True)
 
     def extract_features(self, code: str) -> Dict[str, int]:
         """

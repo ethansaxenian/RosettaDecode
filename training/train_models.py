@@ -51,7 +51,7 @@ if __name__ == '__main__':
     #     for feature, weight in {k: v for k, v in sorted(weights_dict.items(), key=lambda item: item[1], reverse=True)}.items():
     #         print("\t", feature, weight)
     #
-    # with open(f"../data/feature_importances_{type(new_trainer.model).__name__}.txt", "w") as file:
+    # with open(f"../data/feature_importances/feature_importances_{type(new_trainer.model).__name__}.txt", "w") as file:
     #     for lang, weights_dict in new_trainer.get_feature_weights().items():
     #         file.write(f"{lang}\n")
     #         for feature, weight in {k: v for k, v in sorted(weights_dict.items(), key=lambda item: item[1], reverse=True)}.items():
