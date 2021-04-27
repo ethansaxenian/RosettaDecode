@@ -6,5 +6,7 @@ data/features/
 data/saved_models/
 data/area-Accuracies.png
 data/experiments.txt
+data/feature_importances_LinearSVC.txt
+data/feature_importances_SGDClassifier.txt
 venv/
 project-checkpoints/
