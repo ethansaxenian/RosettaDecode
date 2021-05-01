@@ -22,15 +22,18 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = MultinomialNB
+    model = MLPClassifier
     params = {
-        # 'loss': 'log',
-        # 'penalty': 'elasticnet',
-        # 'alpha': 0.0001,
-        # 'shuffle': False,
-        # 'random_state': 1,
-        # 'learning_rate': 'constant',
-        # 'eta0': 0.01
+        'hidden_layer_sizes': (100,),
+        'activation': 'logistic',
+        'solver': 'adam',
+        'alpha': 1e-05,
+        'batch_size': 64,
+        'learning_rate_init': 0.0001,
+        'max_iter': 1000,
+        'random_state': 1,
+        'tol': 0.0001,
+        'verbose': True,
     }
     trainer = Trainer(model, params, feature_names=splitter.vectorizer.get_feature_names())
     trainer.train(X_train, y_train)

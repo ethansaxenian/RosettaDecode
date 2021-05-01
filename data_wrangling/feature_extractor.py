@@ -1,42 +1,14 @@
 import json
 import os
-import re
 from collections import Counter
 from pathlib import Path
-from typing import Callable, Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any
 
 import unidecode
 
 from data_wrangling.file_path_storer import generate_file_paths
-from shared import get_language_from_filename, DEFAULT_KEYWORDS, SPECIAL_CHAR_NAMES, CHAR_MAPPING, SPECIAL_CHARS
-
-
-def remove_spaces(code: str) -> str:
-    return re.sub(r"[\n\t\s]*", "", code)
-
-
-def find_words(code: str) -> List[str]:
-    return [word for word in re.findall(r'\w+', code) if not word.isdecimal()]
-
-
-def find_special_characters(code: str) -> List[str]:
-    return re.findall(r'[.]{3}|[^0-9a-zA-Z_ \n]', code)  # find all special characters and ellipses
-
-
-def features_per_line(code: str, regex: Callable[[str], List[str]]) -> List[int]:
-    return [len(regex(line)) for line in code.split("\n")]
-
-
-def n_length_substrings(n: int, code: str) -> List[str]:
-    return [code[i:i+n] for i in range(len(code) - (n-1)) if code[i:i+n].isalpha()]
-
-
-def count_line_endings(code: str) -> Counter[str, int]:
-    return Counter(re.findall(r'.(?=\n)', re.sub(r"[ |\t]*", "", code)))
-
-
-def pct_specials(code: str) -> float:
-    return len(find_special_characters(code)) / len(remove_spaces(code))
+from shared import get_language_from_filename, DEFAULT_KEYWORDS, CHAR_MAPPING, SPECIAL_CHARS, find_words, \
+    find_special_characters, count_line_endings
 
 
 class FeatureExtractor:
@@ -48,7 +20,6 @@ class FeatureExtractor:
         self.reserved_keywords = keywords or DEFAULT_KEYWORDS
         if not Path("../data/file_paths.jsonl").exists():
             generate_file_paths()
-        os.makedirs("../data/features", exist_ok=True)
 
     def extract_features(self, code: str) -> Dict[str, int]:
         """

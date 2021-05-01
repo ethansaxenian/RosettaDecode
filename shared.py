@@ -1,5 +1,6 @@
 import pathlib
-from typing import Union
+import re
+from typing import Union, List, Counter
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression, SGDClassifier
@@ -87,3 +88,15 @@ RANDOM_SEED = 12345678
 
 Model = Union[DecisionTreeClassifier, RandomForestClassifier, LogisticRegression, SGDClassifier, GaussianNB,
               MLPClassifier, SVC, NuSVC, LinearSVC, MultinomialNB, KNeighborsClassifier, BernoulliNB]
+
+
+def find_words(code: str) -> List[str]:
+    return [word for word in re.findall(r'\w+', code) if not word.isdecimal()]
+
+
+def find_special_characters(code: str) -> List[str]:
+    return re.findall(r'[.]{3}|[^0-9a-zA-Z_ \n]', code)  # find all special characters and ellipses
+
+
+def count_line_endings(code: str) -> Counter[str, int]:
+    return Counter(re.findall(r'.(?=\n)', re.sub(r"[ |\t]*", "", code)))
