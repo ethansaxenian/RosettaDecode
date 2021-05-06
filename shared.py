@@ -1,6 +1,7 @@
 import pathlib
 import re
-from typing import Union, List, Counter
+from collections import Counter
+from typing import Union, List
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression, SGDClassifier
