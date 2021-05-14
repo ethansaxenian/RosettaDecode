@@ -87,7 +87,7 @@ class Trainer:
             pickle.dump(self, file)
 
     @staticmethod
-    def load_from_file(filename: str):
+    def load_from_file(filename: str) -> 'Trainer':
         with open(f"../data/saved_models/{filename}", "rb") as file:
             return pickle.load(file)
 
