@@ -31,6 +31,7 @@ class DTree:
     wrapper class for DTreeNode
     all attributes attempt to mimic those of sklearn's DecisionTreeClassifier
     """
+
     def __init__(self, criterion: str = "gini", splitter: str = "best", max_depth: Optional[int] = None,
                  max_features: Optional[Union[int, float, str]] = None, random_state: Optional[int] = None):
         if criterion not in ("gini", "entropy"):
@@ -44,7 +45,7 @@ class DTree:
             raise ValueError('max_features must be in (0, n_features]')
         if isinstance(max_features, str) and max_features not in ("sqrt", "log2"):
             raise ValueError('max_features must be in {"sqrt", "log2"}')
-        self.max_features = max_features  # N.B.: a small enough value for max_features may result in an error, as all samples may have the same values for these features
+        self.max_features = max_features
         self.random_state = random_state
         self.local_random = random.Random(random_state)
 
@@ -125,7 +126,8 @@ class DTreeNode:
             return self.local_random.sample(all_features, int(math.log2(n_features)))
 
     @staticmethod
-    def filter(x: np.ndarray, y: np.ndarray, index: int, split: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def filter(x: np.ndarray, y: np.ndarray, index: int, split: float) -> Tuple[np.ndarray, np.ndarray,
+                                                                                np.ndarray, np.ndarray]:
         """ returns a tuple containing the data and labels greater than and less than split at feature_index"""
         x_lt, y_lt, x_gt, y_gt = [], [], [], []
 
@@ -199,7 +201,7 @@ class DTreeNode:
 
 class DTreeBranch(DTreeNode):
     def __init__(self, feature: int, split_at: float, less_than: DTreeNode, greater_than: DTreeNode):
-        # I don't think the various other parameters actually matter here,
+        # I don't think the various parameters for DTreeNode actually matter here,
         # as all of the logic is coming from the DTreeNode object itself
         super().__init__()
         self.feature = feature
