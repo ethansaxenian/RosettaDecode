@@ -22,28 +22,29 @@ if __name__ == '__main__':
 
     X_train, X_vali, X_test, y_train, y_vali, y_test = splitter.split_train_vali_test(X, y)
 
-    model = MLPClassifier
-    params = {
-        'hidden_layer_sizes': (100,),
-        'activation': 'logistic',
-        'solver': 'adam',
-        'alpha': 1e-05,
-        'batch_size': 64,
-        'learning_rate_init': 0.0001,
-        'max_iter': 1000,
-        'random_state': 1,
-        'tol': 0.0001,
-        'verbose': True,
-    }
-    trainer = Trainer(model, params, feature_names=splitter.vectorizer.get_feature_names())
-    trainer.train(X_train, y_train)
-    acc, prec, rec = trainer.validate(X_vali, y_vali)
-    print(acc)
-    print(prec)
-    print(rec)
+    model = SVC
+    # params = {
+    #     'hidden_layer_sizes': (100,),
+    #     'activation': 'logistic',
+    #     'solver': 'adam',
+    #     'alpha': 1e-05,
+    #     'batch_size': 64,
+    #     'learning_rate_init': 0.0001,
+    #     'max_iter': 1000,
+    #     'random_state': 1,
+    #     'tol': 0.0001
+    # }
+    # trainer = Trainer(model, feature_names=splitter.vectorizer.get_feature_names())
+    # trainer.train(X_train, y_train)
+    # acc, prec, rec = trainer.validate(X_vali, y_vali)
+    # print(acc)
+    # print(prec)
+    # print(rec)
+    new_trainer = Trainer.load_from_file("SVC")
+    new_trainer.plot_confusion_matrix(X_test, y_test)
     # trainer.save_to_file(model.__name__)
 
-    # new_trainer = Trainer.load_from_file("SVC")
+    #
     # acc, prec, rec = new_trainer.validate(X_vali, y_vali)
     # print(acc)
     # print(prec)

@@ -8,5 +8,6 @@ data/experiments.txt
 !**.gitkeep
 data/feature_importances_LinearSVC.txt
 data/feature_importances_SGDClassifier.txt
+data/confusion-matrix.png
 venv/
 project-checkpoints/

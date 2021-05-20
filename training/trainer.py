@@ -3,7 +3,9 @@ from collections import defaultdict
 from typing import Type, Optional, List, Dict
 
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.feature_extraction import DictVectorizer
+from sklearn.metrics import plot_confusion_matrix
 
 from data_wrangling.feature_extractor import FeatureExtractor
 from shared import Model, INT_TO_LANG
@@ -96,3 +98,9 @@ class Trainer:
         for class_num, weights in enumerate(self.model.coef_):
             class_weights[INT_TO_LANG[class_num + 1]] = {i: round(v, 3) for i, v in zip(self.feature_names, weights)}
         return class_weights
+
+    def plot_confusion_matrix(self, X: np.ndarray, y: np.ndarray):
+        plot_confusion_matrix(self.model, X, y, normalize="all", display_labels=list(INT_TO_LANG.values()),
+                              xticks_rotation="vertical", values_format=".2g", cmap="Blues")
+        plt.show()
+        plt.savefig("../data/confusion-matrix.png")
