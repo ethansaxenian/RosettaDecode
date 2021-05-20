@@ -100,7 +100,7 @@ class Trainer:
         return class_weights
 
     def plot_confusion_matrix(self, X: np.ndarray, y: np.ndarray):
-        plot_confusion_matrix(self.model, X, y, normalize="all", display_labels=list(INT_TO_LANG.values()),
-                              xticks_rotation="vertical", values_format=".2g", cmap="Blues")
+        plot_confusion_matrix(self.model, X, y, normalize="true", display_labels=list(INT_TO_LANG.values()),
+                              xticks_rotation="vertical", values_format="0.3f", cmap="Blues")
         plt.show()
-        plt.savefig("../data/confusion-matrix.png")
+        # plt.savefig("../data/confusion-matrix.png")
