@@ -103,4 +103,3 @@ class Trainer:
         plot_confusion_matrix(self.model, X, y, normalize="true", display_labels=list(INT_TO_LANG.values()),
                               xticks_rotation="vertical", values_format="0.3f", cmap="Blues")
         plt.show()
-        # plt.savefig("../data/confusion-matrix.png")
