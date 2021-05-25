@@ -93,11 +93,14 @@ class Trainer:
         with open(f"../data/saved_models/{filename}", "rb") as file:
             return pickle.load(file)
 
-    def get_feature_weights(self) -> dict[str, dict[str, float]]:
+    def get_feature_weights(self) -> Dict[str, Dict[str, float]]:
         class_weights = {}
         for class_num, weights in enumerate(self.model.coef_):
             class_weights[INT_TO_LANG[class_num + 1]] = {i: round(v, 3) for i, v in zip(self.feature_names, weights)}
         return class_weights
+
+    def get_feature_importances(self) -> Dict[str, float]:
+        return {i: round(v, 3) for i, v in zip(self.feature_names, self.model.feature_importances_)}
 
     def plot_confusion_matrix(self, X: np.ndarray, y: np.ndarray):
         plot_confusion_matrix(self.model, X, y, normalize="true", display_labels=list(INT_TO_LANG.values()),

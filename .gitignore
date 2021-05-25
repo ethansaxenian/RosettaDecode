@@ -3,11 +3,9 @@
 __pycache__/
 data/features/*
 data/saved_models/*
-data/area-Accuracies.png
+data/*.png
 data/experiments.txt
 !**.gitkeep
-data/feature_importances_LinearSVC.txt
-data/feature_importances_SGDClassifier.txt
-data/confusion-matrix.png
+data/feature_importances*.txt
 venv/
 project-checkpoints/
