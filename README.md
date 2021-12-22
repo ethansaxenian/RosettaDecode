@@ -1,6 +1,11 @@
-This git repo has been modified from [github.com/acmeism/RosettaCodeData](https://github.com/acmeism/RosettaCodeData).
+# RosettaDecode
+### A Natural (Programming) Language Processing Model
 
-It contains all tasks from [Rosetta Code](https://rosettacode.org) in the current supported languages.
+Using scikit-learn models to predict programming languages from source code.
+
+
+Final project for CS451 (Machine Learning)
+
 
 Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl, Python, Ruby
 
@@ -17,7 +22,7 @@ Current supported languages: C, C++, Go, Haskell, Java, JavaScript, Julia, Perl,
 | Python      | 2260        |
 | Ruby        | 2116        |
 
-Other sources of language data:
+Sources of language data:
 - C++
   - https://github.com/facebook/folly
   
@@ -53,4 +58,5 @@ Other sources of language data:
   - https://github.com/ruby/ruby
   
 - Misc.
+  - https://github.com/acmeism/RosettaCodeData
   - https://github.com/TheAlgorithms
